@@ -12,6 +12,9 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
+    "types": [
+      "vite/client"
+    ],
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",

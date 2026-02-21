@@ -1,176 +1,263 @@
 import React from 'react';
-import { 
-  AlertTriangle, 
-  FileText, 
-  GraduationCap, 
-  PlusCircle, 
-  History, 
-  Download, 
+import {
+  AlertTriangle,
+  FileText,
+  GraduationCap,
+  PlusCircle,
+  History,
+  Download,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
+import AuthService from '../../api/services/auth.service';
+import DataService from '../../api/services/data.service';
+import { components } from '../../api/types';
+
+type School = components['schemas']['School'];
 
 export default function SchoolDashboard() {
+  const [associatedSchool, setAssociatedSchool] = React.useState<School | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        const [user, allSchools] = await Promise.all([
+          AuthService.getCurrentUser(),
+          DataService.getSchools()
+        ]);
+
+        if (user?.school_code) {
+          const school = allSchools.find(s => s.code === user.school_code);
+          setAssociatedSchool(school || null);
+        } else {
+          // If no school_code, just take the first one for demo or show error
+          setAssociatedSchool(allSchools[0] || null);
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.detail || 'Failed to load dashboard data.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
+        <p className="text-slate-500 font-medium">Loading your dashboard data...</p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-8">
-      {/* Alert Banner */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-4 shadow-sm">
-        <div className="bg-amber-100 p-2 rounded-lg text-amber-700">
-          <AlertTriangle className="w-5 h-5" />
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3 text-red-600 dark:text-red-400">
+          <AlertCircle className="w-5 h-5" />
+          <p className="text-sm font-medium">{error}</p>
         </div>
-        <div className="flex-1">
-          <h4 className="font-bold text-amber-900">Attention: SSCE Accreditation expiring soon</h4>
-          <p className="text-amber-700 mt-0.5 text-sm">
-            Your certification is set to expire in 3 months. Please initiate your renewal process early to avoid service interruption for upcoming exams.
-          </p>
+      )}
+
+      {/* Status Banners */}
+      {associatedSchool?.status === 'expired' && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-sm animate-in zoom-in-95">
+          <div className="bg-red-100 dark:bg-red-900/50 p-4 rounded-xl text-red-700 dark:text-red-400 border border-red-200">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h4 className="font-black text-red-950 dark:text-red-300 text-xl uppercase tracking-tighter">Accreditation Expired</h4>
+            <p className="text-red-900/80 dark:text-red-400 mt-1 text-sm font-bold">
+              Your accreditation for the current academic session has lapsed. To ensure your students can participate in upcoming examinations, please initiate the renewal process immediately.
+            </p>
+          </div>
+          <a href="https://payments.neco.gov.ng/payment" target="_blank" rel="noopener noreferrer" className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl text-sm font-black transition-all shrink-0 shadow-lg hover:shadow-red-500/20 active:scale-95 uppercase tracking-widest">
+            Renew Registry
+          </a>
         </div>
-        <button className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shrink-0">
-          Start Renewal Now
-        </button>
-      </div>
+      )}
+
+      {associatedSchool?.status === 'active' && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-300 dark:border-emerald-800 rounded-2xl p-6 flex items-center gap-6 shadow-sm border-l-[12px] border-l-emerald-600">
+          <div className="bg-emerald-100 dark:bg-emerald-900/50 p-4 rounded-xl text-emerald-700 dark:text-emerald-400 border border-emerald-200">
+            <FileText className="w-8 h-8" />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-black text-emerald-950 dark:text-emerald-300 text-xl uppercase tracking-tighter">Institution Status: Accredited</h4>
+            <p className="text-emerald-900/80 dark:text-emerald-400 mt-1 text-sm font-bold">
+              Your institution is fully accredited for the 2024/2025 examination cycle. No further action is required at this time.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div>
-        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Dashboard Overview</h2>
-        <p className="text-slate-500 mt-1">Manage and track your school's examination certifications.</p>
+        <h2 className="text-3xl font-black text-slate-950 dark:text-white tracking-tight uppercase">Dashboard Overview</h2>
+        <p className="text-slate-700 dark:text-slate-400 mt-1 font-bold">Comprehensive management of your school's examination certifications and compliance.</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* SSCE Card */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4">
-            <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Active</span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 p-8 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6">
+            <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border-2 ${associatedSchool?.status === 'active'
+              ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+              : 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-400 border-amber-300 dark:border-amber-800'
+              }`}>
+              {associatedSchool?.status || 'Pending'}
+            </span>
           </div>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <FileText className="w-6 h-6" />
+          <div className="flex items-center gap-5 mb-8">
+            <div className="h-14 w-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200">
+              <FileText className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">SSCE Accreditation</h3>
-              <p className="text-slate-400 text-sm">Senior Secondary School Certificate</p>
+              <h3 className="text-2xl font-black text-slate-950 dark:text-white">{associatedSchool?.name || 'SSCE ACCREDITATION'}</h3>
+              <p className="text-slate-600 dark:text-slate-500 text-sm font-bold tracking-widest uppercase">ID CODE: {associatedSchool?.code || '...'}</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-slate-50 p-3 rounded-lg">
-              <span className="text-xs text-slate-500 font-semibold block">Last Accredited</span>
-              <span className="text-sm font-bold">12 Oct 2023</span>
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner">
+              <span className="text-[10px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest block mb-1">Last Accredited</span>
+              <span className="text-sm font-black text-slate-950 dark:text-white">12 Oct 2023</span>
             </div>
-            <div className="bg-slate-50 p-3 rounded-lg border-l-4 border-emerald-500">
-              <span className="text-xs text-slate-500 font-semibold block">Next Due Date</span>
-              <span className="text-sm font-bold">12 Oct 2024</span>
+            <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-xl border-l-[6px] border-emerald-600 border-y border-r border-slate-300">
+              <span className="text-[10px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest block mb-1">Next Due Date</span>
+              <span className="text-sm font-black text-slate-950 dark:text-white">12 Oct 2024</span>
             </div>
           </div>
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-slate-400 text-xs uppercase font-bold tracking-widest mb-1">Time Remaining</p>
-              <p className="text-3xl font-black text-emerald-600">90 Days</p>
+              <p className="text-slate-600 dark:text-slate-500 text-[10px] uppercase font-black tracking-widest mb-1">Validity Period</p>
+              <p className="text-4xl font-black text-emerald-700 dark:text-emerald-400">90 Days</p>
             </div>
-            <div className="relative h-16 w-16 flex items-center justify-center">
-              <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
-                <path className="text-slate-100 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeWidth="3"></path>
-                <path className="text-emerald-600 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeDasharray="75, 100" strokeLinecap="round" strokeWidth="3"></path>
+            <div className="relative h-20 w-20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg className="h-full w-full -rotate-90 drop-shadow-sm" viewBox="0 0 36 36">
+                <path className="text-slate-200 dark:text-slate-700 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeWidth="4"></path>
+                <path className="text-emerald-600 dark:text-emerald-400 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" strokeDasharray="75, 100" strokeLinecap="round" strokeWidth="4"></path>
               </svg>
-              <span className="absolute text-[10px] font-bold">75%</span>
+              <span className="absolute text-xs font-black text-slate-950 dark:text-white">75%</span>
             </div>
           </div>
         </div>
 
         {/* BECE Card */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4">
-            <span className="bg-red-100 text-red-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Expired</span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 p-8 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6">
+            <span className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border-2 border-red-300 dark:border-red-800">EXPIRED STATUS</span>
           </div>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="h-12 w-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6" />
+          <div className="flex items-center gap-5 mb-8">
+            <div className="h-14 w-14 rounded-2xl bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 flex items-center justify-center border border-red-200">
+              <GraduationCap className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">BECE Accreditation</h3>
-              <p className="text-slate-400 text-sm">Basic Education Certificate Exam</p>
+              <h3 className="text-2xl font-black text-slate-950 dark:text-white uppercase">BECE Accreditation</h3>
+              <p className="text-slate-600 dark:text-slate-500 text-sm font-bold tracking-tighter capitalize">Basic Education Certificate Examination</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-slate-50 p-3 rounded-lg">
-              <span className="text-xs text-slate-500 font-semibold block">Last Accredited</span>
-              <span className="text-sm font-bold">05 Jan 2023</span>
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner">
+              <span className="text-[10px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest block mb-1">Last Accredited</span>
+              <span className="text-sm font-black text-slate-950 dark:text-white">05 Jan 2023</span>
             </div>
-            <div className="bg-slate-50 p-3 rounded-lg border-l-4 border-red-500">
-              <span className="text-xs text-slate-500 font-semibold block">Next Due Date</span>
-              <span className="text-sm font-bold text-red-500">05 Jan 2024</span>
+            <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-xl border-l-[6px] border-red-600 border-y border-r border-slate-300">
+              <span className="text-[10px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest block mb-1">Termination Date</span>
+              <span className="text-sm font-black text-red-700 dark:text-red-400">05 Jan 2024</span>
             </div>
           </div>
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-slate-400 text-xs uppercase font-bold tracking-widest mb-1">Status Action</p>
-              <p className="text-3xl font-black text-red-500">Immediate</p>
+              <p className="text-slate-600 dark:text-slate-500 text-[10px] uppercase font-black tracking-widest mb-1">Action Required</p>
+              <p className="text-4xl font-black text-red-700 dark:text-red-400 uppercase">Immediate</p>
             </div>
-            <button className="bg-emerald-600 text-white p-3 rounded-lg flex items-center gap-2 font-bold hover:bg-emerald-700 hover:shadow-lg transition-all">
-              <RefreshCw className="w-5 h-5" />
-              <span>Renew Now</span>
-            </button>
+            <a href="https://payments.neco.gov.ng/payment" target="_blank" rel="noopener noreferrer" className="bg-emerald-600 text-white p-4 rounded-xl flex items-center gap-2 font-black shadow-lg hover:shadow-emerald-500/20 hover:bg-emerald-700 transition-all hover:scale-105 uppercase text-xs tracking-widest">
+              <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+              <span>Renew Registration</span>
+            </a>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
       <div className="space-y-4">
-        <h3 className="text-lg font-bold">Quick Actions</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button className="flex flex-col items-center justify-center gap-3 p-6 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition-all text-center group">
-            <PlusCircle className="w-8 h-8 group-hover:scale-110 transition-transform" />
-            <span className="font-bold">Apply for New Accreditation</span>
-          </button>
-          <button className="flex flex-col items-center justify-center gap-3 p-6 bg-white border border-slate-200 rounded-xl hover:border-emerald-600 hover:text-emerald-600 transition-all text-center group">
-            <History className="w-8 h-8 text-emerald-600" />
-            <span className="font-bold">Renew Existing</span>
-          </button>
-          <button className="flex flex-col items-center justify-center gap-3 p-6 bg-white border border-slate-200 rounded-xl hover:border-emerald-600 hover:text-emerald-600 transition-all text-center group">
-            <Download className="w-8 h-8 text-emerald-600" />
-            <span className="font-bold">View Certificates</span>
+        <h3 className="text-lg font-black dark:text-white uppercase tracking-tight text-slate-950">Quick Administration Actions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <a href="https://payments.neco.gov.ng/payment" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center gap-4 p-8 bg-emerald-600 text-white rounded-2xl shadow-xl hover:bg-emerald-700 transition-all text-center border-b-8 border-emerald-800 hover:translate-y-1 hover:border-b-4 group">
+            <PlusCircle className="w-10 h-10 group-hover:scale-110 transition-transform" />
+            <span className="font-black uppercase tracking-widest text-xs">Apply for New Certification</span>
+          </a>
+          <a href="https://payments.neco.gov.ng/payment" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center gap-4 p-8 bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 rounded-2xl hover:border-emerald-600 dark:hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400 transition-all text-center border-b-8 border-slate-300 dark:border-slate-800 group shadow-sm">
+            <History className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+            <span className="font-black uppercase tracking-widest text-xs dark:text-white group-hover:text-emerald-700">Renew Existing Records</span>
+          </a>
+          <button className="flex flex-col items-center justify-center gap-4 p-8 bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 rounded-2xl hover:border-emerald-600 dark:hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400 transition-all text-center border-b-8 border-slate-300 dark:border-slate-800 group shadow-sm">
+            <Download className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+            <span className="font-black uppercase tracking-widest text-xs dark:text-white group-hover:text-emerald-700">Retrieve Certificates</span>
           </button>
         </div>
       </div>
 
       {/* Recent Submissions */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-slate-200 flex justify-between items-center">
-          <h3 className="text-lg font-bold">Recent Submissions</h3>
-          <a href="#" className="text-emerald-600 text-sm font-bold hover:underline">View all history</a>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-700 overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-slate-300 dark:border-slate-700 flex justify-between items-center bg-slate-200 dark:bg-slate-800/30">
+          <h3 className="text-lg font-black dark:text-white uppercase tracking-tight text-slate-950">Recent Application Submissions</h3>
+          <a href="#" className="text-emerald-700 dark:text-emerald-400 text-sm font-black hover:underline underline-offset-4">View Full History →</a>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+            <thead className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-300">
               <tr>
-                <th className="px-6 py-4">Application ID</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Submitted Date</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Action</th>
+                <th className="px-6 py-5">Internal Tracking ID</th>
+                <th className="px-6 py-5">Application Schema</th>
+                <th className="px-6 py-5">Submission Timeline</th>
+                <th className="px-6 py-5">Compliance Status</th>
+                <th className="px-6 py-5 text-right">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              <tr>
-                <td className="px-6 py-4 font-bold text-sm">#APP-99201</td>
-                <td className="px-6 py-4 text-sm">SSCE Renewal</td>
-                <td className="px-6 py-4 text-sm">24 Oct 2023</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Under Review</span>
+            <tbody className="divide-y divide-slate-300 dark:divide-slate-800 font-medium">
+              <tr className="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors">
+                <td className="px-6 py-5 font-black text-sm text-slate-950 dark:text-white">
+                  <span className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">#APP-99201</span>
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-slate-400 hover:text-emerald-600 transition-colors">
+                <td className="px-6 py-5 text-sm font-bold text-slate-800 dark:text-slate-300">SSCE RENEWAL</td>
+                <td className="px-6 py-5">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-black text-slate-950 dark:text-slate-300">24 Oct 2023</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-black uppercase tracking-tighter">Certified Log</span>
+                  </div>
+                </td>
+                <td className="px-6 py-5">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-300 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-400">Under Review</span>
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <button className="p-2 text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-400 transition-all hover:bg-slate-300 dark:hover:bg-slate-700 rounded-lg border border-transparent hover:border-slate-300">
                     <Eye className="w-5 h-5" />
                   </button>
                 </td>
               </tr>
-              <tr>
-                <td className="px-6 py-4 font-bold text-sm">#APP-88412</td>
-                <td className="px-6 py-4 text-sm">BECE Initial</td>
-                <td className="px-6 py-4 text-sm">12 Jan 2023</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Approved</span>
+              <tr className="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors">
+                <td className="px-6 py-5 font-black text-sm text-slate-950 dark:text-white">
+                  <span className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">#APP-88412</span>
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-slate-400 hover:text-emerald-600 transition-colors">
+                <td className="px-6 py-5 text-sm font-bold text-slate-800 dark:text-slate-300">BECE INITIAL</td>
+                <td className="px-6 py-5">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-black text-slate-950 dark:text-slate-300">12 Jan 2023</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-black uppercase tracking-tighter">Certified Log</span>
+                  </div>
+                </td>
+                <td className="px-6 py-5">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-300 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400">Approved</span>
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <button className="p-2 text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-400 transition-all hover:bg-slate-300 dark:hover:bg-slate-700 rounded-lg border border-transparent hover:border-slate-300">
                     <Eye className="w-5 h-5" />
                   </button>
                 </td>
