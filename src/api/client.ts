@@ -1,9 +1,15 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const baseURL = import.meta.env.VITE_API_URL;
+
+if (!baseURL) {
+    console.error('VITE_API_URL is NOT defined. Using default: http://localhost:8000');
+} else {
+    console.log('API Base URL:', baseURL);
+}
 
 const client = axios.create({
-    baseURL,
+    baseURL: baseURL || 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     },
