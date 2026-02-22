@@ -1,15 +1,20 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL;
+const envBaseURL = import.meta.env.VITE_API_URL;
 
-if (!baseURL) {
-    console.error('VITE_API_URL is NOT defined. Using default: http://localhost:8000');
-} else {
-    console.log('API Base URL:', baseURL);
-}
+// On Netlify, we want to use the proxy /api to avoid CORS issues.
+// If VITE_API_URL is set to '/api' or is missing on a remote host, we use '/api'.
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const baseURL = envBaseURL || (isLocalhost ? 'http://localhost:8000' : '/api');
+
+console.log('API Base URL configuration:', {
+    envValue: envBaseURL,
+    resolvedURL: baseURL,
+    isLocalhost
+});
 
 const client = axios.create({
-    baseURL: baseURL || 'http://localhost:8000',
+    baseURL: baseURL,
     headers: {
         'Content-Type': 'application/json',
     },
