@@ -48,6 +48,7 @@ export default function HeadOfficeSchools() {
     const [isLoadingLgas, setIsLoadingLgas] = useState(false);
     const [isLoadingCustodians, setIsLoadingCustodians] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [activeTab, setActiveTab] = useState<'SSCE' | 'BECE'>('SSCE');
     const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
     const [newSchool, setNewSchool] = useState({
         name: '',
@@ -69,14 +70,15 @@ export default function HeadOfficeSchools() {
         try {
             setIsLoading(true);
             setError(null);
-            const [schoolsData, statesData, custodiansData, lgasData, zonesData] = await Promise.all([
+            const [schoolsData, beceSchoolsData, statesData, custodiansData, lgasData, zonesData] = await Promise.all([
                 DataService.getSchools(),
+                DataService.getBeceSchools(),
                 DataService.getStates(),
                 DataService.getCustodians(),
                 DataService.getLGAs(),
                 DataService.getZones()
             ]);
-            setSchools(schoolsData);
+            setSchools(activeTab === 'SSCE' ? schoolsData : beceSchoolsData);
             setStates(statesData);
             setCustodians(custodiansData);
             setAllLgas(lgasData);
@@ -87,6 +89,22 @@ export default function HeadOfficeSchools() {
             setIsLoading(false);
         }
     };
+
+    const fetchSchools = async () => {
+        try {
+            setIsLoading(true);
+            const data = activeTab === 'SSCE' ? await DataService.getSchools() : await DataService.getBeceSchools();
+            setSchools(data);
+        } catch (err: any) {
+            setError('Failed to refresh schools list.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSchools();
+    }, [activeTab]);
 
     const fetchLgasForState = async (stateCode: string) => {
         if (!stateCode) {
@@ -155,17 +173,17 @@ export default function HeadOfficeSchools() {
         try {
             setUploadProgress('uploading');
             setError(null);
-            await DataService.uploadSchools(file);
+            if (activeTab === 'SSCE') {
+                await DataService.uploadSchools(file);
+            } else {
+                await DataService.uploadBeceSchools(file);
+            }
             setUploadProgress('success');
-
-            // Refresh schools
-            const schoolsData = await DataService.getSchools();
-            setSchools(schoolsData);
-
+            fetchSchools();
             setTimeout(() => setUploadProgress('idle'), 3000);
         } catch (err: any) {
             setUploadProgress('error');
-            setError('Failed to upload schools. Please ensure the file format is correct.');
+            setError(`Failed to upload ${activeTab} schools. Please ensure the file format is correct.`);
         }
     };
 
@@ -179,7 +197,11 @@ export default function HeadOfficeSchools() {
         try {
             setIsSubmitting(true);
             setError(null);
-            await DataService.createSchool(newSchool);
+            if (activeTab === 'SSCE') {
+                await DataService.createSchool(newSchool);
+            } else {
+                await DataService.createBeceSchool(newSchool);
+            }
             setShowAddModal(false);
             setNewSchool({
                 name: '',
@@ -192,7 +214,7 @@ export default function HeadOfficeSchools() {
                 accredited_date: '',
                 status: 'active'
             });
-            fetchInitialData();
+            fetchSchools();
         } catch (err: any) {
             setError(err.response?.data?.detail?.[0]?.msg || 'Failed to create school. The code might already exist.');
         } finally {
@@ -212,7 +234,7 @@ export default function HeadOfficeSchools() {
         try {
             setIsSubmitting(true);
             setError(null);
-            await DataService.updateSchool(editingSchool.code, {
+            const payload = {
                 name: editingSchool.name,
                 code: editingSchool.code,
                 state_code: editingSchool.state_code,
@@ -222,10 +244,16 @@ export default function HeadOfficeSchools() {
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
                 status: editingSchool.status
-            });
+            };
+
+            if (activeTab === 'SSCE') {
+                await DataService.updateSchool(editingSchool.code, payload);
+            } else {
+                await DataService.updateBeceSchool(editingSchool.code, payload);
+            }
             setShowEditModal(false);
             setEditingSchool(null);
-            fetchInitialData();
+            fetchSchools();
         } catch (err: any) {
             setError(err.response?.data?.detail?.[0]?.msg || 'Failed to update school.');
         } finally {
@@ -234,15 +262,19 @@ export default function HeadOfficeSchools() {
     };
 
     const handleDeleteAll = async () => {
-        if (!window.confirm('WARNING: Are you sure you want to delete ALL schools? This action is irreversible.')) return;
+        if (!window.confirm(`WARNING: Are you sure you want to delete ALL ${activeTab} schools? This action is irreversible.`)) return;
 
         try {
             setIsLoading(true);
             setError(null);
-            await DataService.deleteAllSchools();
+            if (activeTab === 'SSCE') {
+                await DataService.deleteAllSchools();
+            } else {
+                await DataService.deleteAllBeceSchools();
+            }
             setSchools([]);
         } catch (err: any) {
-            setError('Failed to delete schools.');
+            setError(`Failed to delete ${activeTab} schools.`);
         } finally {
             setIsLoading(false);
         }
@@ -298,6 +330,30 @@ export default function HeadOfficeSchools() {
                         <Trash2 className="w-5 h-5" />
                     </button>
                 </div>
+            </div>
+
+            {/* Tab Interface */}
+            <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
+                <button
+                    onClick={() => setActiveTab('SSCE')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'SSCE'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                        }`}
+                >
+                    <GraduationCap className={`w-4 h-4 ${activeTab === 'SSCE' ? 'text-emerald-600' : ''}`} />
+                    SSCE SCHOOLS
+                </button>
+                <button
+                    onClick={() => setActiveTab('BECE')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'BECE'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                        }`}
+                >
+                    <Building2 className={`w-4 h-4 ${activeTab === 'BECE' ? 'text-emerald-600' : ''}`} />
+                    BECE SCHOOLS
+                </button>
             </div>
 
             {/* Dynamic Alerts */}

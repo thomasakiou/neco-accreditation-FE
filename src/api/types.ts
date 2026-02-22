@@ -342,6 +342,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/data/bece-schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bece Schools */
+        get: operations["get_bece_schools_api_v1_data_bece_schools_get"];
+        put?: never;
+        /** Create Bece School */
+        post: operations["create_bece_school_api_v1_data_bece_schools_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data/bece-schools/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bece School */
+        get: operations["get_bece_school_api_v1_data_bece_schools__code__get"];
+        /** Update Bece School */
+        put: operations["update_bece_school_api_v1_data_bece_schools__code__put"];
+        post?: never;
+        /** Delete Bece School */
+        delete: operations["delete_bece_school_api_v1_data_bece_schools__code__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data/bece-schools/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete All Bece Schools */
+        delete: operations["delete_all_bece_schools_api_v1_data_bece_schools_all_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/data/states/all": {
         parameters: {
             query?: never;
@@ -387,6 +441,23 @@ export interface paths {
         put?: never;
         /** Upload Schools */
         post: operations["upload_schools_api_v1_data_upload_schools_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data/upload/bece-schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Bece Schools */
+        post: operations["upload_bece_schools_api_v1_data_upload_bece_schools_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -499,6 +570,79 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BECESchool */
+        BECESchool: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** State Code */
+            state_code: string;
+            /** Lga Code */
+            lga_code: string;
+            /** Custodian Code */
+            custodian_code: string;
+            /** Email */
+            email?: string | null;
+            /**
+             * Accreditation Status
+             * @default Unaccredited
+             */
+            accreditation_status: string;
+            /** Accredited Date */
+            accredited_date?: string | null;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+        };
+        /** BECESchoolCreate */
+        BECESchoolCreate: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** State Code */
+            state_code: string;
+            /** Lga Code */
+            lga_code: string;
+            /** Custodian Code */
+            custodian_code: string;
+            /** Email */
+            email?: string | null;
+            /**
+             * Accreditation Status
+             * @default Unaccredited
+             */
+            accreditation_status: string;
+            /** Accredited Date */
+            accredited_date?: string | null;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+        };
+        /** BECESchoolUpdate */
+        BECESchoolUpdate: {
+            /** Name */
+            name?: string | null;
+            /** State Code */
+            state_code?: string | null;
+            /** Lga Code */
+            lga_code?: string | null;
+            /** Custodian Code */
+            custodian_code?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Accreditation Status */
+            accreditation_status?: string | null;
+            /** Accredited Date */
+            accredited_date?: string | null;
+            /** Status */
+            status?: string | null;
+        };
         /** Body_login_api_v1_auth_login_post */
         Body_login_api_v1_auth_login_post: {
             /** Grant Type */
@@ -523,28 +667,24 @@ export interface components {
              */
             client_secret?: string | null;
         };
+        /** Body_upload_bece_schools_api_v1_data_upload_bece_schools_post */
+        Body_upload_bece_schools_api_v1_data_upload_bece_schools_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_lgas_api_v1_data_upload_lgas_post */
         Body_upload_lgas_api_v1_data_upload_lgas_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
         };
         /** Body_upload_schools_api_v1_data_upload_schools_post */
         Body_upload_schools_api_v1_data_upload_schools_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
         };
         /** Body_upload_states_api_v1_data_upload_states_post */
         Body_upload_states_api_v1_data_upload_states_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
         };
         /** Custodian */
@@ -1839,6 +1979,185 @@ export interface operations {
             };
         };
     };
+    get_bece_schools_api_v1_data_bece_schools_get: {
+        parameters: {
+            query?: {
+                state_code?: string | null;
+                lga_code?: string | null;
+                custodian_code?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECESchool"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_bece_school_api_v1_data_bece_schools_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BECESchoolCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECESchool"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bece_school_api_v1_data_bece_schools__code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECESchool"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_bece_school_api_v1_data_bece_schools__code__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BECESchoolUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECESchool"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bece_school_api_v1_data_bece_schools__code__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_all_bece_schools_api_v1_data_bece_schools_all_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     delete_all_states_api_v1_data_states_all_delete: {
         parameters: {
             query?: never;
@@ -1885,6 +2204,39 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_upload_schools_api_v1_data_upload_schools_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_bece_schools_api_v1_data_upload_bece_schools_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_bece_schools_api_v1_data_upload_bece_schools_post"];
             };
         };
         responses: {

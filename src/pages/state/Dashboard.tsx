@@ -8,6 +8,7 @@ import {
   MoreVertical,
   Megaphone,
   HelpCircle,
+  GraduationCap,
   Loader2,
   Lock
 } from 'lucide-react';
@@ -18,7 +19,8 @@ import { components } from '../../api/types';
 type School = components['schemas']['School'];
 
 export default function StateDashboard() {
-  const [schools, setSchools] = React.useState<School[]>([]);
+  const [ssceSchools, setSsceSchools] = React.useState<School[]>([]);
+  const [beceSchools, setBeceSchools] = React.useState<School[]>([]);
   const [lgas, setLgas] = React.useState<components['schemas']['LGA'][]>([]);
   const [custodians, setCustodians] = React.useState<components['schemas']['Custodian'][]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -34,14 +36,16 @@ export default function StateDashboard() {
         if (user?.state_code) {
           setStateName(user.state_name || `State Office (${user.state_code})`);
 
-          const [schoolData, lgaData, custodianData, statesData] = await Promise.all([
+          const [ssceData, beceData, lgaData, custodianData, statesData] = await Promise.all([
             DataService.getSchools({ state_code: user.state_code }),
+            DataService.getBeceSchools({ state_code: user.state_code }),
             DataService.getLGAs({ state_code: user.state_code }),
             DataService.getCustodians({ state_code: user.state_code }),
             DataService.getStates()
           ]);
 
-          setSchools(schoolData);
+          setSsceSchools(ssceData);
+          setBeceSchools(beceData);
           setLgas(lgaData);
           setCustodians(custodianData);
 
@@ -61,13 +65,14 @@ export default function StateDashboard() {
     fetchData();
   }, []);
 
-  const totalSchools = schools.length;
-  const activeSchools = schools.filter(s => s.accreditation_status === 'Accredited').length;
-  const expiredSchools = schools.filter(s => s.status === 'expired').length;
-  const pendingSchools = schools.filter(s => s.status === 'pending').length;
+  const totalSsce = ssceSchools.length;
+  const totalBece = beceSchools.length;
+  const activeSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited').length;
+  const expiredSsce = ssceSchools.filter(s => s.status === 'expired').length;
+  const pendingSsce = ssceSchools.filter(s => s.status === 'pending').length;
 
-  // Calculate schools due for reaccreditation in the next 90 days
-  const dueSoonCount = schools.filter(s => {
+  // Calculate schools due for reaccreditation in the next 90 days (SSCE focus for now)
+  const dueSoonCount = ssceSchools.filter(s => {
     if (!s.accredited_date || s.accreditation_status !== 'Accredited') return false;
     const expiryDate = new Date(s.accredited_date);
     expiryDate.setFullYear(expiryDate.getFullYear() + 2); // Assuming 2 year validity
@@ -78,15 +83,15 @@ export default function StateDashboard() {
   }).length;
 
   const statsCards = [
-    { icon: SchoolIcon, label: 'Total Schools', value: totalSchools.toLocaleString(), change: 'State Total', changeColor: 'emerald', iconBg: 'emerald', topBorder: true },
-    { icon: CheckCircle, label: 'Accredited', value: activeSchools.toLocaleString(), change: 'Valid', changeColor: 'emerald', iconBg: 'emerald' },
-    { icon: Calendar, label: 'Due Soon', value: dueSoonCount.toLocaleString(), change: 'Next 90d', changeColor: 'amber', iconBg: 'amber' },
-    { icon: AlertCircle, label: 'Expired', value: expiredSchools.toLocaleString(), change: 'Requires Action', changeColor: 'red', iconBg: 'red' },
-    { icon: Clock, label: 'Pending', value: pendingSchools.toLocaleString(), change: 'In Review', changeColor: 'emerald', iconBg: 'emerald' },
+    { icon: SchoolIcon, label: 'SSCE Schools', value: totalSsce.toLocaleString(), change: 'State Total', changeColor: 'emerald', iconBg: 'emerald', topBorder: true },
+    { icon: GraduationCap, label: 'BECE Schools', value: totalBece.toLocaleString(), change: 'State Total', changeColor: 'blue', iconBg: 'blue' },
+    { icon: CheckCircle, label: 'Accredited (SSCE)', value: activeSsce.toLocaleString(), change: 'Valid', changeColor: 'emerald', iconBg: 'emerald' },
+    { icon: Calendar, label: 'Due Soon (SSCE)', value: dueSoonCount.toLocaleString(), change: 'Next 90d', changeColor: 'amber', iconBg: 'amber' },
+    { icon: Clock, label: 'Pending Review', value: pendingSsce.toLocaleString(), change: 'In Review', changeColor: 'emerald', iconBg: 'emerald' },
   ];
 
-  // Group schools by LGA with Name
-  const lgaGrouping = schools.reduce((acc: Record<string, number>, school) => {
+  // Group schools by LGA (using SSCE for distribution overview)
+  const lgaGrouping = ssceSchools.reduce((acc: Record<string, number>, school) => {
     const lgaName = lgas.find(l => l.code === school.lga_code)?.name || school.lga_code;
     acc[lgaName] = (acc[lgaName] || 0) + 1;
     return acc;
@@ -96,12 +101,12 @@ export default function StateDashboard() {
     .map(([name, count]) => ({
       name,
       count,
-      percent: totalSchools > 0 ? Math.round((count / totalSchools) * 100) : 0
+      percent: totalSsce > 0 ? Math.round((count / totalSsce) * 100) : 0
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  const recentApplications = schools
+  const recentApplications = ssceSchools
     .filter(s => s.status === 'pending' || s.accreditation_status === 'Accredited')
     .sort((a, b) => {
       const dateA = a.accredited_date ? new Date(a.accredited_date).getTime() : 0;
@@ -241,7 +246,7 @@ export default function StateDashboard() {
               <div className="flex-1 text-center">
                 <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-widest font-black">Success Rate</p>
                 <p className="text-base font-black text-emerald-700 dark:text-emerald-400">
-                  {totalSchools > 0 ? ((activeSchools / totalSchools) * 100).toFixed(1) : '0.0'}%
+                  {totalSsce > 0 ? ((activeSsce / totalSsce) * 100).toFixed(1) : '0.0'}%
                 </p>
               </div>
             </div>

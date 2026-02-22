@@ -4,6 +4,7 @@ import {
   Users,
   FileCheck,
   TrendingUp,
+  GraduationCap,
   MapPin,
   MoreVertical,
   ArrowUpRight,
@@ -19,7 +20,8 @@ type State = components['schemas']['State'];
 
 export default function HeadOfficeDashboard() {
   const [states, setStates] = React.useState<State[]>([]);
-  const [schools, setSchools] = React.useState<School[]>([]);
+  const [ssceSchools, setSsceSchools] = React.useState<School[]>([]);
+  const [beceSchools, setBeceSchools] = React.useState<School[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -27,12 +29,14 @@ export default function HeadOfficeDashboard() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [statesData, schoolsData] = await Promise.all([
+        const [statesData, ssceSchoolsData, beceSchoolsData] = await Promise.all([
           DataService.getStates(),
-          DataService.getSchools()
+          DataService.getSchools(),
+          DataService.getBeceSchools()
         ]);
         setStates(statesData);
-        setSchools(schoolsData);
+        setSsceSchools(ssceSchoolsData);
+        setBeceSchools(beceSchoolsData);
       } catch (err: any) {
         setError('Failed to load dashboard data.');
       } finally {
@@ -43,15 +47,16 @@ export default function HeadOfficeDashboard() {
   }, []);
 
   const totalStates = states.length;
-  const totalSchools = schools.length;
-  const accreditedSchools = schools.filter(s => s.status === 'active').length;
-  const pendingSchools = schools.filter(s => s.status === 'pending').length;
+  const totalSsceSchools = ssceSchools.length;
+  const totalBeceSchools = beceSchools.length;
+  const accreditedSsce = ssceSchools.filter(s => s.status === 'active').length;
+  const pendingSsce = ssceSchools.filter(s => s.status === 'pending').length;
 
   const stats = [
     { icon: Building2, label: 'Total States Active', value: totalStates.toString(), change: '+2', up: true, iconBg: 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400' },
-    { icon: Users, label: 'Total Schools', value: totalSchools.toLocaleString(), change: '+5.2%', up: true, iconBg: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400' },
-    { icon: FileCheck, label: 'Accredited (YTD)', value: accreditedSchools.toLocaleString(), change: '+12%', up: true, iconBg: 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' },
-    { icon: TrendingUp, label: 'Pending Review', value: pendingSchools.toLocaleString(), change: '-3.1%', up: false, iconBg: 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400' },
+    { icon: Users, label: 'SSCE Schools', value: totalSsceSchools.toLocaleString(), change: 'Total', up: true, iconBg: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400' },
+    { icon: GraduationCap, label: 'BECE Schools', value: totalBeceSchools.toLocaleString(), change: 'Total', up: true, iconBg: 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' },
+    { icon: FileCheck, label: 'Accredited SSCE', value: accreditedSsce.toLocaleString(), change: 'YTD', up: true, iconBg: 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400' },
   ];
 
   const activities = [
@@ -62,7 +67,7 @@ export default function HeadOfficeDashboard() {
   ];
 
   const statePerformance = states.map(state => {
-    const stateSchools = schools.filter(s => s.state_code === state.code);
+    const stateSchools = ssceSchools.filter(s => s.state_code === state.code);
     const total = stateSchools.length;
     const accredited = stateSchools.filter(s => s.status === 'active').length;
     const rate = total > 0 ? Math.round((accredited / total) * 100) : 0;

@@ -32,6 +32,7 @@ export default function StateSchools() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState<'SSCE' | 'BECE'>('SSCE');
 
     const [selectedLga, setSelectedLga] = useState<string>('');
     const [selectedCustodian, setSelectedCustodian] = useState<string>('');
@@ -90,13 +91,14 @@ export default function StateSchools() {
                 setIsPortalLocked(!!currentState.is_locked);
             }
 
-            const [schoolsData, custodiansData, lgasData] = await Promise.all([
+            const [schoolsData, beceSchoolsData, custodiansData, lgasData] = await Promise.all([
                 DataService.getSchools({ state_code: user.state_code }),
+                DataService.getBeceSchools({ state_code: user.state_code }),
                 DataService.getCustodians({ state_code: user.state_code }),
                 DataService.getLGAs({ state_code: user.state_code })
             ]);
 
-            setSchools(schoolsData);
+            setSchools(activeTab === 'SSCE' ? schoolsData : beceSchoolsData);
             setCustodians(custodiansData);
             setAllLgas(lgasData);
 
@@ -109,6 +111,25 @@ export default function StateSchools() {
             setIsLoading(false);
         }
     };
+
+    const fetchSchools = async () => {
+        try {
+            setIsLoading(true);
+            const params = { state_code: userStateCode };
+            const data = activeTab === 'SSCE' ? await DataService.getSchools(params) : await DataService.getBeceSchools(params);
+            setSchools(data);
+        } catch (err: any) {
+            setError('Failed to refresh schools list.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (userStateCode) {
+            fetchSchools();
+        }
+    }, [activeTab, userStateCode]);
 
     const fetchCustodiansForLga = async (lgaCode: string) => {
         if (!lgaCode) {
@@ -145,16 +166,17 @@ export default function StateSchools() {
         try {
             setUploadProgress('uploading');
             setError(null);
-            await DataService.uploadSchools(file);
+            if (activeTab === 'SSCE') {
+                await DataService.uploadSchools(file);
+            } else {
+                await DataService.uploadBeceSchools(file);
+            }
             setUploadProgress('success');
-
-            const schoolsData = await DataService.getSchools({ state_code: userStateCode });
-            setSchools(schoolsData);
-
+            fetchSchools();
             setTimeout(() => setUploadProgress('idle'), 3000);
         } catch (err: any) {
             setUploadProgress('error');
-            setError('Failed to upload schools. Please ensure the file format is correct.');
+            setError(`Failed to upload ${activeTab} schools. Please ensure the file format is correct.`);
         }
     };
 
@@ -170,10 +192,15 @@ export default function StateSchools() {
         try {
             setIsSubmitting(true);
             setError(null);
-            await DataService.createSchool({
+            const payload = {
                 ...newSchool,
                 state_code: userStateCode
-            });
+            };
+            if (activeTab === 'SSCE') {
+                await DataService.createSchool(payload);
+            } else {
+                await DataService.createBeceSchool(payload);
+            }
             setShowAddModal(false);
             setNewSchool({
                 name: '',
@@ -186,7 +213,7 @@ export default function StateSchools() {
                 accredited_date: '',
                 status: 'active'
             });
-            fetchInitialData();
+            fetchSchools();
         } catch (err: any) {
             setError(err.response?.data?.detail?.[0]?.msg || 'Failed to create school. The code might already exist.');
         } finally {
@@ -206,7 +233,7 @@ export default function StateSchools() {
         try {
             setIsSubmitting(true);
             setError(null);
-            await DataService.updateSchool(editingSchool.code, {
+            const payload = {
                 name: editingSchool.name,
                 code: editingSchool.code,
                 state_code: userStateCode,
@@ -216,10 +243,16 @@ export default function StateSchools() {
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
                 status: editingSchool.status
-            });
+            };
+
+            if (activeTab === 'SSCE') {
+                await DataService.updateSchool(editingSchool.code, payload);
+            } else {
+                await DataService.updateBeceSchool(editingSchool.code, payload);
+            }
             setShowEditModal(false);
             setEditingSchool(null);
-            fetchInitialData();
+            fetchSchools();
         } catch (err: any) {
             setError(err.response?.data?.detail?.[0]?.msg || 'Failed to update school.');
         } finally {
@@ -264,7 +297,7 @@ export default function StateSchools() {
                     <div className="flex flex-wrap items-center gap-3">
                         <label className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-900 dark:text-slate-200 text-sm font-black shadow-sm group">
                             <Upload className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                            <span>Bulk Upload CSV</span>
+                            <span>Bulk Upload {activeTab}</span>
                             <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
                         </label>
 
@@ -273,10 +306,34 @@ export default function StateSchools() {
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all text-sm font-black shadow-lg hover:shadow-emerald-500/20 active:scale-95 group"
                         >
                             <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-                            <span>Register New School</span>
+                            <span>Register {activeTab} School</span>
                         </button>
                     </div>
                 )}
+            </div>
+
+            {/* Tab Interface */}
+            <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
+                <button
+                    onClick={() => setActiveTab('SSCE')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all ${activeTab === 'SSCE'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                        }`}
+                >
+                    <GraduationCap className={`w-4 h-4 ${activeTab === 'SSCE' ? 'text-emerald-600' : ''}`} />
+                    SSCE TRACK
+                </button>
+                <button
+                    onClick={() => setActiveTab('BECE')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all ${activeTab === 'BECE'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                        }`}
+                >
+                    <UsersIcon className={`w-4 h-4 ${activeTab === 'BECE' ? 'text-emerald-600' : ''}`} />
+                    BECE TRACK
+                </button>
             </div>
 
             {/* Alerts */}

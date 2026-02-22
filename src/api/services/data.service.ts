@@ -97,6 +97,11 @@ const DataService = {
         return response.data;
     },
 
+    deleteAllSchools: async () => {
+        const response = await client.delete('/api/v1/data/schools/all');
+        return response.data;
+    },
+
     exportStates: async () => {
         const response = await client.get('/api/v1/data/export/states', {
             responseType: 'blob',
@@ -111,8 +116,42 @@ const DataService = {
         return response.data;
     },
 
-    deleteAllSchools: async () => {
-        const response = await client.delete('/api/v1/data/schools/all');
+    // BECE Schools
+    getBeceSchools: async (params?: { state_code?: string; lga_code?: string; custodian_code?: string }): Promise<School[]> => {
+        const response = await client.get<School[]>('/api/v1/data/bece-schools', { params });
+        return response.data;
+    },
+
+    createBeceSchool: async (school: components['schemas']['SchoolCreate']): Promise<School> => {
+        const response = await client.post<School>('/api/v1/data/bece-schools', school);
+        return response.data;
+    },
+
+    updateBeceSchool: async (code: string, school: components['schemas']['SchoolCreate']): Promise<School> => {
+        const response = await client.put<School>(`/api/v1/data/bece-schools/${code}`, school);
+        return response.data;
+    },
+
+    uploadBeceSchools: async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await client.post('/api/v1/data/upload/bece-schools', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    exportBeceSchools: async () => {
+        const response = await client.get('/api/v1/data/export/bece-schools', {
+            responseType: 'blob',
+        });
+        return response.data;
+    },
+
+    deleteAllBeceSchools: async () => {
+        const response = await client.delete('/api/v1/data/bece-schools/all');
         return response.data;
     },
 
