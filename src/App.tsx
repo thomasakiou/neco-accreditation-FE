@@ -18,6 +18,8 @@ import HeadOfficeZones from './pages/head-office/Zones';
 import HeadOfficeFinalApproval from './pages/head-office/FinalApproval';
 import HeadOfficeReports from './pages/head-office/Reports';
 import HeadOfficeUsers from './pages/head-office/Users';
+import StateApplications from './pages/state/Applications';
+import ReviewApplications from './pages/head-office/ReviewApplications';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
@@ -48,6 +50,7 @@ export default function App() {
                 <Routes>
                   <Route path="dashboard" element={<StateDashboard />} />
                   <Route path="schools" element={<StateSchools />} />
+                  <Route path="applications" element={<StateApplications />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
               </DashboardLayout>
@@ -65,6 +68,7 @@ export default function App() {
                   <Route path="lgas" element={<HeadOfficeLGAs />} />
                   <Route path="schools" element={<HeadOfficeSchools />} />
                   <Route path="custodians" element={<HeadOfficeCustodians />} />
+                  <Route path="review-proofs" element={<ReviewApplications />} />
                   <Route path="approvals" element={<HeadOfficeFinalApproval />} />
                   <Route path="reports" element={<HeadOfficeReports />} />
                   <Route path="users" element={<HeadOfficeUsers />} />

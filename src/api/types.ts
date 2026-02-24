@@ -498,6 +498,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/data/upload/custodians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Custodians */
+        post: operations["upload_custodians_api_v1_data_upload_custodians_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/data/export/schools": {
         parameters: {
             query?: never;
@@ -549,6 +566,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/data/export/custodians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Custodians */
+        get: operations["export_custodians_api_v1_data_export_custodians_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data/export/bece-schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Bece Schools */
+        get: operations["export_bece_schools_api_v1_data_export_bece_schools_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -592,6 +643,13 @@ export interface components {
             /** Accredited Date */
             accredited_date?: string | null;
             /**
+             * Category
+             * @default PUB
+             */
+            category: string;
+            /** Accrd Year */
+            accrd_year?: string | null;
+            /**
              * Status
              * @default active
              */
@@ -619,6 +677,13 @@ export interface components {
             /** Accredited Date */
             accredited_date?: string | null;
             /**
+             * Category
+             * @default PUB
+             */
+            category: string;
+            /** Accrd Year */
+            accrd_year?: string | null;
+            /**
              * Status
              * @default active
              */
@@ -640,6 +705,10 @@ export interface components {
             accreditation_status?: string | null;
             /** Accredited Date */
             accredited_date?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Accrd Year */
+            accrd_year?: string | null;
             /** Status */
             status?: string | null;
         };
@@ -672,6 +741,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_upload_custodians_api_v1_data_upload_custodians_post */
+        Body_upload_custodians_api_v1_data_upload_custodians_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_lgas_api_v1_data_upload_lgas_post */
         Body_upload_lgas_api_v1_data_upload_lgas_post: {
             /** File */
@@ -694,11 +768,11 @@ export interface components {
             /** Name */
             name: string;
             /** State Code */
-            state_code: string;
+            state_code?: string | null;
             /** Lga Code */
-            lga_code: string;
+            lga_code?: string | null;
             /** Town */
-            town: string;
+            town?: string | null;
             /**
              * Status
              * @default active
@@ -712,11 +786,11 @@ export interface components {
             /** Name */
             name: string;
             /** State Code */
-            state_code: string;
+            state_code?: string | null;
             /** Lga Code */
-            lga_code: string;
+            lga_code?: string | null;
             /** Town */
-            town: string;
+            town?: string | null;
             /**
              * Status
              * @default active
@@ -793,6 +867,13 @@ export interface components {
             /** Accredited Date */
             accredited_date?: string | null;
             /**
+             * Category
+             * @default PUB
+             */
+            category: string;
+            /** Accrd Year */
+            accrd_year?: string | null;
+            /**
              * Status
              * @default active
              */
@@ -820,6 +901,13 @@ export interface components {
             /** Accredited Date */
             accredited_date?: string | null;
             /**
+             * Category
+             * @default PUB
+             */
+            category: string;
+            /** Accrd Year */
+            accrd_year?: string | null;
+            /**
              * Status
              * @default active
              */
@@ -841,6 +929,10 @@ export interface components {
             accreditation_status?: string | null;
             /** Accredited Date */
             accredited_date?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Accrd Year */
+            accrd_year?: string | null;
             /** Status */
             status?: string | null;
         };
@@ -2326,9 +2418,44 @@ export interface operations {
             };
         };
     };
-    export_schools_api_v1_data_export_schools_get: {
+    upload_custodians_api_v1_data_upload_custodians_post: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_custodians_api_v1_data_upload_custodians_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_schools_api_v1_data_export_schools_get: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2342,6 +2469,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2368,7 +2504,9 @@ export interface operations {
     };
     export_lgas_api_v1_data_export_lgas_get: {
         parameters: {
-            query?: never;
+            query?: {
+                format?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2382,6 +2520,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_custodians_api_v1_data_export_custodians_get: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_bece_schools_api_v1_data_export_bece_schools_get: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -10,10 +10,12 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
 import { components } from '../../api/types';
+import TemplateDownloadModal from '../../components/modals/TemplateDownloadModal';
 
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];
@@ -24,6 +26,7 @@ export default function HeadOfficeDashboard() {
   const [beceSchools, setBeceSchools] = React.useState<School[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -176,10 +179,22 @@ export default function HeadOfficeDashboard() {
         <div className="p-6 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between">
           <h3 className="font-black text-lg text-slate-950 dark:text-white">State Performance Metrics</h3>
           <div className="flex gap-2">
+            <button
+              onClick={() => setIsTemplateModalOpen(true)}
+              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download Templates
+            </button>
             <button className="px-3 py-1.5 text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700">Export CSV</button>
             <button className="px-3 py-1.5 text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 border border-emerald-200">Print Report</button>
           </div>
         </div>
+
+        <TemplateDownloadModal
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)}
+        />
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">

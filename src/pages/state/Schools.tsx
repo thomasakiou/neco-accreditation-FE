@@ -62,6 +62,8 @@ export default function StateSchools() {
         email: '',
         accreditation_status: 'Unaccredited',
         accredited_date: '',
+        category: 'PUB',
+        accrd_year: '',
         status: 'active'
     });
 
@@ -211,6 +213,8 @@ export default function StateSchools() {
                 email: '',
                 accreditation_status: 'Unaccredited',
                 accredited_date: '',
+                category: 'PUB',
+                accrd_year: '',
                 status: 'active'
             });
             fetchSchools();
@@ -242,6 +246,8 @@ export default function StateSchools() {
                 email: editingSchool.email || null,
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
+                category: editingSchool.category || 'PUB',
+                accrd_year: editingSchool.accrd_year || null,
                 status: editingSchool.status
             };
 
@@ -446,6 +452,30 @@ export default function StateSchools() {
                                 </div>
 
                                 <div className="space-y-1.5">
+                                    <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Category</label>
+                                    <select
+                                        required
+                                        value={newSchool.category}
+                                        onChange={e => setNewSchool({ ...newSchool, category: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    >
+                                        <option value="PUB">Public (PUB)</option>
+                                        <option value="PRI">Private (PRI)</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Year</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 2024"
+                                        value={newSchool.accrd_year || ''}
+                                        onChange={e => setNewSchool({ ...newSchool, accrd_year: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation</label>
                                     <select
                                         required
@@ -554,6 +584,30 @@ export default function StateSchools() {
                                 </div>
 
                                 <div className="space-y-1.5">
+                                    <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Category</label>
+                                    <select
+                                        required
+                                        value={editingSchool.category || 'PUB'}
+                                        onChange={e => setEditingSchool({ ...editingSchool, category: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    >
+                                        <option value="PUB">Public (PUB)</option>
+                                        <option value="PRI">Private (PRI)</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Year</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 2024"
+                                        value={editingSchool.accrd_year || ''}
+                                        onChange={e => setEditingSchool({ ...editingSchool, accrd_year: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation</label>
                                     <select
                                         required
@@ -644,15 +698,16 @@ export default function StateSchools() {
                                 <th className="px-6 py-4">ID Code</th>
                                 <th className="px-6 py-4">Educational Institution</th>
                                 <th className="px-6 py-4">LGA & Strategic Custodian</th>
+                                <th className="px-6 py-4">Category/Year</th>
                                 <th className="px-6 py-4">Accreditation Status</th>
                                 {!isPortalLocked && <th className="px-6 py-4 text-right">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
                             {isLoading ? (
-                                <tr><td colSpan={5} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></td></tr>
+                                <tr><td colSpan={6} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></td></tr>
                             ) : filteredSchools.length === 0 ? (
-                                <tr><td colSpan={5} className="py-20 text-center text-slate-500">No schools found for this selection.</td></tr>
+                                <tr><td colSpan={6} className="py-20 text-center text-slate-500">No schools found for this selection.</td></tr>
                             ) : (
                                 filteredSchools.map(school => (
                                     <tr key={school.code} className="hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors group">
@@ -664,6 +719,12 @@ export default function StateSchools() {
                                         <td className="px-6 py-4">
                                             <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">{allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</p>
                                             <p className="text-[10px] font-bold text-slate-600 dark:text-slate-500">{custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase">{school.category || 'PUB'}</span>
+                                                <span className="text-[10px] font-bold text-slate-500">{school.accrd_year || 'N/A'}</span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1.5">
