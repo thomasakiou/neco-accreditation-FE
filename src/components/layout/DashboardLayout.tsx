@@ -70,7 +70,7 @@ const headOfficeNavItems: SidebarItem[] = [
   { icon: ShieldCheck, label: 'Custodians', path: '/head-office/custodians' },
   { icon: Users, label: 'Users', path: '/head-office/users' },
   { icon: FileText, label: 'Review Proofs', path: '/head-office/review-proofs' },
-  { icon: CheckCircle, label: 'Final Approval', path: '/head-office/approvals', badge: '12' },
+  { icon: CheckCircle, label: 'Final Approval', path: '/head-office/approvals', badge: 'dynamic_pending_approvals' },
   { icon: BarChart3, label: 'Reports', path: '/head-office/reports' },
 ];
 
@@ -79,6 +79,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   const [isDesktopCollapsed, setIsDesktopCollapsed] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState<any>(null);
   const [entityName, setEntityName] = React.useState<string>('');
+  const [pendingApprovalsCount, setPendingApprovalsCount] = React.useState<number>(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
@@ -99,6 +100,18 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           setEntityName(currentState?.name ? `${currentState.name} State Office` : `State Office: ${user.state_code}`);
         } else {
           setEntityName('Head Office Portal');
+
+          // Fetch pending approvals count for Head Office
+          const schools = await DataService.getSchools();
+          const pendingCount = schools.filter((school: any) => {
+            return school.payment_url && (
+              !school.accreditation_status ||
+              school.accreditation_status === 'Pending' ||
+              // school.accreditation_status === 'Failed' ||
+              school.accreditation_status === 'Unaccredited'
+            );
+          }).length;
+          setPendingApprovalsCount(pendingCount);
         }
       } catch (err) {
         console.error('Failed to fetch user data:', err);
@@ -108,7 +121,13 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     fetchUserData();
   }, [role]);
 
-  const navItems = role === 'school' ? schoolNavItems : role === 'state' ? stateNavItems : headOfficeNavItems;
+  const navItemsRaw = role === 'school' ? schoolNavItems : role === 'state' ? stateNavItems : headOfficeNavItems;
+  const navItems = navItemsRaw.map(item => {
+    if (item.badge === 'dynamic_pending_approvals') {
+      return { ...item, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount.toString() : undefined };
+    }
+    return item;
+  });
   const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : 'National Admin');
   const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : 'Head Office Portal');
 

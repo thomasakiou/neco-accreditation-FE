@@ -425,8 +425,6 @@ export default function StateApplications() {
                                             <option value="" className="dark:bg-slate-800">Accre. Status</option>
                                             <option value="Accredited" className="dark:bg-slate-800">Accredited</option>
                                             <option value="Unaccredited" className="dark:bg-slate-800">Unaccredited</option>
-                                            <option value="Partial" className="dark:bg-slate-800">Partial</option>
-                                            <option value="Failed" className="dark:bg-slate-800">Fail</option>
                                         </select>
                                     </div>
 

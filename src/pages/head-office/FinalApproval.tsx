@@ -270,7 +270,7 @@ export default function HeadOfficeFinalApproval() {
                             {/* State Header - Collapsible */}
                             <button
                                 onClick={() => toggleState(stateCode)}
-                                className="w-full flex items-center justify-between px-6 py-4 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors border-b border-slate-200 dark:border-slate-700"
+                                className="w-full flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors border-b border-slate-200 dark:border-slate-700 gap-3"
                             >
                                 <div className="flex items-center gap-3">
                                     {expandedStates[stateCode] ? (
@@ -284,11 +284,34 @@ export default function HeadOfficeFinalApproval() {
                                     <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black rounded-lg">
                                         {stateSchools.length} school{stateSchools.length !== 1 ? 's' : ''}
                                     </span>
+                                    {/* Pending Approvals Badge */}
+                                    {(() => {
+                                        const pendingInState = stateSchools.filter(school => {
+                                            return school.payment_url && (
+                                                !school.accreditation_status ||
+                                                school.accreditation_status === 'Pending' ||
+                                                // school.accreditation_status === 'Failed' ||
+                                                school.accreditation_status === 'Unaccredited'
+                                            );
+                                        }).length;
+                                        if (pendingInState > 0) {
+                                            return (
+                                                <span className="px-2.5 py-1 bg-amber-400 text-black text-[10px] font-black rounded-lg animate-pulse" title={`${pendingInState} schools pending final approval`}>
+                                                    {pendingInState} Pending
+                                                </span>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
-                                <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500">
-                                    <span className="text-emerald-600">{stateSchools.filter(s => s.accreditation_status === 'Full' || s.accreditation_status === 'Partial').length} accredited</span>
+                                <div className="flex items-center gap-3 text-[12px] font-bold text-slate-500">
+                                    <span className="text-emerald-600">{stateSchools.filter(s => s.accreditation_status === 'Full').length} Full</span>
                                     <span>•</span>
-                                    <span className="text-blue-500">{stateSchools.filter(s => !!s.payment_url).length} with proof</span>
+                                    <span className="text-emerald-600">{stateSchools.filter(s => s.accreditation_status === 'Partial').length} Partial</span>
+                                    <span>•</span>
+                                    <span className="text-red-500">{stateSchools.filter(s => s.accreditation_status === 'Failed' || s.accreditation_status === 'Failed').length} failed</span>
+                                    <span>•</span>
+                                    <span className="text-blue-300">{stateSchools.filter(s => !!s.payment_url).length} Paid</span>
                                 </div>
                             </button>
 
