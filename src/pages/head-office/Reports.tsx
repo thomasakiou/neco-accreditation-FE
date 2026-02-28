@@ -184,7 +184,7 @@ export default function HeadOfficeReports() {
         const stats = { PUB: 0, PRI: 0 };
         schools.forEach(s => {
             if (s.category === 'PUB') stats.PUB++;
-            else if (s.category === 'PRI') stats.PRI++;
+            else if (s.category === 'PRV') stats.PRI++;
         });
         return [
             { name: 'Public Schools', value: stats.PUB, color: '#3b82f6' }, // blue-500

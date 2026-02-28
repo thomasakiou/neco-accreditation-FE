@@ -37,6 +37,7 @@ export default function HeadOfficeFinalApproval() {
     const [selectedStateFilter, setSelectedStateFilter] = useState('');
     const [selectedAccrFilter, setSelectedAccrFilter] = useState('');
     const [selectedProofFilter, setSelectedProofFilter] = useState('');
+    const [selectedDueFilter, setSelectedDueFilter] = useState('');
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
 
     // Review modal
@@ -53,11 +54,13 @@ export default function HeadOfficeFinalApproval() {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [schoolsData, statesData] = await Promise.all([
+            const [schoolsData, beceSchoolsData, statesData] = await Promise.all([
                 DataService.getSchools(),
+                DataService.getBeceSchools(),
                 DataService.getStates()
             ]);
-            setSchools(schoolsData);
+            // Merge SSCE and BECE schools
+            setSchools([...schoolsData, ...beceSchoolsData]);
             setStates(statesData);
             // Collapse all states by default for faster rendering
             setExpandedStates({});
@@ -86,9 +89,26 @@ export default function HeadOfficeFinalApproval() {
                 (selectedProofFilter === 'Proof' && !!school.payment_url) ||
                 (selectedProofFilter === 'No Proof' && !school.payment_url) ||
                 (selectedProofFilter === 'Pending' && !!school.payment_url && (!school.accreditation_status || ['Pending', 'Unaccredited'].includes(school.accreditation_status)));
-            return matchesSearch && matchesState && matchesAccr && matchesProof;
+
+            const isDue = () => {
+                if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) return false;
+                const accreditedDate = new Date(school.accredited_date);
+                const yearsToAdd = school.accreditation_status === 'Full' ? 5 : 1;
+                const expiryDate = new Date(accreditedDate);
+                expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+                const today = new Date();
+                const sixMonthsFromNow = new Date();
+                sixMonthsFromNow.setMonth(today.getMonth() + 6);
+                return expiryDate <= sixMonthsFromNow;
+            };
+
+            const matchesDue = !selectedDueFilter ||
+                (selectedDueFilter === 'Due' && isDue()) ||
+                (selectedDueFilter === 'Not Due' && !isDue());
+
+            return matchesSearch && matchesState && matchesAccr && matchesProof && matchesDue;
         });
-    }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter]);
+    }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter, selectedDueFilter]);
 
     // Group filtered schools by state
     const schoolsByState = useMemo(() => {
@@ -178,6 +198,20 @@ export default function HeadOfficeFinalApproval() {
     const pendingCount = schools.filter(s => !s.accreditation_status || s.accreditation_status === 'Pending').length;
     const proofCount = schools.filter(s => !!s.payment_url).length;
 
+    const dueCount = schools.filter(s => {
+        if (!s.accredited_date || !['Full', 'Partial'].includes(s.accreditation_status || '')) return false;
+        const accreditedDate = new Date(s.accredited_date);
+        const yearsToAdd = s.accreditation_status === 'Full' ? 5 : 1;
+        const expiryDate = new Date(accreditedDate);
+        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+
+        const today = new Date();
+        const sixMonthsFromNow = new Date();
+        sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+        return expiryDate <= sixMonthsFromNow;
+    }).length;
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -192,12 +226,16 @@ export default function HeadOfficeFinalApproval() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Schools</p>
                     <h3 className="text-2xl font-black text-slate-950 dark:text-white">{totalSchools}</h3>
                 </div>
-                <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg">
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
+                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">Due for Accreditation</p>
+                    <h3 className="text-2xl font-black text-slate-950 dark:text-white">{dueCount}</h3>
+                </div>
+                <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg font-bold">
                     <p className="text-[10px] font-black text-emerald-100 uppercase tracking-widest">Accredited</p>
                     <h3 className="text-2xl font-black">{accreditedCount}</h3>
                 </div>
@@ -250,6 +288,14 @@ export default function HeadOfficeFinalApproval() {
                             <option value="Proof">Proof Uploaded</option>
                             <option value="Pending">Pending Approval</option>
                             <option value="No Proof">No Proof</option>
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl">
+                        <Calendar className="w-4 h-4 text-slate-500" />
+                        <select value={selectedDueFilter} onChange={(e) => setSelectedDueFilter(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200">
+                            <option value="">Accre. Due</option>
+                            <option value="Due">Due</option>
+                            <option value="Not Due">Not Due</option>
                         </select>
                     </div>
                 </div>
