@@ -18,7 +18,9 @@ import {
     MapPin,
     Calendar,
     CheckSquare,
-    Users as UsersIcon
+    Users as UsersIcon,
+    ChevronRight,
+    ChevronDown
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import { components } from '../../api/types';
@@ -65,13 +67,24 @@ export default function HeadOfficeSchools() {
         email: '',
         accreditation_status: 'Unaccredited',
         accredited_date: '',
-        category: 'PUB',
+        category: 'Public',
         accrd_year: '',
         status: 'active'
     });
 
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+    const toggleRow = (schoolCode: string) => {
+        const newExpandedRows = new Set(expandedRows);
+        if (newExpandedRows.has(schoolCode)) {
+            newExpandedRows.delete(schoolCode);
+        } else {
+            newExpandedRows.add(schoolCode);
+        }
+        setExpandedRows(newExpandedRows);
+    };
 
     useEffect(() => {
         fetchInitialData();
@@ -250,7 +263,7 @@ export default function HeadOfficeSchools() {
                 email: '',
                 accreditation_status: 'Unaccredited',
                 accredited_date: '',
-                category: 'PUB',
+                category: 'Public',
                 accrd_year: '',
                 status: 'active'
             });
@@ -283,7 +296,7 @@ export default function HeadOfficeSchools() {
                 email: editingSchool.email || null,
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
-                category: editingSchool.category || 'PUB',
+                category: editingSchool.category || 'Public',
                 accrd_year: editingSchool.accrd_year || null,
                 status: editingSchool.status
             };
@@ -538,8 +551,8 @@ export default function HeadOfficeSchools() {
                                             onChange={e => setNewSchool({ ...newSchool, category: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
-                                            <option value="PUB">Public (PUB)</option>
-                                            <option value="PRI">Private (PRI)</option>
+                                            <option value="Public">Public</option>
+                                            <option value="Private">Private</option>
                                         </select>
                                     </div>
 
@@ -703,8 +716,8 @@ export default function HeadOfficeSchools() {
                                             onChange={e => setEditingSchool({ ...editingSchool, category: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
-                                            <option value="PUB">Public (PUB)</option>
-                                            <option value="PRI">Private (PRI)</option>
+                                            <option value="Public">Public</option>
+                                            <option value="Private">Private</option>
                                         </select>
                                     </div>
 
@@ -798,8 +811,8 @@ export default function HeadOfficeSchools() {
                         </div>
 
                         {/* Filters Row */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:items-center gap-3 w-full">
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 xl:flex-none xl:min-w-[140px]">
+                        <div className="flex flex-wrap items-center gap-3 w-full">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[140px] xl:flex-none">
                                 <MapPin className="w-4 h-4 text-slate-600" />
                                 <select
                                     value={selectedZone}
@@ -820,7 +833,7 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 xl:flex-none xl:min-w-[140px]">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[140px] xl:flex-none">
                                 <Building2 className="w-4 h-4 text-slate-600" />
                                 <select
                                     value={selectedState}
@@ -842,7 +855,7 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 xl:flex-none xl:min-w-[140px]">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[140px] xl:flex-none">
                                 <Filter className="w-4 h-4 text-slate-600" />
                                 <select
                                     value={selectedLga}
@@ -863,7 +876,7 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 xl:flex-none xl:min-w-[160px]">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[160px] xl:flex-none">
                                 <UsersIcon className="w-4 h-4 text-slate-600" />
                                 <select
                                     value={selectedCustodian}
@@ -881,7 +894,7 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 xl:flex-none xl:min-w-[180px]">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[180px] xl:flex-none">
                                 <CheckSquare className="w-4 h-4 text-slate-600" />
                                 <select
                                     value={selectedAccreditationStatus}
@@ -896,44 +909,46 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-2 ml-auto">
-                                <button
-                                    onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('excel') : DataService.exportBeceSchools('excel')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-                                    title="Export Excel"
-                                >
-                                    <Download className="w-4 h-4 text-emerald-600" />
-                                    EXCEL
-                                </button>
-                                <button
-                                    onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('csv') : DataService.exportBeceSchools('csv')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-                                    title="Export CSV"
-                                >
-                                    <Download className="w-4 h-4 text-blue-600" />
-                                    CSV
-                                </button>
-                                <button
-                                    onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('dbf') : DataService.exportBeceSchools('dbf')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-                                    title="Export DBF (FoxPro)"
-                                >
-                                    <Download className="w-4 h-4 text-orange-600" />
-                                    DBF
-                                </button>
-                            </div>
+                            <div className="flex flex-wrap items-center gap-4 ml-auto">
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('excel') : DataService.exportBeceSchools('excel')}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                        title="Export Excel"
+                                    >
+                                        <Download className="w-4 h-4 text-emerald-600" />
+                                        EXCEL
+                                    </button>
+                                    <button
+                                        onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('csv') : DataService.exportBeceSchools('csv')}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                        title="Export CSV"
+                                    >
+                                        <Download className="w-4 h-4 text-blue-600" />
+                                        CSV
+                                    </button>
+                                    <button
+                                        onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('dbf') : DataService.exportBeceSchools('dbf')}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                        title="Export DBF (FoxPro)"
+                                    >
+                                        <Download className="w-4 h-4 text-orange-600" />
+                                        DBF
+                                    </button>
+                                </div>
 
-                            <div className="flex items-center gap-3 ml-4">
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Rows:</span>
-                                <select
-                                    value={rowsPerPage}
-                                    onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                    className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold py-1.5 pl-2 pr-6 focus:ring-2 focus:ring-emerald-500 outline-none transition-all cursor-pointer"
-                                >
-                                    {[10, 20, 50, 100].map(size => (
-                                        <option key={size} value={size}>{size}</option>
-                                    ))}
-                                </select>
+                                <div className="flex items-center gap-3 sm:border-l sm:border-slate-300 sm:dark:border-slate-700 sm:pl-4">
+                                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Rows:</span>
+                                    <select
+                                        value={rowsPerPage}
+                                        onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                        className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold py-1.5 pl-2 pr-6 focus:ring-2 focus:ring-emerald-500 outline-none transition-all cursor-pointer"
+                                    >
+                                        {[10, 20, 50, 100].map(size => (
+                                            <option key={size} value={size}>{size}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -943,11 +958,12 @@ export default function HeadOfficeSchools() {
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-slate-200/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
                                 <tr>
+                                    <th className="px-4 py-4 w-10"></th>
                                     <th className="px-6 py-4 text-center">Code</th>
                                     <th className="px-6 py-4">School</th>
-                                    <th className="px-6 py-4">State/Zone</th>
-                                    <th className="px-6 py-4">LGA/Custodian</th>
-                                    <th className="px-6 py-4">Category/Year</th>
+                                    <th className="px-6 py-4">State</th>
+                                    <th className="px-6 py-4">Custodian</th>
+                                    <th className="px-6 py-4">Category</th>
                                     <th className="px-6 py-4">Accreditation</th>
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
@@ -976,88 +992,148 @@ export default function HeadOfficeSchools() {
                                     </tr>
                                 ) : (
                                     paginatedSchools.map((school) => (
-                                        <tr key={school.code} className="group hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors">
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-400 text-sm font-mono font-bold">
-                                                    {school.code}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-base font-bold text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors">
-                                                        {school.name}
+                                        <React.Fragment key={school.code}>
+                                            <tr className="group hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-300 dark:border-slate-800 last:border-0">
+                                                <td className="px-4 py-4 text-center">
+                                                    <button
+                                                        onClick={() => toggleRow(school.code)}
+                                                        className="p-1 hover:bg-slate-300 dark:hover:bg-slate-700 rounded transition-colors"
+                                                    >
+                                                        {expandedRows.has(school.code) ? (
+                                                            <ChevronDown className="w-4 h-4 text-emerald-600" />
+                                                        ) : (
+                                                            <ChevronRight className="w-4 h-4 text-slate-400" />
+                                                        )}
+                                                    </button>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-400 text-sm font-mono font-bold">
+                                                        {school.code}
                                                     </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-base font-bold text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors">
+                                                            {school.name}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
                                                     <span className="text-sm font-bold text-slate-900 dark:text-slate-300">
                                                         {states.find(s => s.code === school.state_code)?.name || school.state_code}
                                                     </span>
-                                                    <span className="text-xs text-slate-500 font-bold bg-slate-100 dark:bg-slate-800/50 px-1.5 py-0.5 rounded w-fit mt-0.5">
-                                                        {zones.find(z => z.code === (states.find(s => s.code === school.state_code)?.zone_code))?.name || 'Loading Zone...'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
+                                                </td>
+                                                <td className="px-6 py-4">
                                                     <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                                                        {allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}
-                                                    </span>
-                                                    <span className="text-xs text-slate-500 font-bold">
                                                         {custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}
                                                     </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
+                                                </td>
+                                                <td className="px-6 py-4">
                                                     <span className="text-sm font-bold text-slate-900 dark:text-slate-300">
-                                                        {(school as any).category || 'PUB'}
+                                                        {school.category === 'PUB' ? 'Public' : school.category === 'PRI' || school.category === 'PRV' ? 'Private' : school.category || 'Public'}
                                                     </span>
-                                                    <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                                                        {(school as any).accrd_year || 'N/A'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm w-fit ${school.accreditation_status === 'Accredited'
-                                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                                        }`}>
-                                                        {school.accreditation_status === 'Accredited' ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                                                        {school.accreditation_status}
-                                                    </span>
-                                                    {school.accredited_date && (
-                                                        <span className="text-xs text-slate-600 dark:text-slate-400 font-bold flex items-center gap-1.5 mt-1">
-                                                            <Calendar className="w-3.5 h-3.5" />
-                                                            {new Date(school.accredited_date).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm w-fit ${school.accreditation_status === 'Accredited'
+                                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                            }`}>
+                                                            {school.accreditation_status === 'Accredited' ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                                                            {school.accreditation_status}
                                                         </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleEditClick(school)}
-                                                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
-                                                        title="Edit School"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteSchool(school.code, school.name)}
-                                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
-                                                        title="Delete School"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1.5">
-                                                        <MoreVertical className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleEditClick(school)}
+                                                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
+                                                            title="Edit School"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteSchool(school.code, school.name)}
+                                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
+                                                            title="Delete School"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {expandedRows.has(school.code) && (
+                                                <tr className="bg-slate-50 dark:bg-slate-900/50 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    <td colSpan={8} className="px-10 py-6 border-b border-slate-300 dark:border-slate-800">
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Location Details</label>
+                                                                    <div className="space-y-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <MapPin className="w-4 h-4 text-emerald-600" />
+                                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                                                Zone: {zones.find(z => z.code === (states.find(s => s.code === school.state_code)?.zone_code))?.name || 'N/A'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 pl-6">
+                                                                            <Filter className="w-3.5 h-3.5 text-slate-400" />
+                                                                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                                                                                LGA: {allLgas.find(l => l.code === school.lga_code)?.name || 'N/A'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Accreditation Info</label>
+                                                                    <div className="space-y-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Calendar className="w-4 h-4 text-emerald-600" />
+                                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                                                Year: {(school as any).accrd_year || 'N/A'}
+                                                                            </span>
+                                                                        </div>
+                                                                        {school.accredited_date && (
+                                                                            <div className="flex items-center gap-2 pl-6">
+                                                                                <CheckSquare className="w-3.5 h-3.5 text-slate-400" />
+                                                                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                                                                    Date: {new Date(school.accredited_date).toLocaleDateString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Contact & Status</label>
+                                                                    <div className="space-y-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Building2 className="w-4 h-4 text-emerald-600" />
+                                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 break-all">
+                                                                                {school.email || 'No email provided'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 pl-6">
+                                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter ${school.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30' :
+                                                                                'bg-slate-100 text-slate-600 dark:bg-slate-800'
+                                                                                }`}>
+                                                                                System: {school.status}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
                                     ))
                                 )}
                             </tbody>
