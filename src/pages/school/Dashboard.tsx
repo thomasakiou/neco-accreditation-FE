@@ -152,7 +152,7 @@ export default function SchoolDashboard() {
             </div>
             <div className="bg-slate-200 dark:bg-slate-800 p-4 rounded-xl border-l-[6px] border-emerald-600 border-y border-r border-slate-300">
               <span className="text-[10px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest block mb-1">Status</span>
-              <span className="text-sm font-black text-slate-950 dark:text-white uppercase">{ssceSchool?.accreditation_status || 'Unaccredited'}</span>
+              <span className="text-sm font-black text-slate-950 dark:text-white uppercase">{(ssceSchool?.accreditation_status === 'Full' || ssceSchool?.accreditation_status === 'Passed' || ssceSchool?.accreditation_status === 'Partial') ? `Accredited (${ssceSchool?.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : ssceSchool?.accreditation_status === 'Failed' ? 'Unaccredited' : ssceSchool?.accreditation_status || 'Unaccredited'}</span>
             </div>
           </div>
           <div className="flex items-end justify-between">
@@ -199,7 +199,7 @@ export default function SchoolDashboard() {
             </div>
             <div className={`bg-slate-200 dark:bg-slate-800 p-4 rounded-xl border-l-[6px] border-y border-r border-slate-300 ${beceSchool?.status === 'active' ? 'border-emerald-600' : 'border-red-600'}`}>
               <span className="text-[10px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest block mb-1">Status</span>
-              <span className={`text-sm font-black uppercase ${beceSchool?.status === 'active' ? 'text-slate-950 dark:text-white' : 'text-red-700 dark:text-red-400'}`}>{beceSchool?.accreditation_status || 'Unaccredited'}</span>
+              <span className={`text-sm font-black uppercase ${beceSchool?.status === 'active' ? 'text-slate-950 dark:text-white' : 'text-red-700 dark:text-red-400'}`}>{(beceSchool?.accreditation_status === 'Full' || beceSchool?.accreditation_status === 'Passed' || beceSchool?.accreditation_status === 'Partial') ? `Accredited (${beceSchool?.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : beceSchool?.accreditation_status === 'Failed' ? 'Unaccredited' : beceSchool?.accreditation_status || 'Unaccredited'}</span>
             </div>
           </div>
           <div className="flex items-end justify-between">

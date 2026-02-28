@@ -52,7 +52,7 @@ export default function HeadOfficeDashboard() {
   const totalStates = states.length;
   const totalSsceSchools = ssceSchools.length;
   const totalBeceSchools = beceSchools.length;
-  const accreditedSsce = ssceSchools.filter(s => s.status === 'active').length;
+  const accreditedSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial').length;
   const pendingSsce = ssceSchools.filter(s => s.status === 'pending').length;
 
   const stats = [
@@ -72,7 +72,7 @@ export default function HeadOfficeDashboard() {
   const statePerformance = states.map(state => {
     const stateSchools = ssceSchools.filter(s => s.state_code === state.code);
     const total = stateSchools.length;
-    const accredited = stateSchools.filter(s => s.status === 'active').length;
+    const accredited = stateSchools.filter(s => s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial').length;
     const rate = total > 0 ? Math.round((accredited / total) * 100) : 0;
 
     let status = 'New';

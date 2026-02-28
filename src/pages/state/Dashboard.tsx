@@ -79,13 +79,14 @@ export default function StateDashboard() {
   } = React.useMemo(() => {
     const totalSsce = ssceSchools.length;
     const totalBece = beceSchools.length;
-    const activeSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited').length;
-    const activeBece = beceSchools.filter(s => s.accreditation_status === 'Accredited').length;
+    const activeSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial').length;
+    const activeBece = beceSchools.filter(s => s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial').length;
     const expiredSsce = ssceSchools.filter(s => s.status === 'expired').length;
 
     // Calculate schools due for reaccreditation in the next 90 days
     const dueSoonCount = ssceSchools.filter(s => {
-      if (!s.accredited_date || s.accreditation_status !== 'Accredited') return false;
+      const isAccredited = s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial';
+      if (!s.accredited_date || !isAccredited) return false;
       const expiryDate = new Date(s.accredited_date);
       expiryDate.setFullYear(expiryDate.getFullYear() + 2); // Assuming 2 year validity
       const today = new Date();
@@ -95,7 +96,8 @@ export default function StateDashboard() {
     }).length;
 
     const dueSoonCountBece = beceSchools.filter(s => {
-      if (!s.accredited_date || s.accreditation_status !== 'Accredited') return false;
+      const isAccredited = s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial';
+      if (!s.accredited_date || !isAccredited) return false;
       const expiryDate = new Date(s.accredited_date);
       expiryDate.setFullYear(expiryDate.getFullYear() + 2); // Assuming 2 year validity
       const today = new Date();
@@ -142,8 +144,8 @@ export default function StateDashboard() {
         lga: lgas.find(l => l.code === s.lga_code)?.name || s.lga_code,
         type: 'SSCE Accreditation',
         date: s.accredited_date ? new Date(s.accredited_date).toLocaleDateString() : 'Pending',
-        status: s.accreditation_status === 'Accredited' ? 'Accredited' : 'Pending Review',
-        statusColor: s.accreditation_status === 'Accredited' ? 'emerald' : 'amber'
+        status: (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial') ? 'Accredited' : s.accreditation_status === 'Failed' ? 'Fail' : 'Pending Review',
+        statusColor: (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial') ? 'emerald' : s.accreditation_status === 'Failed' ? 'red' : 'amber'
       }));
 
     return {

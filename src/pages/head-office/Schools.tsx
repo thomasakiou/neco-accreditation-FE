@@ -41,6 +41,7 @@ export default function HeadOfficeSchools() {
     const [selectedLga, setSelectedLga] = useState<string>('');
     const [selectedCustodian, setSelectedCustodian] = useState<string>('');
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = useState<string>('');
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingSchool, setEditingSchool] = useState<School | null>(null);
@@ -353,9 +354,13 @@ export default function HeadOfficeSchools() {
         const matchesState = selectedState === '' || school.state_code === selectedState;
         const matchesLga = selectedLga === '' || school.lga_code === selectedLga;
         const matchesCustodian = selectedCustodian === '' || school.custodian_code === selectedCustodian;
-        const matchesAccreditation = selectedAccreditationStatus === '' || school.accreditation_status === selectedAccreditationStatus;
+        const matchesAccreditation = selectedAccreditationStatus === '' ||
+            (selectedAccreditationStatus === 'Accredited' ? (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') : selectedAccreditationStatus === 'Unaccredited' ? (school.accreditation_status === 'Unaccredited' || school.accreditation_status === 'Failed' || !school.accreditation_status || school.accreditation_status === 'Pending') : school.accreditation_status === selectedAccreditationStatus);
+        const matchesCategory = selectedCategory === '' ||
+            (selectedCategory === 'Public' ? school.category === 'PUB' || school.category === 'Public' :
+                selectedCategory === 'Private' ? school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' : false);
 
-        return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation;
+        return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory;
     });
 
     const totalPages = Math.ceil(filteredSchools.length / rowsPerPage);
@@ -909,6 +914,21 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[150px] xl:flex-none">
+                                <GraduationCap className="w-4 h-4 text-slate-600" />
+                                <select
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                    className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
+                                >
+                                    <option value="" className="dark:bg-slate-800">
+                                        All Categories
+                                    </option>
+                                    <option value="Public" className="dark:bg-slate-800">Public</option>
+                                    <option value="Private" className="dark:bg-slate-800">Private</option>
+                                </select>
+                            </div>
+
                             <div className="flex flex-wrap items-center gap-4 ml-auto">
                                 <div className="flex items-center gap-2">
                                     <button
@@ -1035,12 +1055,14 @@ export default function HeadOfficeSchools() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex flex-col gap-1">
-                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm w-fit ${school.accreditation_status === 'Accredited'
+                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm w-fit ${(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
                                                             ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                            : school.accreditation_status === 'Failed'
+                                                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                                                             }`}>
-                                                            {school.accreditation_status === 'Accredited' ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                                                            {school.accreditation_status}
+                                                            {(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                                                            {(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}
                                                         </span>
                                                     </div>
                                                 </td>

@@ -11,11 +11,13 @@ export type Custodian = components['schemas']['Custodian'];
 let statesCache: State[] | null = null;
 let zonesCache: Zone[] | null = null;
 let lgasCache: Record<string, LGA[]> = {}; // Key: state_code or 'all'
+let schoolsCache: School[] | null = null;
 
 export const clearStaticCache = () => {
     statesCache = null;
     zonesCache = null;
     lgasCache = {};
+    schoolsCache = null;
 };
 
 const DataService = {
@@ -77,11 +79,13 @@ const DataService = {
 
     lockStates: async (request: components['schemas']['LockRequest']) => {
         const response = await client.post('/api/v1/data/states/lock', request);
+        statesCache = null;
         return response.data;
     },
 
     unlockStates: async (request: components['schemas']['LockRequest']) => {
         const response = await client.post('/api/v1/data/states/unlock', request);
+        statesCache = null;
         return response.data;
     },
 
@@ -108,17 +112,23 @@ const DataService = {
     },
 
     getSchools: async (params?: { state_code?: string; lga_code?: string; custodian_code?: string }): Promise<School[]> => {
+        // Only cache when fetching all schools (no filter params)
+        const hasParams = params && Object.values(params).some(v => v !== undefined);
+        if (!hasParams && schoolsCache) return schoolsCache;
         const response = await client.get<School[]>('/api/v1/data/schools', { params });
+        if (!hasParams) schoolsCache = response.data;
         return response.data;
     },
 
     createSchool: async (school: components['schemas']['SchoolCreate']): Promise<School> => {
         const response = await client.post<School>('/api/v1/data/schools', school);
+        schoolsCache = null;
         return response.data;
     },
 
     updateSchool: async (code: string, school: components['schemas']['SchoolUpdate']): Promise<School> => {
         const response = await client.put<School>(`/api/v1/data/schools/${code}`, school);
+        schoolsCache = null;
         return response.data;
     },
 
@@ -130,6 +140,7 @@ const DataService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        schoolsCache = null;
         return response.data;
     },
 
@@ -152,10 +163,12 @@ const DataService = {
 
     deleteSchool: async (code: string) => {
         await client.delete(`/api/v1/data/schools/${code}`);
+        schoolsCache = null;
     },
 
     deleteAllSchools: async () => {
         await client.delete('/api/v1/data/schools/all');
+        schoolsCache = null;
     },
 
     // BECE Schools
