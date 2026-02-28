@@ -402,8 +402,8 @@ export default function StateApplications() {
                     {/* Schools List */}
                     <div className="space-y-4">
                         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm overflow-hidden">
-                            <div className="p-4 border-b border-slate-300 dark:border-slate-800 flex items-center gap-4">
-                                <div className="relative flex-1">
+                            <div className="p-4 border-b border-slate-300 dark:border-slate-800 flex flex-wrap items-center gap-4">
+                                <div className="relative w-full md:w-auto flex-1">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     <input
                                         type="text"
@@ -414,46 +414,48 @@ export default function StateApplications() {
                                     />
                                 </div>
 
-                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg">
-                                    <CheckCircle2 className="w-4 h-4 text-slate-400" />
-                                    <select
-                                        value={selectedAccreditationStatus}
-                                        onChange={(e) => setSelectedAccreditationStatus(e.target.value)}
-                                        className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
-                                    >
-                                        <option value="" className="dark:bg-slate-800">Accre. Status</option>
-                                        <option value="Accredited" className="dark:bg-slate-800">Accredited</option>
-                                        <option value="Unaccredited" className="dark:bg-slate-800">Unaccredited</option>
-                                        <option value="Partial" className="dark:bg-slate-800">Partial</option>
-                                        <option value="Failed" className="dark:bg-slate-800">Fail</option>
-                                    </select>
-                                </div>
+                                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                                    <div className="flex-1 md:flex-none flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[140px]">
+                                        <CheckCircle2 className="w-4 h-4 text-slate-400 shrink-0" />
+                                        <select
+                                            value={selectedAccreditationStatus}
+                                            onChange={(e) => setSelectedAccreditationStatus(e.target.value)}
+                                            className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
+                                        >
+                                            <option value="" className="dark:bg-slate-800">Accre. Status</option>
+                                            <option value="Accredited" className="dark:bg-slate-800">Accredited</option>
+                                            <option value="Unaccredited" className="dark:bg-slate-800">Unaccredited</option>
+                                            <option value="Partial" className="dark:bg-slate-800">Partial</option>
+                                            <option value="Failed" className="dark:bg-slate-800">Fail</option>
+                                        </select>
+                                    </div>
 
-                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg">
-                                    <Upload className="w-4 h-4 text-slate-400" />
-                                    <select
-                                        value={selectedProofStatus}
-                                        onChange={(e) => setSelectedProofStatus(e.target.value)}
-                                        className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
-                                    >
-                                        <option value="" className="dark:bg-slate-800">Proof Status</option>
-                                        <option value="Proof" className="dark:bg-slate-800">Proof Uploaded</option>
-                                        <option value="No Proof" className="dark:bg-slate-800">No Proof</option>
-                                    </select>
-                                </div>
+                                    <div className="flex-1 md:flex-none flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[140px]">
+                                        <Upload className="w-4 h-4 text-slate-400 shrink-0" />
+                                        <select
+                                            value={selectedProofStatus}
+                                            onChange={(e) => setSelectedProofStatus(e.target.value)}
+                                            className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
+                                        >
+                                            <option value="" className="dark:bg-slate-800">Proof Status</option>
+                                            <option value="Proof" className="dark:bg-slate-800">Proof Uploaded</option>
+                                            <option value="No Proof" className="dark:bg-slate-800">No Proof</option>
+                                        </select>
+                                    </div>
 
 
-                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase">Rows:</span>
-                                    <select
-                                        value={rowsPerPage}
-                                        onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                        className="bg-transparent border-none text-xs font-black uppercase tracking-wider outline-none dark:text-slate-200 cursor-pointer"
-                                    >
-                                        {[10, 20, 50, 100].map(size => (
-                                            <option key={size} value={size} className="dark:bg-slate-800">{size}</option>
-                                        ))}
-                                    </select>
+                                    <div className="flex-1 md:flex-none flex items-center justify-between md:justify-start gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[100px]">
+                                        <span className="text-[10px] font-black text-slate-500 uppercase">Rows:</span>
+                                        <select
+                                            value={rowsPerPage}
+                                            onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                            className="bg-transparent border-none text-xs font-black uppercase tracking-wider outline-none dark:text-slate-200 cursor-pointer"
+                                        >
+                                            {[10, 20, 50, 100].map(size => (
+                                                <option key={size} value={size} className="dark:bg-slate-800">{size}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
