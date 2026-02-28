@@ -68,9 +68,14 @@ export default function StateDashboard() {
   const {
     activeSsce,
     activeBece,
-    expiredSsce,
-    dueSoonCount,
-    dueSoonCountBece,
+    fullSsce,
+    partialSsce,
+    failedSsce,
+    pendingSsce,
+    fullBece,
+    partialBece,
+    failedBece,
+    pendingBece,
     statsCards,
     dashboardLgaData,
     recentApplications,
@@ -79,40 +84,35 @@ export default function StateDashboard() {
   } = React.useMemo(() => {
     const totalSsce = ssceSchools.length;
     const totalBece = beceSchools.length;
-    const activeSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial').length;
-    const activeBece = beceSchools.filter(s => s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial').length;
-    const expiredSsce = ssceSchools.filter(s => s.status === 'expired').length;
 
-    // Calculate schools due for reaccreditation in the next 90 days
-    const dueSoonCount = ssceSchools.filter(s => {
-      const isAccredited = s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial';
-      if (!s.accredited_date || !isAccredited) return false;
-      const expiryDate = new Date(s.accredited_date);
-      expiryDate.setFullYear(expiryDate.getFullYear() + 2); // Assuming 2 year validity
-      const today = new Date();
-      const diffTime = expiryDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays > 0 && diffDays <= 90;
-    }).length;
+    // SSCE Stats logic
+    const fullSsce = ssceSchools.filter(s => s.accreditation_status === 'Full').length;
+    const partialSsce = ssceSchools.filter(s => s.accreditation_status === 'Partial').length;
+    const failedSsce = ssceSchools.filter(s => s.accreditation_status === 'Failed').length;
+    const activeSsce = fullSsce + partialSsce;
+    const pendingSsce = ssceSchools.filter(s => !!s.payment_url && (!s.accreditation_status || ['Pending', 'Unaccredited'].includes(s.accreditation_status))).length;
 
-    const dueSoonCountBece = beceSchools.filter(s => {
-      const isAccredited = s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial';
-      if (!s.accredited_date || !isAccredited) return false;
-      const expiryDate = new Date(s.accredited_date);
-      expiryDate.setFullYear(expiryDate.getFullYear() + 2); // Assuming 2 year validity
-      const today = new Date();
-      const diffTime = expiryDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays > 0 && diffDays <= 90;
-    }).length;
+    // BECE Stats logic
+    const fullBece = beceSchools.filter(s => s.accreditation_status === 'Full').length;
+    const partialBece = beceSchools.filter(s => s.accreditation_status === 'Partial').length;
+    const failedBece = beceSchools.filter(s => s.accreditation_status === 'Failed').length;
+    const activeBece = fullBece + partialBece;
+    const pendingBece = beceSchools.filter(s => !!s.payment_url && (!s.accreditation_status || ['Pending', 'Unaccredited'].includes(s.accreditation_status))).length;
 
     const statsCards = [
-      { icon: SchoolIcon, label: 'SSCE Schools', value: totalSsce.toLocaleString(), change: 'State Total', changeColor: 'emerald', iconBg: 'emerald', topBorder: true },
-      { icon: GraduationCap, label: 'BECE Schools', value: totalBece.toLocaleString(), change: 'State Total', changeColor: 'blue', iconBg: 'blue' },
-      { icon: CheckCircle, label: 'Accredited (SSCE)', value: activeSsce.toLocaleString(), change: 'Valid', changeColor: 'emerald', iconBg: 'emerald' },
-      { icon: CheckCircle, label: 'Accredited (BECE)', value: activeBece.toLocaleString(), change: 'Valid', changeColor: 'blue', iconBg: 'blue' },
-      { icon: Calendar, label: 'Due Soon (SSCE)', value: dueSoonCount.toLocaleString(), change: 'Next 90d', changeColor: 'amber', iconBg: 'amber' },
-      { icon: Calendar, label: 'Due Soon (BECE)', value: dueSoonCountBece.toLocaleString(), change: 'Next 90d', changeColor: 'orange', iconBg: 'orange' },
+      // SSCE Group
+      { icon: SchoolIcon, label: 'Total SSCE', value: totalSsce.toLocaleString(), change: 'SSCE', changeColor: 'emerald', iconBg: 'emerald' },
+      { icon: CheckCircle, label: 'Full (SSCE)', value: fullSsce.toLocaleString(), change: 'Valid', changeColor: 'emerald', iconBg: 'emerald' },
+      { icon: CheckCircle, label: 'Partial (SSCE)', value: partialSsce.toLocaleString(), change: 'Valid', changeColor: 'amber', iconBg: 'amber' },
+      { icon: AlertCircle, label: 'Failed (SSCE)', value: failedSsce.toLocaleString(), change: 'Failed', changeColor: 'red', iconBg: 'red' },
+      { icon: Clock, label: 'Pending (SSCE)', value: pendingSsce.toLocaleString(), change: 'Awaiting', changeColor: 'slate', iconBg: 'slate' },
+
+      // BECE Group
+      { icon: GraduationCap, label: 'Total BECE', value: totalBece.toLocaleString(), change: 'BECE', changeColor: 'blue', iconBg: 'blue' },
+      { icon: CheckCircle, label: 'Full (BECE)', value: fullBece.toLocaleString(), change: 'Valid', changeColor: 'blue', iconBg: 'blue' },
+      { icon: CheckCircle, label: 'Partial (BECE)', value: partialBece.toLocaleString(), change: 'Valid', changeColor: 'amber', iconBg: 'amber' },
+      { icon: AlertCircle, label: 'Failed (BECE)', value: failedBece.toLocaleString(), change: 'Failed', changeColor: 'red', iconBg: 'red' },
+      { icon: Clock, label: 'Pending (BECE)', value: pendingBece.toLocaleString(), change: 'Awaiting', changeColor: 'slate', iconBg: 'slate' },
     ];
 
     // Group schools by LGA (using SSCE for distribution overview)
@@ -151,9 +151,14 @@ export default function StateDashboard() {
     return {
       activeSsce,
       activeBece,
-      expiredSsce,
-      dueSoonCount,
-      dueSoonCountBece,
+      fullSsce,
+      partialSsce,
+      failedSsce,
+      pendingSsce,
+      fullBece,
+      partialBece,
+      failedBece,
+      pendingBece,
       statsCards,
       dashboardLgaData,
       recentApplications,
@@ -191,19 +196,47 @@ export default function StateDashboard() {
           <p className="text-sm font-medium">{error}</p>
         </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-        {statsCards.map((card) => (
-          <div key={card.label} className={`bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm ${card.topBorder ? 'border-t-4 border-t-emerald-600' : ''} hover:shadow-md transition-shadow`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-10 h-10 rounded-lg bg-${card.iconBg}-100 dark:bg-${card.iconBg}-900/50 text-${card.iconBg}-700 dark:text-${card.iconBg}-400 flex items-center justify-center border border-${card.iconBg}-200 dark:border-${card.iconBg}-800`}>
-                <card.icon className="w-5 h-5" />
+
+      {/* SSCE Stats */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-l-4 border-emerald-500 pl-4">
+          <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">SSCE Accreditation Overview</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {statsCards.slice(0, 5).map((card) => (
+            <div key={card.label} className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-9 h-9 rounded-lg bg-${card.iconBg}-100 dark:bg-${card.iconBg}-900/50 text-${card.iconBg}-700 dark:text-${card.iconBg}-400 flex items-center justify-center border border-${card.iconBg}-200 dark:border-${card.iconBg}-800`}>
+                  <card.icon className="w-4.5 h-4.5" />
+                </div>
+                <span className={`text-[9px] font-black uppercase tracking-widest text-${card.changeColor}-700 dark:text-${card.changeColor}-400 bg-${card.changeColor}-100 dark:bg-${card.changeColor}-900/30 px-2 py-0.5 rounded-md border border-${card.changeColor}-200 dark:border-${card.changeColor}-800`}>{card.change}</span>
               </div>
-              <span className={`text-[10px] font-black uppercase tracking-widest text-${card.changeColor}-700 dark:text-${card.changeColor}-400 bg-${card.changeColor}-100 dark:bg-${card.changeColor}-900/30 px-2 py-1 rounded-md border border-${card.changeColor}-200 dark:border-${card.changeColor}-800`}>{card.change}</span>
+              <p className="text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">{card.label}</p>
+              <h3 className="text-2xl font-black mt-1 text-slate-950 dark:text-white">{card.value}</h3>
             </div>
-            <p className="text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest">{card.label}</p>
-            <h3 className="text-3xl font-black mt-1 text-slate-950 dark:text-white">{card.value}</h3>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+
+      {/* BECE Stats */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-l-4 border-blue-500 pl-4">
+          <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">BECE Accreditation Overview</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {statsCards.slice(5, 10).map((card) => (
+            <div key={card.label} className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-9 h-9 rounded-lg bg-${card.iconBg}-100 dark:bg-${card.iconBg}-900/50 text-${card.iconBg}-700 dark:text-${card.iconBg}-400 flex items-center justify-center border border-${card.iconBg}-200 dark:border-${card.iconBg}-800`}>
+                  <card.icon className="w-4.5 h-4.5" />
+                </div>
+                <span className={`text-[9px] font-black uppercase tracking-widest text-${card.changeColor}-700 dark:text-${card.changeColor}-400 bg-${card.changeColor}-100 dark:bg-${card.changeColor}-900/30 px-2 py-0.5 rounded-md border border-${card.changeColor}-200 dark:border-${card.changeColor}-800`}>{card.change}</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">{card.label}</p>
+              <h3 className="text-2xl font-black mt-1 text-slate-950 dark:text-white">{card.value}</h3>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

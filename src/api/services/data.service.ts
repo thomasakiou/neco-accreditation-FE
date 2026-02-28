@@ -24,7 +24,7 @@ const DataService = {
     getStates: async (): Promise<State[]> => {
         if (statesCache) return statesCache;
         const response = await client.get<State[]>('/api/v1/data/states');
-        statesCache = response.data;
+        statesCache = response.data.sort((a, b) => a.name.localeCompare(b.name));
         return statesCache;
     },
 
@@ -94,16 +94,7 @@ const DataService = {
             params: { format },
             responseType: 'blob',
         });
-
-        const extension = format === 'excel' ? 'xlsx' : format;
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `states.${extension}`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        DataService.downloadBlob(response.data, 'states', format);
     },
 
     deleteState: async (code: string) => {
@@ -144,21 +135,26 @@ const DataService = {
         return response.data;
     },
 
-    exportSchools: async (format: string = 'excel') => {
-        const response = await client.get('/api/v1/data/export/schools', {
-            params: { format },
-            responseType: 'blob',
-        });
-
+    // Helper for downloading blobs
+    downloadBlob: (data: any, fileName: string, format: string) => {
         const extension = format === 'excel' ? 'xlsx' : format;
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const blob = new Blob([data]);
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `ssce_schools.${extension}`);
+        link.setAttribute('download', `${fileName}.${extension}`);
         document.body.appendChild(link);
         link.click();
         link.remove();
         window.URL.revokeObjectURL(url);
+    },
+
+    exportSchools: async (format: string = 'excel', params?: { state_code?: string; zone_code?: string; category?: string; accreditation_status?: string }) => {
+        const response = await client.get('/api/v1/data/export/schools', {
+            params: { format, ...params },
+            responseType: 'blob',
+        });
+        DataService.downloadBlob(response.data, 'ssce_schools', format);
     },
 
     deleteSchool: async (code: string) => {
@@ -198,21 +194,12 @@ const DataService = {
         return response.data;
     },
 
-    exportBeceSchools: async (format: string = 'excel') => {
+    exportBeceSchools: async (format: string = 'excel', params?: { state_code?: string; zone_code?: string; category?: string; accreditation_status?: string }) => {
         const response = await client.get('/api/v1/data/export/bece-schools', {
-            params: { format },
+            params: { format, ...params },
             responseType: 'blob',
         });
-
-        const extension = format === 'excel' ? 'xlsx' : format;
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `bece_schools.${extension}`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        DataService.downloadBlob(response.data, 'bece_schools', format);
     },
 
     deleteBeceSchool: async (code: string) => {
@@ -278,21 +265,12 @@ const DataService = {
         return response.data;
     },
 
-    exportLGAs: async (format: string = 'excel') => {
+    exportLGAs: async (format: string = 'excel', params?: { state_code?: string }) => {
         const response = await client.get('/api/v1/data/export/lgas', {
-            params: { format },
+            params: { format, ...params },
             responseType: 'blob',
         });
-
-        const extension = format === 'excel' ? 'xlsx' : format;
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `lgas.${extension}`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        DataService.downloadBlob(response.data, 'lgas', format);
     },
 
     deleteLGA: async (code: string) => {
@@ -315,21 +293,12 @@ const DataService = {
         return response.data;
     },
 
-    exportCustodians: async (format: string = 'excel') => {
+    exportCustodians: async (format: string = 'excel', params?: { state_code?: string; lga_code?: string }) => {
         const response = await client.get('/api/v1/data/export/custodians', {
-            params: { format },
+            params: { format, ...params },
             responseType: 'blob',
         });
-
-        const extension = format === 'excel' ? 'xlsx' : format;
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `custodians.${extension}`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        DataService.downloadBlob(response.data, 'custodians', format);
     },
 
     deleteCustodian: async (code: string) => {
@@ -371,17 +340,9 @@ const DataService = {
         const response = await client.get(`/api/v1/data/upload/templates/${tableName}`, {
             responseType: 'blob',
         });
-
-        // Create a link and trigger the download
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${tableName}_template.csv`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        DataService.downloadBlob(response.data, `${tableName}_template`, 'csv');
     },
+
 };
 
 export default DataService;

@@ -28,6 +28,7 @@ import {
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
+import SearchableSelect from '../../components/common/SearchableSelect';
 import { baseURL } from '../../api/client';
 
 type School = components['schemas']['School'];
@@ -816,31 +817,28 @@ export default function StateSchools() {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm focus-within:ring-2 ring-emerald-500/20">
-                                <Filter className="w-4 h-4 text-slate-600" />
-                                <select
-                                    value={selectedLga}
-                                    onChange={(e) => {
-                                        setSelectedLga(e.target.value);
-                                        setSelectedCustodian(''); // Clear custodian when LGA changes
-                                    }}
-                                    className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
-                                >
-                                    <option value="" className="dark:bg-slate-800">All LGAs</option>
-                                    {allLgas.map(lga => <option key={lga.code} value={lga.code} className="dark:bg-slate-800">{lga.name}</option>)}
-                                </select>
-                            </div>
+                            <SearchableSelect
+                                value={selectedLga}
+                                onChange={(val) => {
+                                    setSelectedLga(val);
+                                    setSelectedCustodian('');
+                                }}
+                                options={allLgas.map(lga => ({ value: lga.code, label: lga.name }))}
+                                placeholder="All LGAs"
+                                icon={<Filter className="w-4 h-4 text-slate-600" />}
+                                containerClassName="flex-1"
+                            />
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
-                                <UsersIcon className="w-4 h-4 text-slate-600" />
-                                <select value={selectedCustodian} onChange={(e) => setSelectedCustodian(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
-                                    <option value="" className="dark:bg-slate-800">All Custodians</option>
-                                    {custodians
-                                        .filter(c => !selectedLga || c.lga_code === selectedLga)
-                                        .map(c => <option key={c.code} value={c.code} className="dark:bg-slate-800">{c.name}</option>)
-                                    }
-                                </select>
-                            </div>
+                            <SearchableSelect
+                                value={selectedCustodian}
+                                onChange={setSelectedCustodian}
+                                options={custodians
+                                    .filter(c => !selectedLga || c.lga_code === selectedLga)
+                                    .map(c => ({ value: c.code, label: c.name }))}
+                                placeholder="All Custodians"
+                                icon={<UsersIcon className="w-4 h-4 text-slate-600" />}
+                                containerClassName="flex-1"
+                            />
 
                             <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
                                 <CheckSquare className="w-4 h-4 text-slate-600" />

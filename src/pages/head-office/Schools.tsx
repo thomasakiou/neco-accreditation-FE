@@ -20,10 +20,12 @@ import {
     CheckSquare,
     Users as UsersIcon,
     ChevronRight,
-    ChevronDown
+    ChevronDown,
+    FileText
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import { components } from '../../api/types';
+import SearchableSelect from '../../components/common/SearchableSelect';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
 
 type School = components['schemas']['School'];
@@ -59,6 +61,8 @@ export default function HeadOfficeSchools() {
         variant?: 'danger' | 'warning'; onConfirm: () => void;
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isExporting, setIsExporting] = useState<string | null>(null);
+
     const [newSchool, setNewSchool] = useState({
         name: '',
         code: '',
@@ -124,6 +128,31 @@ export default function HeadOfficeSchools() {
             setError('Failed to refresh schools list.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleExport = async (format: 'excel' | 'csv' | 'dbf') => {
+        try {
+            setIsExporting(format);
+            setError(null);
+
+            const params = {
+                state_code: selectedState || undefined,
+                zone_code: selectedZone || undefined,
+                category: selectedCategory || undefined,
+                accreditation_status: selectedAccreditationStatus || undefined
+            };
+
+            if (activeTab === 'SSCE') {
+                await DataService.exportSchools(format, params);
+            } else {
+                await DataService.exportBeceSchools(format, params);
+            }
+        } catch (err: any) {
+            console.error(`Export failed:`, err);
+            setError(`Failed to export ${format.toUpperCase()} file. Please try again.`);
+        } finally {
+            setIsExporting(null);
         }
     };
 
@@ -344,28 +373,109 @@ export default function HeadOfficeSchools() {
         });
     };
 
-    const filteredSchools = schools.filter(school => {
-        const matchesSearch =
-            school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            school.code.toLowerCase().includes(searchTerm.toLowerCase());
+    const { filteredSchools, totalPages, startIndex, paginatedSchools } = React.useMemo(() => {
+        const filtered = schools.filter(school => {
+            const matchesSearch =
+                school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                school.code.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const schoolState = states.find(s => s.code === school.state_code);
-        const matchesZone = selectedZone === '' || schoolState?.zone_code === selectedZone;
-        const matchesState = selectedState === '' || school.state_code === selectedState;
-        const matchesLga = selectedLga === '' || school.lga_code === selectedLga;
-        const matchesCustodian = selectedCustodian === '' || school.custodian_code === selectedCustodian;
-        const matchesAccreditation = selectedAccreditationStatus === '' ||
-            (selectedAccreditationStatus === 'Accredited' ? (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') : selectedAccreditationStatus === 'Unaccredited' ? (school.accreditation_status === 'Unaccredited' || school.accreditation_status === 'Failed' || !school.accreditation_status || school.accreditation_status === 'Pending') : school.accreditation_status === selectedAccreditationStatus);
-        const matchesCategory = selectedCategory === '' ||
-            (selectedCategory === 'Public' ? school.category === 'PUB' || school.category === 'Public' :
-                selectedCategory === 'Private' ? school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' : false);
+            const schoolState = states.find(s => s.code === school.state_code);
+            const matchesZone = selectedZone === '' || schoolState?.zone_code === selectedZone;
+            const matchesState = selectedState === '' || school.state_code === selectedState;
+            const matchesLga = selectedLga === '' || school.lga_code === selectedLga;
+            const matchesCustodian = selectedCustodian === '' || school.custodian_code === selectedCustodian;
+            const matchesAccreditation = selectedAccreditationStatus === '' ||
+                (selectedAccreditationStatus === 'Accredited' ? (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') :
+                    selectedAccreditationStatus === 'Unaccredited' ? (school.accreditation_status === 'Unaccredited' || school.accreditation_status === 'Failed' || !school.accreditation_status || school.accreditation_status === 'Pending') :
+                        school.accreditation_status === selectedAccreditationStatus);
+            const matchesCategory = selectedCategory === '' ||
+                (selectedCategory === 'Public' ? school.category === 'PUB' || school.category === 'Public' :
+                    selectedCategory === 'Private' ? school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' : false);
 
-        return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory;
-    });
+            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory;
+        });
 
-    const totalPages = Math.ceil(filteredSchools.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const paginatedSchools = filteredSchools.slice(startIndex, startIndex + rowsPerPage);
+        const totalPages = Math.ceil(filtered.length / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const paginated = filtered.slice(startIndex, startIndex + rowsPerPage);
+
+        return {
+            filteredSchools: filtered,
+            totalPages,
+            startIndex,
+            paginatedSchools: paginated
+        };
+    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, states, currentPage, rowsPerPage]);
+
+    const handleExportReport = () => {
+        const rows = filteredSchools.map((school, idx) => `
+            <tr>
+                <td>${idx + 1}</td>
+                <td style="font-family:monospace;font-weight:bold">${school.code}</td>
+                <td style="font-weight:600">${school.name}</td>
+                <td>${states.find(s => s.code === school.state_code)?.name || school.state_code}</td>
+                <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
+                <td>${custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</td>
+                <td>${school.category === 'PUB' || school.category === 'Public' ? 'Public' : 'Private'}</td>
+                <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status || 'Unaccredited'}</td>
+                <td>${school.accredited_date || 'N/A'}</td>
+            </tr>
+        `).join('');
+
+        const logoUrl = window.location.origin + '/images/neco.png';
+        const html = `<!DOCTYPE html><html><head><title>${activeTab} Schools Report</title>
+        <style>
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            @page { size: landscape; margin: 1cm; }
+            body { font-family: Arial, sans-serif; color: #1e293b; padding: 30px; position: relative; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .watermark { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; opacity: 0.04; z-index: 0; pointer-events: none; }
+            .watermark img { width: 90vw; height: 90vh; object-fit: contain; }
+            .content { position: relative; z-index: 1; }
+            .header { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #059669; padding-bottom: 20px; margin-bottom: 24px; }
+            .header img { width: 70px; height: 70px; object-fit: contain; }
+            .header-text { flex: 1; }
+            .header-text h1 { font-size: 28px; margin: 0 0 4px 0; color: #059669; font-weight: 800; }
+            .header-text h2 { font-size: 18px; color: #059669; margin: 0 0 4px 0; font-weight: 700; }
+            .header-text p { font-size: 14px; color: #64748b; margin: 0; }
+            .meta { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 13px; color: #64748b; font-weight: 600; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; font-size: 12px; }
+            th { background-color: #059669; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            tr:nth-child(even) { background-color: #f0fdf4; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .footer { margin-top: 30px; padding-top: 16px; border-top: 2px solid #059669; display: flex; justify-content: space-between; font-size: 11px; color: #059669; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        </style></head><body>
+        <div class="watermark"><img src="${logoUrl}" alt="watermark" /></div>
+        <div class="content">
+        <div class="header">
+            <img src="${logoUrl}" alt="NECO Logo" />
+            <div class="header-text">
+                <h1>National Examinations Council (NECO)</h1>
+                <h2>Head Office - Accreditation Management</h2>
+                <p>${activeTab} Schools Master Report</p>
+            </div>
+        </div>
+        <div class="meta">
+            <span>Generated on: ${new Date().toLocaleString()}</span>
+            <span>Total: ${filteredSchools.length} schools</span>
+        </div>
+        <table>
+            <thead><tr><th style="background-color:#059669;color:white">S/N</th><th style="background-color:#059669;color:white">Center Code</th><th style="background-color:#059669;color:white">School Name</th><th style="background-color:#059669;color:white">State</th><th style="background-color:#059669;color:white">LGA</th><th style="background-color:#059669;color:white">Custodian</th><th style="background-color:#059669;color:white">Category</th><th style="background-color:#059669;color:white">Status</th><th style="background-color:#059669;color:white">Accrd. Date</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <div class="footer">
+            <div>Accreditation Management System — Master Report</div>
+            <div>Page 1 of 1</div>
+        </div>
+        </div>
+        <script>window.onload = function() { window.print(); }<\/script>
+        </body></html>`;
+
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+        }
+    };
 
     return (
         <>
@@ -406,27 +516,49 @@ export default function HeadOfficeSchools() {
                 </div>
 
                 {/* Tab Interface */}
-                <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
-                    <button
-                        onClick={() => setActiveTab('SSCE')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'SSCE'
-                            ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
-                            }`}
-                    >
-                        <GraduationCap className={`w-4 h-4 ${activeTab === 'SSCE' ? 'text-emerald-600' : ''}`} />
-                        SSCE SCHOOLS
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('BECE')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'BECE'
-                            ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
-                            }`}
-                    >
-                        <Building2 className={`w-4 h-4 ${activeTab === 'BECE' ? 'text-emerald-600' : ''}`} />
-                        BECE SCHOOLS
-                    </button>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
+                        <button
+                            onClick={() => setActiveTab('SSCE')}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'SSCE'
+                                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                                }`}
+                        >
+                            <GraduationCap className={`w-4 h-4 ${activeTab === 'SSCE' ? 'text-emerald-600' : ''}`} />
+                            SSCE SCHOOLS
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('BECE')}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'BECE'
+                                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                                }`}
+                        >
+                            <Building2 className={`w-4 h-4 ${activeTab === 'BECE' ? 'text-emerald-600' : ''}`} />
+                            BECE SCHOOLS
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
+                        {[
+                            { id: '', label: 'All', color: 'text-emerald-700 dark:text-emerald-400' },
+                            { id: 'Full', label: 'Full', color: 'text-emerald-700 dark:text-emerald-400' },
+                            { id: 'Partial', label: 'Partial', color: 'text-amber-700 dark:text-amber-400' },
+                            { id: 'Failed', label: 'Failed', color: 'text-red-700 dark:text-red-400' }
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setSelectedAccreditationStatus(tab.id)}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${selectedAccreditationStatus === tab.id
+                                    ? `bg-white dark:bg-slate-900 ${tab.color} shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105`
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                                    }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Dynamic Alerts */}
@@ -838,66 +970,45 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[140px] xl:flex-none">
-                                <Building2 className="w-4 h-4 text-slate-600" />
-                                <select
-                                    value={selectedState}
-                                    onChange={(e) => {
-                                        setSelectedState(e.target.value);
-                                        setSelectedLga('');
-                                        setSelectedCustodian('');
-                                    }}
-                                    className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
-                                >
-                                    <option value="" className="dark:bg-slate-800">
-                                        All States
-                                    </option>
-                                    {states
-                                        .filter(s => selectedZone === '' || s.zone_code === selectedZone)
-                                        .map(state => (
-                                            <option key={state.code} value={state.code} className="dark:bg-slate-800">{state.name}</option>
-                                        ))}
-                                </select>
-                            </div>
+                            <SearchableSelect
+                                value={selectedState}
+                                onChange={(val) => {
+                                    setSelectedState(val);
+                                    setSelectedLga('');
+                                    setSelectedCustodian('');
+                                }}
+                                options={states
+                                    .filter(s => selectedZone === '' || s.zone_code === selectedZone)
+                                    .map(state => ({ value: state.code, label: state.name }))}
+                                placeholder="All States"
+                                icon={<Building2 className="w-4 h-4 text-slate-600" />}
+                                containerClassName="flex-1 min-w-[140px] xl:flex-none"
+                            />
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[140px] xl:flex-none">
-                                <Filter className="w-4 h-4 text-slate-600" />
-                                <select
-                                    value={selectedLga}
-                                    onChange={(e) => {
-                                        setSelectedLga(e.target.value);
-                                        setSelectedCustodian('');
-                                    }}
-                                    className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
-                                >
-                                    <option value="" className="dark:bg-slate-800">
-                                        All LGAs
-                                    </option>
-                                    {allLgas
-                                        .filter(l => selectedState === '' || l.state_code === selectedState)
-                                        .map(lga => (
-                                            <option key={lga.code} value={lga.code} className="dark:bg-slate-800">{lga.name}</option>
-                                        ))}
-                                </select>
-                            </div>
+                            <SearchableSelect
+                                value={selectedLga}
+                                onChange={(val) => {
+                                    setSelectedLga(val);
+                                    setSelectedCustodian('');
+                                }}
+                                options={allLgas
+                                    .filter(l => selectedState === '' || l.state_code === selectedState)
+                                    .map(lga => ({ value: lga.code, label: lga.name }))}
+                                placeholder="All LGAs"
+                                icon={<Filter className="w-4 h-4 text-slate-600" />}
+                                containerClassName="flex-1 min-w-[140px] xl:flex-none"
+                            />
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[160px] xl:flex-none">
-                                <UsersIcon className="w-4 h-4 text-slate-600" />
-                                <select
-                                    value={selectedCustodian}
-                                    onChange={(e) => setSelectedCustodian(e.target.value)}
-                                    className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
-                                >
-                                    <option value="" className="dark:bg-slate-800">
-                                        All Custodians
-                                    </option>
-                                    {custodians
-                                        .filter(c => selectedLga === '' || c.lga_code === selectedLga)
-                                        .map(custodian => (
-                                            <option key={custodian.code} value={custodian.code} className="dark:bg-slate-800">{custodian.name}</option>
-                                        ))}
-                                </select>
-                            </div>
+                            <SearchableSelect
+                                value={selectedCustodian}
+                                onChange={setSelectedCustodian}
+                                options={custodians
+                                    .filter(c => selectedLga === '' || c.lga_code === selectedLga)
+                                    .map(custodian => ({ value: custodian.code, label: custodian.name }))}
+                                placeholder="All Custodians"
+                                icon={<UsersIcon className="w-4 h-4 text-slate-600" />}
+                                containerClassName="flex-1 min-w-[160px] xl:flex-none"
+                            />
 
                             <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[180px] xl:flex-none">
                                 <CheckSquare className="w-4 h-4 text-slate-600" />
@@ -932,28 +1043,39 @@ export default function HeadOfficeSchools() {
                             <div className="flex flex-wrap items-center gap-4 ml-auto">
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('excel') : DataService.exportBeceSchools('excel')}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                        onClick={() => handleExport('excel')}
+                                        disabled={isExporting !== null}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                         title="Export Excel"
                                     >
-                                        <Download className="w-4 h-4 text-emerald-600" />
+                                        {isExporting === 'excel' ? <Loader2 className="w-4 h-4 animate-spin text-emerald-600" /> : <Download className="w-4 h-4 text-emerald-600" />}
                                         EXCEL
                                     </button>
                                     <button
-                                        onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('csv') : DataService.exportBeceSchools('csv')}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                        onClick={() => handleExport('csv')}
+                                        disabled={isExporting !== null}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                         title="Export CSV"
                                     >
-                                        <Download className="w-4 h-4 text-blue-600" />
+                                        {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <Download className="w-4 h-4 text-blue-600" />}
                                         CSV
                                     </button>
                                     <button
-                                        onClick={() => activeTab === 'SSCE' ? DataService.exportSchools('dbf') : DataService.exportBeceSchools('dbf')}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                        onClick={() => handleExport('dbf')}
+                                        disabled={isExporting !== null}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                         title="Export DBF (FoxPro)"
                                     >
-                                        <Download className="w-4 h-4 text-orange-600" />
+                                        {isExporting === 'dbf' ? <Loader2 className="w-4 h-4 animate-spin text-orange-600" /> : <Download className="w-4 h-4 text-orange-600" />}
                                         DBF
+                                    </button>
+                                    <button
+                                        onClick={handleExportReport}
+                                        className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
+                                        title="Download PDF Report"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        PDF REPORT
                                     </button>
                                 </div>
 

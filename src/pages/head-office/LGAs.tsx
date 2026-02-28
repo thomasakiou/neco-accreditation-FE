@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import DataService, { LGA, State } from '../../api/services/data.service';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
+import SearchableSelect from '../../components/common/SearchableSelect';
 
 export default function LGAs() {
     const [lgas, setLgas] = useState<LGA[]>([]);
@@ -27,6 +28,8 @@ export default function LGAs() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingLga, setEditingLga] = useState<LGA | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isExporting, setIsExporting] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -38,7 +41,6 @@ export default function LGAs() {
         isOpen: boolean; title: string; message: string; confirmLabel?: string;
         variant?: 'danger' | 'warning'; onConfirm: () => void;
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
-    const [isDeleting, setIsDeleting] = useState(false);
 
     const [newLga, setNewLga] = useState({
         name: '',
@@ -67,7 +69,21 @@ export default function LGAs() {
         }
     };
 
+    const handleExport = async (format: 'excel' | 'csv' | 'dbf') => {
+        try {
+            setIsExporting(format);
+            setError(null);
+            await DataService.exportLGAs(format, { state_code: selectedState || undefined });
+        } catch (err: any) {
+            console.error(`Export failed:`, err);
+            setError(`Failed to export ${format.toUpperCase()} file. Please try again.`);
+        } finally {
+            setIsExporting(null);
+        }
+    };
+
     const handleAddLga = async (e: React.FormEvent) => {
+
         e.preventDefault();
         try {
             setIsSubmitting(true);
@@ -386,18 +402,15 @@ export default function LGAs() {
 
                         <div className="flex flex-wrap items-center gap-4">
                             <div className="flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-slate-400" />
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">State:</span>
-                                <select
+                                <SearchableSelect
                                     value={selectedState}
-                                    onChange={(e) => setSelectedState(e.target.value)}
-                                    className="text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-3 pr-8 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
-                                >
-                                    <option value="">All States</option>
-                                    {states.map(state => (
-                                        <option key={state.code} value={state.code}>{state.name}</option>
-                                    ))}
-                                </select>
+                                    onChange={setSelectedState}
+                                    options={states.map(state => ({ value: state.code, label: state.name }))}
+                                    placeholder="All States"
+                                    icon={<MapPin className="w-4 h-4 text-slate-400" />}
+                                    className="bg-slate-50 dark:bg-slate-800 border-none !px-2 !py-1"
+                                    containerClassName="min-w-[150px]"
+                                />
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -415,27 +428,30 @@ export default function LGAs() {
 
                             <div className="flex items-center gap-2 ml-auto">
                                 <button
-                                    onClick={() => DataService.exportLGAs('excel')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                    onClick={() => handleExport('excel')}
+                                    disabled={isExporting !== null}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                     title="Export Excel"
                                 >
-                                    <Download className="w-4 h-4 text-emerald-600" />
+                                    {isExporting === 'excel' ? <Loader2 className="w-4 h-4 animate-spin text-emerald-600" /> : <Download className="w-4 h-4 text-emerald-600" />}
                                     EXCEL
                                 </button>
                                 <button
-                                    onClick={() => DataService.exportLGAs('csv')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                    onClick={() => handleExport('csv')}
+                                    disabled={isExporting !== null}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                     title="Export CSV"
                                 >
-                                    <Download className="w-4 h-4 text-blue-600" />
+                                    {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <Download className="w-4 h-4 text-blue-600" />}
                                     CSV
                                 </button>
                                 <button
-                                    onClick={() => DataService.exportLGAs('dbf')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                    onClick={() => handleExport('dbf')}
+                                    disabled={isExporting !== null}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                     title="Export DBF (FoxPro)"
                                 >
-                                    <Download className="w-4 h-4 text-orange-600" />
+                                    {isExporting === 'dbf' ? <Loader2 className="w-4 h-4 animate-spin text-orange-600" /> : <Download className="w-4 h-4 text-orange-600" />}
                                     DBF
                                 </button>
                             </div>

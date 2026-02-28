@@ -57,6 +57,8 @@ export default function HeadOfficeStates() {
         onConfirm: () => void;
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isExporting, setIsExporting] = useState<string | null>(null);
+
 
     useEffect(() => {
         fetchAllData();
@@ -78,7 +80,21 @@ export default function HeadOfficeStates() {
         }
     };
 
+    const handleExport = async (format: 'excel' | 'csv' | 'dbf') => {
+        try {
+            setIsExporting(format);
+            setError(null);
+            await DataService.exportStates(format);
+        } catch (err: any) {
+            console.error(`Export failed:`, err);
+            setError(`Failed to export ${format.toUpperCase()} file. Please try again.`);
+        } finally {
+            setIsExporting(null);
+        }
+    };
+
     const getZoneName = (zoneCode: string) => {
+
         const zone = zones.find(z => z.code === zoneCode);
         return zone ? zone.name : zoneCode;
     };
@@ -562,27 +578,30 @@ export default function HeadOfficeStates() {
 
                             <div className="flex items-center gap-2 ml-auto">
                                 <button
-                                    onClick={() => DataService.exportStates('excel')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                    onClick={() => handleExport('excel')}
+                                    disabled={isExporting !== null}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                     title="Export Excel"
                                 >
-                                    <Download className="w-4 h-4 text-emerald-600" />
+                                    {isExporting === 'excel' ? <Loader2 className="w-4 h-4 animate-spin text-emerald-600" /> : <Download className="w-4 h-4 text-emerald-600" />}
                                     EXCEL
                                 </button>
                                 <button
-                                    onClick={() => DataService.exportStates('csv')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                    onClick={() => handleExport('csv')}
+                                    disabled={isExporting !== null}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                     title="Export CSV"
                                 >
-                                    <Download className="w-4 h-4 text-blue-600" />
+                                    {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <Download className="w-4 h-4 text-blue-600" />}
                                     CSV
                                 </button>
                                 <button
-                                    onClick={() => DataService.exportStates('dbf')}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                    onClick={() => handleExport('dbf')}
+                                    disabled={isExporting !== null}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                     title="Export DBF (FoxPro)"
                                 >
-                                    <Download className="w-4 h-4 text-orange-600" />
+                                    {isExporting === 'dbf' ? <Loader2 className="w-4 h-4 animate-spin text-orange-600" /> : <Download className="w-4 h-4 text-orange-600" />}
                                     DBF
                                 </button>
                             </div>

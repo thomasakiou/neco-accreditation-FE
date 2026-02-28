@@ -24,6 +24,7 @@ import DataService from '../../api/services/data.service';
 import { clearStaticCache } from '../../api/services/data.service';
 import { baseURL } from '../../api/client';
 import { components } from '../../api/types';
+import SearchableSelect from '../../components/common/SearchableSelect';
 
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];
@@ -83,7 +84,8 @@ export default function HeadOfficeFinalApproval() {
                 (selectedAccrFilter === school.accreditation_status);
             const matchesProof = !selectedProofFilter ||
                 (selectedProofFilter === 'Proof' && !!school.payment_url) ||
-                (selectedProofFilter === 'No Proof' && !school.payment_url);
+                (selectedProofFilter === 'No Proof' && !school.payment_url) ||
+                (selectedProofFilter === 'Pending' && !!school.payment_url && (!school.accreditation_status || ['Pending', 'Unaccredited'].includes(school.accreditation_status)));
             return matchesSearch && matchesState && matchesAccr && matchesProof;
         });
     }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter]);
@@ -222,13 +224,14 @@ export default function HeadOfficeFinalApproval() {
                             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-slate-200"
                         />
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl">
-                        <Filter className="w-4 h-4 text-slate-500" />
-                        <select value={selectedStateFilter} onChange={(e) => setSelectedStateFilter(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200">
-                            <option value="">All States</option>
-                            {states.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
-                        </select>
-                    </div>
+                    <SearchableSelect
+                        value={selectedStateFilter}
+                        onChange={setSelectedStateFilter}
+                        options={states.map(s => ({ value: s.code, label: s.name }))}
+                        placeholder="All States"
+                        icon={<Filter className="w-4 h-4 text-slate-500" />}
+                        containerClassName="flex-1"
+                    />
                     <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl">
                         <Shield className="w-4 h-4 text-slate-500" />
                         <select value={selectedAccrFilter} onChange={(e) => setSelectedAccrFilter(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200">
@@ -245,6 +248,7 @@ export default function HeadOfficeFinalApproval() {
                         <select value={selectedProofFilter} onChange={(e) => setSelectedProofFilter(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200">
                             <option value="">Proof Status</option>
                             <option value="Proof">Proof Uploaded</option>
+                            <option value="Pending">Pending Approval</option>
                             <option value="No Proof">No Proof</option>
                         </select>
                     </div>
@@ -281,7 +285,7 @@ export default function HeadOfficeFinalApproval() {
                                     <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                                         {getStateName(stateCode)}
                                     </h2>
-                                    <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black rounded-lg">
+                                    <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[12px] font-black rounded-lg">
                                         {stateSchools.length} school{stateSchools.length !== 1 ? 's' : ''}
                                     </span>
                                     {/* Pending Approvals Badge */}
@@ -307,9 +311,9 @@ export default function HeadOfficeFinalApproval() {
                                 <div className="flex items-center gap-3 text-[12px] font-bold text-slate-500">
                                     <span className="text-emerald-600">{stateSchools.filter(s => s.accreditation_status === 'Full').length} Full</span>
                                     <span>•</span>
-                                    <span className="text-emerald-600">{stateSchools.filter(s => s.accreditation_status === 'Partial').length} Partial</span>
+                                    <span className="text-emerald-700">{stateSchools.filter(s => s.accreditation_status === 'Partial').length} Partial</span>
                                     <span>•</span>
-                                    <span className="text-red-500">{stateSchools.filter(s => s.accreditation_status === 'Failed' || s.accreditation_status === 'Failed').length} failed</span>
+                                    <span className="text-red-500">{stateSchools.filter(s => s.accreditation_status === 'Failed').length} failed</span>
                                     <span>•</span>
                                     <span className="text-blue-300">{stateSchools.filter(s => !!s.payment_url).length} Paid</span>
                                 </div>

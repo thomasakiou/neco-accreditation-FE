@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import DataService, { Custodian, State, LGA } from '../../api/services/data.service';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
+import SearchableSelect from '../../components/common/SearchableSelect';
 
 export default function Custodians() {
     const [custodians, setCustodians] = useState<Custodian[]>([]);
@@ -47,6 +48,8 @@ export default function Custodians() {
         variant?: 'danger' | 'warning'; onConfirm: () => void;
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isExporting, setIsExporting] = useState<string | null>(null);
+
 
     const fetchInitialData = async () => {
         try {
@@ -92,6 +95,22 @@ export default function Custodians() {
             fetchLgasForState(newCustodian.state_code);
         }
     }, [newCustodian.state_code, showAddModal]);
+
+    const handleExport = async (format: 'excel' | 'csv' | 'dbf') => {
+        try {
+            setIsExporting(format);
+            setError(null);
+            await DataService.exportCustodians(format, {
+                state_code: selectedState || undefined,
+                lga_code: selectedLga || undefined
+            });
+        } catch (err: any) {
+            console.error(`Export failed:`, err);
+            setError(`Failed to export ${format.toUpperCase()} file. Please try again.`);
+        } finally {
+            setIsExporting(null);
+        }
+    };
 
     useEffect(() => {
         if (showEditModal && editingCustodian?.state_code) {
@@ -439,34 +458,26 @@ export default function Custodians() {
                         </div>
 
                         <div className="flex items-center gap-2 flex-1 max-w-lg ml-4">
-                            <div className="relative flex-1">
-                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                                <select
-                                    value={selectedState}
-                                    onChange={(e) => { setSelectedState(e.target.value); setSelectedLga(''); setCurrentPage(1); }}
-                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all appearance-none cursor-pointer"
-                                >
-                                    <option value="">All States</option>
-                                    {states.map(s => (
-                                        <option key={s.code} value={s.code}>{s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <SearchableSelect
+                                value={selectedState}
+                                onChange={(val) => { setSelectedState(val); setSelectedLga(''); setCurrentPage(1); }}
+                                options={states.map(s => ({ value: s.code, label: s.name }))}
+                                placeholder="All States"
+                                icon={<Filter className="w-3.5 h-3.5 text-slate-400" />}
+                                containerClassName="flex-1"
+                            />
 
-                            <div className="relative flex-1">
-                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                                <select
-                                    value={selectedLga}
-                                    onChange={(e) => { setSelectedLga(e.target.value); setCurrentPage(1); }}
-                                    disabled={!selectedState}
-                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all appearance-none cursor-pointer disabled:opacity-50"
-                                >
-                                    <option value="">All LGAs</option>
-                                    {lgas.filter(l => l.state_code === selectedState).map(l => (
-                                        <option key={l.code} value={l.code}>{l.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <SearchableSelect
+                                value={selectedLga}
+                                onChange={(val) => { setSelectedLga(val); setCurrentPage(1); }}
+                                options={lgas
+                                    .filter(l => l.state_code === selectedState)
+                                    .map(l => ({ value: l.code, label: l.name }))}
+                                placeholder="All LGAs"
+                                disabled={!selectedState}
+                                icon={<Filter className="w-3.5 h-3.5 text-slate-400" />}
+                                containerClassName="flex-1"
+                            />
                         </div>
 
                         <div className="flex items-center gap-3 ml-4">
@@ -483,27 +494,30 @@ export default function Custodians() {
                         </div>
                         <div className="flex items-center gap-2 px-2">
                             <button
-                                onClick={() => DataService.exportCustodians('excel')}
-                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                onClick={() => handleExport('excel')}
+                                disabled={isExporting !== null}
+                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                 title="Export Excel"
                             >
-                                <Download className="w-4 h-4 text-emerald-600" />
+                                {isExporting === 'excel' ? <Loader2 className="w-4 h-4 animate-spin text-emerald-600" /> : <Download className="w-4 h-4 text-emerald-600" />}
                                 EXCEL
                             </button>
                             <button
-                                onClick={() => DataService.exportCustodians('csv')}
-                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                onClick={() => handleExport('csv')}
+                                disabled={isExporting !== null}
+                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                 title="Export CSV"
                             >
-                                <Download className="w-4 h-4 text-blue-600" />
+                                {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <Download className="w-4 h-4 text-blue-600" />}
                                 CSV
                             </button>
                             <button
-                                onClick={() => DataService.exportCustodians('dbf')}
-                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                onClick={() => handleExport('dbf')}
+                                disabled={isExporting !== null}
+                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
                                 title="Export DBF (FoxPro)"
                             >
-                                <Download className="w-4 h-4 text-orange-600" />
+                                {isExporting === 'dbf' ? <Loader2 className="w-4 h-4 animate-spin text-orange-600" /> : <Download className="w-4 h-4 text-orange-600" />}
                                 DBF
                             </button>
                         </div>
