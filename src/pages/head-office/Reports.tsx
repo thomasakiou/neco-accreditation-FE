@@ -25,23 +25,12 @@ export default function HeadOfficeReports() {
         try {
             setIsExporting(type);
             setError(null);
-            let blob: Blob;
-
             switch (type) {
-                case 'schools': blob = await DataService.exportSchools(); break;
-                case 'states': blob = await DataService.exportStates(); break;
-                case 'lgas': blob = await DataService.exportLGAs(); break;
+                case 'schools': await DataService.exportSchools(); break;
+                case 'states': await DataService.exportStates(); break;
+                case 'lgas': await DataService.exportLGAs(); break;
                 default: throw new Error('Invalid export type');
             }
-
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `${type}_report_${new Date().toISOString().split('T')[0]}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
         } catch (err) {
             setError(`Failed to export ${type} report. Please try again.`);
         } finally {

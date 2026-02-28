@@ -16,11 +16,15 @@ import {
     Calendar,
     CheckSquare,
     Users as UsersIcon,
-    Lock
+    Lock,
+    ChevronDown,
+    ChevronUp,
+    ExternalLink
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
+import { baseURL } from '../../api/client';
 
 type School = components['schemas']['School'];
 
@@ -38,12 +42,24 @@ export default function StateSchools() {
     const [selectedCustodian, setSelectedCustodian] = useState<string>('');
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = useState<string>('');
 
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingSchool, setEditingSchool] = useState<School | null>(null);
 
     const [allLgas, setAllLgas] = useState<LGA[]>([]);
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [custodians, setCustodians] = useState<Custodian[]>([]);
+
+    const toggleRow = (code: string) => {
+        const next = new Set(expandedRows);
+        if (next.has(code)) next.delete(code);
+        else next.add(code);
+        setExpandedRows(next);
+    };
 
     const [modalLgas, setModalLgas] = useState<LGA[]>([]);
     const [modalCustodians, setModalCustodians] = useState<Custodian[]>([]);
@@ -84,21 +100,21 @@ export default function StateSchools() {
             }
 
             setUserStateCode(user.state_code);
-            setUserStateName(user.state_name || user.state_code);
 
-            // Check if state is locked
+            // Check if state is locked and get name
             const statesData = await DataService.getStates();
             const currentState = statesData.find(s => s.code === user.state_code);
+
+            setUserStateName(currentState?.name || user.state_name || user.state_code);
+
             if (currentState) {
                 setIsPortalLocked(!!currentState.is_locked);
             }
 
-            const [schoolsData, beceSchoolsData, custodiansData, lgasData] = await Promise.all([
-                DataService.getSchools({ state_code: user.state_code }),
-                DataService.getBeceSchools({ state_code: user.state_code }),
-                DataService.getCustodians({ state_code: user.state_code }),
-                DataService.getLGAs({ state_code: user.state_code })
-            ]);
+            const schoolsData = await DataService.getSchools({ state_code: user.state_code });
+            const beceSchoolsData = await DataService.getBeceSchools({ state_code: user.state_code });
+            const custodiansData = await DataService.getCustodians({ state_code: user.state_code });
+            const lgasData = await DataService.getLGAs({ state_code: user.state_code });
 
             setSchools(activeTab === 'SSCE' ? schoolsData : beceSchoolsData);
             setCustodians(custodiansData);
@@ -266,17 +282,30 @@ export default function StateSchools() {
         }
     };
 
-    const filteredSchools = schools.filter(school => {
-        const matchesSearch =
-            school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            school.code.toLowerCase().includes(searchTerm.toLowerCase());
+    const { filteredSchools, totalPages, startIndex, paginatedSchools } = React.useMemo(() => {
+        const filtered = schools.filter(school => {
+            const matchesSearch =
+                school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                school.code.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesLga = selectedLga === '' || school.lga_code === selectedLga;
-        const matchesCustodian = selectedCustodian === '' || school.custodian_code === selectedCustodian;
-        const matchesAccreditation = selectedAccreditationStatus === '' || school.accreditation_status === selectedAccreditationStatus;
+            const matchesLga = selectedLga === '' || school.lga_code === selectedLga;
+            const matchesCustodian = selectedCustodian === '' || school.custodian_code === selectedCustodian;
+            const matchesAccreditation = selectedAccreditationStatus === '' || school.accreditation_status === selectedAccreditationStatus;
 
-        return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation;
-    });
+            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation;
+        });
+
+        const totalPages = Math.ceil(filtered.length / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const paginated = filtered.slice(startIndex, startIndex + rowsPerPage);
+
+        return {
+            filteredSchools: filtered,
+            totalPages,
+            startIndex,
+            paginatedSchools: paginated
+        };
+    }, [schools, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, currentPage, rowsPerPage]);
 
     return (
         <div className="space-y-6">
@@ -423,7 +452,6 @@ export default function StateSchools() {
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
                                     <select
-                                        required
                                         value={newSchool.lga_code}
                                         onChange={e => setNewSchool({ ...newSchool, lga_code: e.target.value, custodian_code: '' })}
                                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
@@ -438,7 +466,6 @@ export default function StateSchools() {
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian</label>
                                     <select
-                                        required
                                         disabled={!newSchool.lga_code || isLoadingCustodians}
                                         value={newSchool.custodian_code}
                                         onChange={e => setNewSchool({ ...newSchool, custodian_code: e.target.value })}
@@ -454,13 +481,12 @@ export default function StateSchools() {
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Category</label>
                                     <select
-                                        required
                                         value={newSchool.category}
                                         onChange={e => setNewSchool({ ...newSchool, category: e.target.value })}
                                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                     >
-                                        <option value="PUB">Public (PUB)</option>
-                                        <option value="PRI">Private (PRI)</option>
+                                        <option value="PUB">Public</option>
+                                        <option value="PRI">Private</option>
                                     </select>
                                 </div>
 
@@ -492,7 +518,6 @@ export default function StateSchools() {
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Date</label>
                                     <input
                                         type="date"
-                                        required={newSchool.accreditation_status === 'Accredited'}
                                         value={newSchool.accredited_date}
                                         onChange={e => setNewSchool({ ...newSchool, accredited_date: e.target.value })}
                                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
@@ -555,7 +580,6 @@ export default function StateSchools() {
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
                                     <select
-                                        required
                                         value={editingSchool.lga_code}
                                         onChange={e => setEditingSchool({ ...editingSchool, lga_code: e.target.value, custodian_code: '' })}
                                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
@@ -570,7 +594,6 @@ export default function StateSchools() {
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian</label>
                                     <select
-                                        required
                                         disabled={!editingSchool.lga_code || isLoadingCustodians}
                                         value={editingSchool.custodian_code}
                                         onChange={e => setEditingSchool({ ...editingSchool, custodian_code: e.target.value })}
@@ -586,13 +609,12 @@ export default function StateSchools() {
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Category</label>
                                     <select
-                                        required
                                         value={editingSchool.category || 'PUB'}
                                         onChange={e => setEditingSchool({ ...editingSchool, category: e.target.value })}
                                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                     >
-                                        <option value="PUB">Public (PUB)</option>
-                                        <option value="PRI">Private (PRI)</option>
+                                        <option value="PUB">Public</option>
+                                        <option value="PRI">Private</option>
                                     </select>
                                 </div>
 
@@ -624,7 +646,6 @@ export default function StateSchools() {
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Date</label>
                                     <input
                                         type="date"
-                                        required={editingSchool.accreditation_status === 'Accredited'}
                                         value={editingSchool.accredited_date || ''}
                                         onChange={e => setEditingSchool({ ...editingSchool, accredited_date: e.target.value })}
                                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
@@ -661,7 +682,14 @@ export default function StateSchools() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm focus-within:ring-2 ring-emerald-500/20">
                             <Filter className="w-4 h-4 text-slate-600" />
-                            <select value={selectedLga} onChange={(e) => setSelectedLga(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
+                            <select
+                                value={selectedLga}
+                                onChange={(e) => {
+                                    setSelectedLga(e.target.value);
+                                    setSelectedCustodian(''); // Clear custodian when LGA changes
+                                }}
+                                className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
+                            >
                                 <option value="" className="dark:bg-slate-800">All LGAs</option>
                                 {allLgas.map(lga => <option key={lga.code} value={lga.code} className="dark:bg-slate-800">{lga.name}</option>)}
                             </select>
@@ -671,7 +699,10 @@ export default function StateSchools() {
                             <UsersIcon className="w-4 h-4 text-slate-600" />
                             <select value={selectedCustodian} onChange={(e) => setSelectedCustodian(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
                                 <option value="" className="dark:bg-slate-800">All Custodians</option>
-                                {custodians.map(c => <option key={c.code} value={c.code} className="dark:bg-slate-800">{c.name}</option>)}
+                                {custodians
+                                    .filter(c => !selectedLga || c.lga_code === selectedLga)
+                                    .map(c => <option key={c.code} value={c.code} className="dark:bg-slate-800">{c.name}</option>)
+                                }
                             </select>
                         </div>
 
@@ -688,6 +719,19 @@ export default function StateSchools() {
                             <Download className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
                             <span>Export Report</span>
                         </button>
+
+                        <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm focus-within:ring-2 ring-emerald-500/20">
+                            <span className="text-[10px] font-black text-slate-500 uppercase">Rows:</span>
+                            <select
+                                value={rowsPerPage}
+                                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
+                            >
+                                {[10, 20, 50, 100].map(size => (
+                                    <option key={size} value={size} className="dark:bg-slate-800">{size}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -695,11 +739,11 @@ export default function StateSchools() {
                     <table className="w-full text-left">
                         <thead className="bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-300 dark:border-slate-700">
                             <tr>
-                                <th className="px-6 py-4">ID Code</th>
+                                <th className="px-4 py-4 w-10"></th>
+                                <th className="px-6 py-4 text-center">ID Code</th>
                                 <th className="px-6 py-4">Educational Institution</th>
-                                <th className="px-6 py-4">LGA & Strategic Custodian</th>
-                                <th className="px-6 py-4">Category/Year</th>
-                                <th className="px-6 py-4">Accreditation Status</th>
+                                <th className="px-6 py-4">Accre. Date</th>
+                                <th className="px-6 py-4">Status</th>
                                 {!isPortalLocked && <th className="px-6 py-4 text-right">Actions</th>}
                             </tr>
                         </thead>
@@ -709,42 +753,157 @@ export default function StateSchools() {
                             ) : filteredSchools.length === 0 ? (
                                 <tr><td colSpan={6} className="py-20 text-center text-slate-500">No schools found for this selection.</td></tr>
                             ) : (
-                                filteredSchools.map(school => (
-                                    <tr key={school.code} className="hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors group">
-                                        <td className="px-6 py-4"><span className="text-xs font-mono font-black text-slate-900 dark:text-emerald-400 bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">{school.code}</span></td>
-                                        <td className="px-6 py-4">
-                                            <p className="font-black text-slate-950 dark:text-white uppercase tracking-tight">{school.name}</p>
-                                            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 underline decoration-slate-300 underline-offset-2">{school.email || 'NO EMAIL REGISTERED'}</p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">{allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</p>
-                                            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-500">{custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase">{school.category || 'PUB'}</span>
-                                                <span className="text-[10px] font-bold text-slate-500">{school.accrd_year || 'N/A'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col gap-1.5">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-current opacity-90 ${school.accreditation_status === 'Accredited' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30'}`}>
-                                                    {school.accreditation_status}
-                                                </span>
-                                                {school.accredited_date && <span className="text-[10px] font-black text-slate-600 dark:text-slate-500 flex items-center gap-1 uppercase tracking-tighter"><Calendar className="w-2.5 h-2.5" />{new Date(school.accredited_date).toLocaleDateString()}</span>}
-                                            </div>
-                                        </td>
-                                        {!isPortalLocked && (
-                                            <td className="px-6 py-4 text-right">
-                                                <button onClick={() => handleEditClick(school)} className="p-2 text-slate-400 hover:text-emerald-600 dark:hover:bg-emerald-900/10 rounded-lg transition-all"><Edit2 className="w-4 h-4" /></button>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))
+                                paginatedSchools.map(school => {
+                                    const isExpanded = expandedRows.has(school.code);
+                                    return (
+                                        <React.Fragment key={school.code}>
+                                            <tr className="hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors group">
+                                                <td className="px-4 py-4 text-center">
+                                                    <button
+                                                        onClick={() => toggleRow(school.code)}
+                                                        className="p-1 hover:bg-slate-300 dark:hover:bg-slate-700 rounded transition-colors text-slate-500"
+                                                    >
+                                                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                    </button>
+                                                </td>
+                                                <td className="px-6 py-4"><span className="text-xs font-mono font-black text-slate-900 dark:text-emerald-400 bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">{school.code}</span></td>
+                                                <td className="px-6 py-4">
+                                                    <p className="font-black text-slate-950 dark:text-white uppercase tracking-tight">{school.name}</p>
+                                                </td>
+                                                <td className="px-6 py-4 text-xs font-black text-slate-900 dark:text-slate-300 uppercase">
+                                                    {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-current opacity-90 ${school.accreditation_status === 'Accredited' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30'}`}>
+                                                        {school.accreditation_status}
+                                                    </span>
+                                                </td>
+                                                {!isPortalLocked && (
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button onClick={() => handleEditClick(school)} className="p-2 text-slate-400 hover:text-emerald-600 dark:hover:bg-emerald-900/10 rounded-lg transition-all"><Edit2 className="w-4 h-4" /></button>
+                                                    </td>
+                                                )}
+                                            </tr>
+                                            {isExpanded && (
+                                                <tr className="bg-slate-50 dark:bg-slate-800/20 border-l-4 border-emerald-500 animate-in slide-in-from-top-1">
+                                                    <td colSpan={6} className="px-6 py-4">
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                            <div>
+                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Custodian</p>
+                                                                <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">{custodians.find(c => c.code.toString() === school.custodian_code?.toString())?.name || school.custodian_code}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Contact & Category</p>
+                                                                <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 underline decoration-slate-300 underline-offset-2 uppercase">{school.email || 'NO EMAIL REGISTERED'}</p>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <p className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase">
+                                                                        {school.category === 'PUB' ? 'Public' : school.category === 'PRI' ? 'Private' : school.category || 'N/A'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status Summary</p>
+                                                                <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">
+                                                                    Current: {school.accreditation_status}
+                                                                </p>
+                                                                <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">
+                                                                    Recorded on: {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString() : 'NO DATE'}
+                                                                </p>
+                                                                <div className="mt-2 text-[10px]">
+                                                                    {school.payment_url ? (
+                                                                        <a
+                                                                            href={school.payment_url.startsWith('http') ? school.payment_url : `${baseURL}/payment-proof/${school.payment_url.split('/').pop()}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="inline-flex items-center gap-1.5 px-2 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-bold uppercase tracking-widest rounded transition-colors"
+                                                                        >
+                                                                            <ExternalLink className="w-3 h-3" />
+                                                                            View Proof
+                                                                        </a>
+                                                                    ) : (
+                                                                        <span className="text-slate-400 font-bold uppercase tracking-widest">No Proof Uploaded</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {!isLoading && filteredSchools.length > 0 && (
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
+                            Showing <span className="text-slate-950 dark:text-white">{startIndex + 1}</span> to{' '}
+                            <span className="text-slate-950 dark:text-white">{Math.min(startIndex + rowsPerPage, filteredSchools.length)}</span> of{' '}
+                            <span className="text-slate-950 dark:text-white">{filteredSchools.length}</span> entries
+                        </p>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase tracking-widest text-slate-900 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-all shadow-sm"
+                            >
+                                Previous
+                            </button>
+                            <div className="flex items-center gap-1">
+                                {(() => {
+                                    const pages = [];
+                                    if (totalPages <= 7) {
+                                        for (let i = 1; i <= totalPages; i++) pages.push(i);
+                                    } else {
+                                        pages.push(1);
+                                        if (currentPage > 3) pages.push('...');
+
+                                        const start = Math.max(2, currentPage - 1);
+                                        const end = Math.min(totalPages - 1, currentPage + 1);
+
+                                        for (let i = start; i <= end; i++) {
+                                            if (!pages.includes(i)) pages.push(i);
+                                        }
+
+                                        if (currentPage < totalPages - 2) pages.push('...');
+                                        pages.push(totalPages);
+                                    }
+
+                                    return pages.map((page, i) => (
+                                        typeof page === 'number' ? (
+                                            <button
+                                                key={i}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all ${currentPage === page
+                                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ) : (
+                                            <span key={i} className="w-8 h-8 flex items-center justify-center text-slate-400 text-xs font-black">
+                                                {page}
+                                            </span>
+                                        )
+                                    ));
+                                })()}
+                            </div>
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
+                                className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase tracking-widest text-slate-900 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-all shadow-sm"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -1,0 +1,11 @@
+﻿Connecting to database: postgresql://postgres:ebimobowei81@localhost:5432/accre_db
+Successfully connected to the database.
+Total LGAs in table: 90
+Columns in lgas table: ['code', 'name', 'state_code']
+{'code': '001001', 'name': 'Aba North', 'state_code': '001'}
+{'code': '001002', 'name': 'Aba South', 'state_code': '001'}
+{'code': '001003', 'name': 'Arochukwu', 'state_code': '001'}
+{'code': '001004', 'name': 'Bende', 'state_code': '001'}
+{'code': '001005', 'name': 'Ikwuano', 'state_code': '001'}
+LGAs with NULL state_code: 0
+LGAs with orphan state_code (not found in states table): 0

@@ -5,7 +5,7 @@ const envBaseURL = import.meta.env.VITE_API_URL;
 // On Netlify, we want to use the proxy /api to avoid CORS issues.
 // If VITE_API_URL is set to '/api' or is missing on a remote host, we use '/api'.
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const baseURL = envBaseURL || (isLocalhost ? 'http://localhost:8000' : '/api');
+export const baseURL = envBaseURL || (isLocalhost ? 'http://localhost:8000' : '/api');
 
 console.log('API Base URL configuration:', {
     envValue: envBaseURL,

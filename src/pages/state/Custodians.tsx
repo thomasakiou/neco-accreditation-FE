@@ -14,9 +14,10 @@ import {
     Filter
 } from 'lucide-react';
 import DataService, { Custodian, State, LGA } from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
 
-export default function Custodians() {
+export default function StateCustodians() {
     const [custodians, setCustodians] = useState<Custodian[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export default function Custodians() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingCustodian, setEditingCustodian] = useState<Custodian | null>(null);
-    const [states, setStates] = useState<State[]>([]);
+    const [userState, setUserState] = useState<State | null>(null);
     const [lgas, setLgas] = useState<LGA[]>([]);
     const [modalLgas, setModalLgas] = useState<LGA[]>([]);
     const [isLoadingLgas, setIsLoadingLgas] = useState(false);
@@ -38,7 +39,6 @@ export default function Custodians() {
         status: 'active'
     });
 
-    const [selectedState, setSelectedState] = useState('');
     const [selectedLga, setSelectedLga] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -51,14 +51,30 @@ export default function Custodians() {
     const fetchInitialData = async () => {
         try {
             setIsLoading(true);
-            const [custodiansData, statesData, lgasData] = await Promise.all([
-                DataService.getCustodians(),
-                DataService.getStates(),
-                DataService.getLGAs()
+            const user = await AuthService.getCurrentUser();
+            const stateCode = user?.state_code;
+
+            if (!stateCode) {
+                setError('State code not found for user.');
+                setIsLoading(false);
+                return;
+            }
+
+            // Fetch state details if possible, or just use the code
+            const statesData = await DataService.getStates();
+            const currentState = statesData.find(s => s.code === stateCode);
+            setUserState(currentState || { code: stateCode, name: stateCode } as State);
+
+            const [custodiansData, lgasData] = await Promise.all([
+                DataService.getCustodians({ state_code: stateCode }),
+                DataService.getLGAs({ state_code: stateCode })
             ]);
+
             setCustodians(custodiansData);
-            setStates(statesData);
             setLgas(lgasData);
+            setModalLgas(lgasData);
+
+            setNewCustodian(prev => ({ ...prev, state_code: stateCode }));
         } catch (err: any) {
             setError('Failed to fetch data. Please try again later.');
         } finally {
@@ -66,38 +82,9 @@ export default function Custodians() {
         }
     };
 
-    const fetchLgasForState = async (stateCode: string) => {
-        if (!stateCode) {
-            setModalLgas([]);
-            return;
-        }
-        try {
-            setIsLoadingLgas(true);
-            const data = await DataService.getLGAs({ state_code: stateCode });
-            setModalLgas(data);
-        } catch (err: any) {
-            console.error('Failed to fetch LGAs:', err);
-        } finally {
-            setIsLoadingLgas(false);
-        }
-    };
-
     useEffect(() => {
         fetchInitialData();
     }, []);
-
-    // Fetch LGAs when state selection changes in modals
-    useEffect(() => {
-        if (showAddModal && newCustodian.state_code) {
-            fetchLgasForState(newCustodian.state_code);
-        }
-    }, [newCustodian.state_code, showAddModal]);
-
-    useEffect(() => {
-        if (showEditModal && editingCustodian?.state_code) {
-            fetchLgasForState(editingCustodian.state_code);
-        }
-    }, [editingCustodian?.state_code, showEditModal]);
 
     const handleAddCustodian = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -108,7 +95,7 @@ export default function Custodians() {
             setNewCustodian({
                 name: '',
                 code: '',
-                state_code: '',
+                state_code: userState?.code || '',
                 lga_code: '',
                 town: '',
                 status: 'active'
@@ -165,17 +152,25 @@ export default function Custodians() {
         });
     };
 
-    const filteredCustodians = custodians.filter(c => {
-        const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.code.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesState = !selectedState || c.state_code === selectedState;
-        const matchesLga = !selectedLga || c.lga_code === selectedLga;
-        return matchesSearch && matchesState && matchesLga;
-    });
+    const { filteredCustodians, totalPages, startIndex, paginatedCustodians } = React.useMemo(() => {
+        const filtered = custodians.filter(c => {
+            const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                c.code.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesLga = !selectedLga || c.lga_code === selectedLga;
+            return matchesSearch && matchesLga;
+        });
 
-    const totalPages = Math.ceil(filteredCustodians.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const paginatedCustodians = filteredCustodians.slice(startIndex, startIndex + rowsPerPage);
+        const totalPages = Math.ceil(filtered.length / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const paginated = filtered.slice(startIndex, startIndex + rowsPerPage);
+
+        return {
+            filteredCustodians: filtered,
+            totalPages,
+            startIndex,
+            paginatedCustodians: paginated
+        };
+    }, [custodians, searchTerm, selectedLga, currentPage, rowsPerPage]);
 
     return (
         <>
@@ -185,9 +180,9 @@ export default function Custodians() {
                     <div>
                         <h1 className="text-2xl font-bold text-slate-950 dark:text-white flex items-center gap-3">
                             <ShieldCheck className="w-8 h-8 text-emerald-600" />
-                            Accredited Custodians
+                            Custodians ({userState?.name || userState?.code || 'State'})
                         </h1>
-                        <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Manage school custodians and their accreditation status.</p>
+                        <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Manage school custodians in your state.</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -249,44 +244,28 @@ export default function Custodians() {
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">State</label>
-                                        <select
-                                            required
-                                            value={newCustodian.state_code}
-                                            onChange={e => setNewCustodian({ ...newCustodian, state_code: e.target.value, lga_code: '' })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                        >
-                                            <option value="">Select State</option>
-                                            {states.map(state => (
-                                                <option key={state.code} value={state.code}>{state.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
                                         <select
                                             required
-                                            disabled={!newCustodian.state_code || isLoadingLgas}
                                             value={newCustodian.lga_code}
                                             onChange={e => setNewCustodian({ ...newCustodian, lga_code: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
-                                            <option value="">{isLoadingLgas ? 'Loading...' : 'Select LGA'}</option>
+                                            <option value="">Select LGA</option>
                                             {modalLgas.map(lga => (
                                                 <option key={lga.code} value={lga.code}>{lga.name}</option>
                                             ))}
                                         </select>
                                     </div>
 
-                                    <div className="space-y-1.5">
+                                    <div className="space-y-1.5 col-span-2">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Town/Area</label>
                                         <input
                                             type="text"
                                             placeholder="e.g. Central Area"
                                             value={newCustodian.town}
                                             onChange={e => setNewCustodian({ ...newCustodian, town: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
                                         />
                                     </div>
                                 </div>
@@ -332,7 +311,7 @@ export default function Custodians() {
                                             required
                                             value={editingCustodian.name}
                                             onChange={e => setEditingCustodian({ ...editingCustodian, name: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
                                         />
                                     </div>
 
@@ -343,33 +322,19 @@ export default function Custodians() {
                                             required
                                             disabled
                                             value={editingCustodian.code}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 outline-none cursor-not-allowed uppercase"
+                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 outline-none cursor-not-allowed font-mono uppercase"
                                         />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">State</label>
-                                        <select
-                                            value={editingCustodian.state_code || ''}
-                                            onChange={e => setEditingCustodian({ ...editingCustodian, state_code: e.target.value, lga_code: '' })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                        >
-                                            <option value="">Select State</option>
-                                            {states.map(state => (
-                                                <option key={state.code} value={state.code}>{state.name}</option>
-                                            ))}
-                                        </select>
                                     </div>
 
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
                                         <select
-                                            disabled={!editingCustodian.state_code || isLoadingLgas}
+                                            required
                                             value={editingCustodian.lga_code || ''}
                                             onChange={e => setEditingCustodian({ ...editingCustodian, lga_code: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
-                                            <option value="">{isLoadingLgas ? 'Loading...' : 'Select LGA'}</option>
+                                            <option value="">Select LGA</option>
                                             {modalLgas.map(lga => (
                                                 <option key={lga.code} value={lga.code}>{lga.name}</option>
                                             ))}
@@ -383,7 +348,7 @@ export default function Custodians() {
                                             placeholder="e.g. Central Area"
                                             value={editingCustodian.town || ''}
                                             onChange={e => setEditingCustodian({ ...editingCustodian, town: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
                                         />
                                     </div>
 
@@ -393,7 +358,7 @@ export default function Custodians() {
                                             required
                                             value={editingCustodian.status || 'active'}
                                             onChange={e => setEditingCustodian({ ...editingCustodian, status: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold"
                                         >
                                             <option value="active">Active</option>
                                             <option value="inactive">Inactive</option>
@@ -438,31 +403,16 @@ export default function Custodians() {
                             />
                         </div>
 
-                        <div className="flex items-center gap-2 flex-1 max-w-lg ml-4">
-                            <div className="relative flex-1">
-                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                                <select
-                                    value={selectedState}
-                                    onChange={(e) => { setSelectedState(e.target.value); setSelectedLga(''); setCurrentPage(1); }}
-                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all appearance-none cursor-pointer"
-                                >
-                                    <option value="">All States</option>
-                                    {states.map(s => (
-                                        <option key={s.code} value={s.code}>{s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
+                        <div className="flex items-center gap-2 flex-1 max-w-sm ml-4">
                             <div className="relative flex-1">
                                 <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                                 <select
                                     value={selectedLga}
                                     onChange={(e) => { setSelectedLga(e.target.value); setCurrentPage(1); }}
-                                    disabled={!selectedState}
-                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all appearance-none cursor-pointer disabled:opacity-50"
+                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all appearance-none cursor-pointer"
                                 >
                                     <option value="">All LGAs</option>
-                                    {lgas.filter(l => l.state_code === selectedState).map(l => (
+                                    {lgas.map(l => (
                                         <option key={l.code} value={l.code}>{l.name}</option>
                                     ))}
                                 </select>
@@ -490,32 +440,15 @@ export default function Custodians() {
                                 <Download className="w-4 h-4 text-emerald-600" />
                                 EXCEL
                             </button>
-                            <button
-                                onClick={() => DataService.exportCustodians('csv')}
-                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-                                title="Export CSV"
-                            >
-                                <Download className="w-4 h-4 text-blue-600" />
-                                CSV
-                            </button>
-                            <button
-                                onClick={() => DataService.exportCustodians('dbf')}
-                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-                                title="Export DBF (FoxPro)"
-                            >
-                                <Download className="w-4 h-4 text-orange-600" />
-                                DBF
-                            </button>
                         </div>
                     </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                            <thead className="bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest">
                                 <tr>
                                     <th className="px-6 py-4">Code</th>
                                     <th className="px-6 py-4">Custodian Name</th>
-                                    <th className="px-6 py-4">State</th>
                                     <th className="px-6 py-4">LGA</th>
                                     <th className="px-6 py-4">Town</th>
                                     <th className="px-6 py-4 text-right">Actions</th>
@@ -525,17 +458,17 @@ export default function Custodians() {
                                 {isLoading ? (
                                     Array(5).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={6} className="px-6 py-4">
+                                            <td colSpan={5} className="px-6 py-4">
                                                 <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
                                             </td>
                                         </tr>
                                     ))
                                 ) : paginatedCustodians.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center">
+                                        <td colSpan={5} className="px-6 py-12 text-center">
                                             <div className="flex flex-col items-center gap-2">
                                                 <ShieldCheck className="w-12 h-12 text-slate-200 dark:text-slate-700" />
-                                                <p className="text-slate-500 dark:text-slate-400 font-medium">No custodians found</p>
+                                                <p className="text-slate-500 dark:text-slate-400 font-medium">No custodians found in your state</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -543,27 +476,22 @@ export default function Custodians() {
                                     paginatedCustodians.map((custodian) => (
                                         <tr key={custodian.code} className="group hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors">
                                             <td className="px-6 py-4">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-400 text-sm font-mono font-bold">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-400 text-xs font-mono font-black">
                                                     {custodian.code}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="text-base font-bold text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors">
+                                                <span className="text-sm font-black text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors uppercase tracking-tight">
                                                     {custodian.name}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="text-sm font-bold text-slate-950 dark:text-slate-300">
-                                                    {states.find(s => s.code === custodian.state_code)?.name || custodian.state_code}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">
                                                     {lgas.find(l => l.code === custodian.lga_code)?.name || custodian.lga_code}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">
                                                     {custodian.town || '—'}
                                                 </span>
                                             </td>
@@ -596,20 +524,20 @@ export default function Custodians() {
                     </div>
 
                     {!isLoading && filteredCustodians.length > 0 && (
-                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
-                            <p>
-                                Showing <span className="font-semibold text-slate-900 dark:text-white">{startIndex + 1}</span> to{' '}
-                                <span className="font-semibold text-slate-900 dark:text-white">
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
+                            <p className="font-medium">
+                                Showing <span className="font-black text-slate-900 dark:text-white">{startIndex + 1}</span> to{' '}
+                                <span className="font-black text-slate-900 dark:text-white">
                                     {Math.min(startIndex + rowsPerPage, filteredCustodians.length)}
                                 </span> of{' '}
-                                <span className="font-semibold text-slate-900 dark:text-white">{filteredCustodians.length}</span> custodians
+                                <span className="font-black text-slate-900 dark:text-white">{filteredCustodians.length}</span> custodians
                             </p>
 
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                     disabled={currentPage === 1}
-                                    className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+                                    className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs uppercase"
                                 >
                                     Previous
                                 </button>
@@ -617,9 +545,8 @@ export default function Custodians() {
                                 <div className="flex items-center gap-1">
                                     {[...Array(totalPages)].map((_, i) => {
                                         const pageNum = i + 1;
-                                        // Logic to show limited page numbers
                                         if (
-                                            totalPages <= 7 ||
+                                            totalPages <= 5 ||
                                             pageNum === 1 ||
                                             pageNum === totalPages ||
                                             (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
@@ -628,9 +555,9 @@ export default function Custodians() {
                                                 <button
                                                     key={pageNum}
                                                     onClick={() => setCurrentPage(pageNum)}
-                                                    className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${currentPage === pageNum
+                                                    className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all ${currentPage === pageNum
                                                         ? 'bg-emerald-600 text-white shadow-sm'
-                                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
                                                         }`}
                                                 >
                                                     {pageNum}
@@ -640,7 +567,7 @@ export default function Custodians() {
                                             pageNum === currentPage - 2 ||
                                             pageNum === currentPage + 2
                                         ) {
-                                            return <span key={pageNum} className="px-1 text-slate-400">...</span>;
+                                            return <span key={pageNum} className="px-1 text-slate-400 font-black">...</span>;
                                         }
                                         return null;
                                     })}
@@ -649,7 +576,7 @@ export default function Custodians() {
                                 <button
                                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                     disabled={currentPage === totalPages}
-                                    className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+                                    className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs uppercase"
                                 >
                                     Next
                                 </button>

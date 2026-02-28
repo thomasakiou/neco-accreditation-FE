@@ -34,14 +34,15 @@ export default function StateDashboard() {
         setIsLoading(true);
         const user = await AuthService.getCurrentUser();
         if (user?.state_code) {
-          setStateName(user.state_name || `State Office (${user.state_code})`);
+          const statesData = await DataService.getStates();
+          const currentState = statesData.find(s => s.code === user.state_code);
+          setStateName(currentState?.name || user.state_name || user.state_code);
 
-          const [ssceData, beceData, lgaData, custodianData, statesData] = await Promise.all([
+          const [ssceData, beceData, lgaData, custodianData] = await Promise.all([
             DataService.getSchools({ state_code: user.state_code }),
             DataService.getBeceSchools({ state_code: user.state_code }),
             DataService.getLGAs({ state_code: user.state_code }),
-            DataService.getCustodians({ state_code: user.state_code }),
-            DataService.getStates()
+            DataService.getCustodians({ state_code: user.state_code })
           ]);
 
           setSsceSchools(ssceData);
@@ -49,7 +50,6 @@ export default function StateDashboard() {
           setLgas(lgaData);
           setCustodians(custodianData);
 
-          const currentState = statesData.find(s => s.code === user.state_code);
           if (currentState) {
             setIsLocked(!!currentState.is_locked);
           }
@@ -65,63 +65,100 @@ export default function StateDashboard() {
     fetchData();
   }, []);
 
-  const totalSsce = ssceSchools.length;
-  const totalBece = beceSchools.length;
-  const activeSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited').length;
-  const expiredSsce = ssceSchools.filter(s => s.status === 'expired').length;
-  const pendingSsce = ssceSchools.filter(s => s.status === 'pending').length;
+  const {
+    activeSsce,
+    activeBece,
+    expiredSsce,
+    dueSoonCount,
+    dueSoonCountBece,
+    statsCards,
+    dashboardLgaData,
+    recentApplications,
+    totalSsce,
+    totalBece
+  } = React.useMemo(() => {
+    const totalSsce = ssceSchools.length;
+    const totalBece = beceSchools.length;
+    const activeSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited').length;
+    const activeBece = beceSchools.filter(s => s.accreditation_status === 'Accredited').length;
+    const expiredSsce = ssceSchools.filter(s => s.status === 'expired').length;
 
-  // Calculate schools due for reaccreditation in the next 90 days (SSCE focus for now)
-  const dueSoonCount = ssceSchools.filter(s => {
-    if (!s.accredited_date || s.accreditation_status !== 'Accredited') return false;
-    const expiryDate = new Date(s.accredited_date);
-    expiryDate.setFullYear(expiryDate.getFullYear() + 2); // Assuming 2 year validity
-    const today = new Date();
-    const diffTime = expiryDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 && diffDays <= 90;
-  }).length;
+    // Calculate schools due for reaccreditation in the next 90 days
+    const dueSoonCount = ssceSchools.filter(s => {
+      if (!s.accredited_date || s.accreditation_status !== 'Accredited') return false;
+      const expiryDate = new Date(s.accredited_date);
+      expiryDate.setFullYear(expiryDate.getFullYear() + 2); // Assuming 2 year validity
+      const today = new Date();
+      const diffTime = expiryDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 && diffDays <= 90;
+    }).length;
 
-  const statsCards = [
-    { icon: SchoolIcon, label: 'SSCE Schools', value: totalSsce.toLocaleString(), change: 'State Total', changeColor: 'emerald', iconBg: 'emerald', topBorder: true },
-    { icon: GraduationCap, label: 'BECE Schools', value: totalBece.toLocaleString(), change: 'State Total', changeColor: 'blue', iconBg: 'blue' },
-    { icon: CheckCircle, label: 'Accredited (SSCE)', value: activeSsce.toLocaleString(), change: 'Valid', changeColor: 'emerald', iconBg: 'emerald' },
-    { icon: Calendar, label: 'Due Soon (SSCE)', value: dueSoonCount.toLocaleString(), change: 'Next 90d', changeColor: 'amber', iconBg: 'amber' },
-    { icon: Clock, label: 'Pending Review', value: pendingSsce.toLocaleString(), change: 'In Review', changeColor: 'emerald', iconBg: 'emerald' },
-  ];
+    const dueSoonCountBece = beceSchools.filter(s => {
+      if (!s.accredited_date || s.accreditation_status !== 'Accredited') return false;
+      const expiryDate = new Date(s.accredited_date);
+      expiryDate.setFullYear(expiryDate.getFullYear() + 2); // Assuming 2 year validity
+      const today = new Date();
+      const diffTime = expiryDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 && diffDays <= 90;
+    }).length;
 
-  // Group schools by LGA (using SSCE for distribution overview)
-  const lgaGrouping = ssceSchools.reduce((acc: Record<string, number>, school) => {
-    const lgaName = lgas.find(l => l.code === school.lga_code)?.name || school.lga_code;
-    acc[lgaName] = (acc[lgaName] || 0) + 1;
-    return acc;
-  }, {});
+    const statsCards = [
+      { icon: SchoolIcon, label: 'SSCE Schools', value: totalSsce.toLocaleString(), change: 'State Total', changeColor: 'emerald', iconBg: 'emerald', topBorder: true },
+      { icon: GraduationCap, label: 'BECE Schools', value: totalBece.toLocaleString(), change: 'State Total', changeColor: 'blue', iconBg: 'blue' },
+      { icon: CheckCircle, label: 'Accredited (SSCE)', value: activeSsce.toLocaleString(), change: 'Valid', changeColor: 'emerald', iconBg: 'emerald' },
+      { icon: CheckCircle, label: 'Accredited (BECE)', value: activeBece.toLocaleString(), change: 'Valid', changeColor: 'blue', iconBg: 'blue' },
+      { icon: Calendar, label: 'Due Soon (SSCE)', value: dueSoonCount.toLocaleString(), change: 'Next 90d', changeColor: 'amber', iconBg: 'amber' },
+      { icon: Calendar, label: 'Due Soon (BECE)', value: dueSoonCountBece.toLocaleString(), change: 'Next 90d', changeColor: 'orange', iconBg: 'orange' },
+    ];
 
-  const dashboardLgaData = (Object.entries(lgaGrouping) as [string, number][])
-    .map(([name, count]) => ({
-      name,
-      count,
-      percent: totalSsce > 0 ? Math.round((count / totalSsce) * 100) : 0
-    }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    // Group schools by LGA (using SSCE for distribution overview)
+    const lgaGrouping = ssceSchools.reduce((acc: Record<string, number>, school) => {
+      const lgaName = lgas.find(l => l.code === school.lga_code)?.name || school.lga_code;
+      acc[lgaName] = (acc[lgaName] || 0) + 1;
+      return acc;
+    }, {});
 
-  const recentApplications = ssceSchools
-    .filter(s => s.status === 'pending' || s.accreditation_status === 'Accredited')
-    .sort((a, b) => {
-      const dateA = a.accredited_date ? new Date(a.accredited_date).getTime() : 0;
-      const dateB = b.accredited_date ? new Date(b.accredited_date).getTime() : 0;
-      return dateB - dateA;
-    })
-    .slice(0, 5)
-    .map(s => ({
-      school: s.name,
-      lga: lgas.find(l => l.code === s.lga_code)?.name || s.lga_code,
-      type: 'SSCE Accreditation',
-      date: s.accredited_date ? new Date(s.accredited_date).toLocaleDateString() : 'Pending',
-      status: s.accreditation_status === 'Accredited' ? 'Accredited' : 'Pending Review',
-      statusColor: s.accreditation_status === 'Accredited' ? 'emerald' : 'amber'
-    }));
+    const dashboardLgaData = (Object.entries(lgaGrouping) as [string, number][])
+      .map(([name, count]) => ({
+        name,
+        count,
+        percent: totalSsce > 0 ? Math.round((count / totalSsce) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const recentApplications = ssceSchools
+      .filter(s => s.status === 'pending' || s.accreditation_status === 'Accredited')
+      .sort((a, b) => {
+        const dateA = a.accredited_date ? new Date(a.accredited_date).getTime() : 0;
+        const dateB = b.accredited_date ? new Date(b.accredited_date).getTime() : 0;
+        return dateB - dateA;
+      })
+      .slice(0, 5)
+      .map(s => ({
+        school: s.name,
+        lga: lgas.find(l => l.code === s.lga_code)?.name || s.lga_code,
+        type: 'SSCE Accreditation',
+        date: s.accredited_date ? new Date(s.accredited_date).toLocaleDateString() : 'Pending',
+        status: s.accreditation_status === 'Accredited' ? 'Accredited' : 'Pending Review',
+        statusColor: s.accreditation_status === 'Accredited' ? 'emerald' : 'amber'
+      }));
+
+    return {
+      activeSsce,
+      activeBece,
+      expiredSsce,
+      dueSoonCount,
+      dueSoonCountBece,
+      statsCards,
+      dashboardLgaData,
+      recentApplications,
+      totalSsce,
+      totalBece
+    };
+  }, [ssceSchools, beceSchools, lgas]);
 
   if (isLoading) {
     return (
@@ -152,7 +189,7 @@ export default function StateDashboard() {
           <p className="text-sm font-medium">{error}</p>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         {statsCards.map((card) => (
           <div key={card.label} className={`bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm ${card.topBorder ? 'border-t-4 border-t-emerald-600' : ''} hover:shadow-md transition-shadow`}>
             <div className="flex items-center justify-between mb-4">

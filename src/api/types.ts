@@ -291,6 +291,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/data/schools/{code}/upload-payment-proof": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload School Payment Proof */
+        post: operations["upload_school_payment_proof_api_v1_data_schools__code__upload_payment_proof_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data/bece-schools/{code}/upload-payment-proof": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Bece School Payment Proof */
+        post: operations["upload_bece_school_payment_proof_api_v1_data_bece_schools__code__upload_payment_proof_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/data/schools/all": {
         parameters: {
             query?: never;
@@ -628,11 +662,11 @@ export interface components {
             /** Name */
             name: string;
             /** State Code */
-            state_code: string;
+            state_code?: string | null;
             /** Lga Code */
-            lga_code: string;
+            lga_code?: string | null;
             /** Custodian Code */
-            custodian_code: string;
+            custodian_code?: string | null;
             /** Email */
             email?: string | null;
             /**
@@ -649,6 +683,8 @@ export interface components {
             category: string;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Payment Url */
+            payment_url?: string | null;
             /**
              * Status
              * @default active
@@ -664,7 +700,7 @@ export interface components {
             /** State Code */
             state_code: string;
             /** Lga Code */
-            lga_code: string;
+            lga_code?: string | null;
             /** Custodian Code */
             custodian_code: string;
             /** Email */
@@ -683,6 +719,8 @@ export interface components {
             category: string;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Payment Url */
+            payment_url?: string | null;
             /**
              * Status
              * @default active
@@ -709,6 +747,8 @@ export interface components {
             category?: string | null;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Payment Url */
+            payment_url?: string | null;
             /** Status */
             status?: string | null;
         };
@@ -736,6 +776,11 @@ export interface components {
              */
             client_secret?: string | null;
         };
+        /** Body_upload_bece_school_payment_proof_api_v1_data_bece_schools__code__upload_payment_proof_post */
+        Body_upload_bece_school_payment_proof_api_v1_data_bece_schools__code__upload_payment_proof_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_bece_schools_api_v1_data_upload_bece_schools_post */
         Body_upload_bece_schools_api_v1_data_upload_bece_schools_post: {
             /** File */
@@ -748,6 +793,11 @@ export interface components {
         };
         /** Body_upload_lgas_api_v1_data_upload_lgas_post */
         Body_upload_lgas_api_v1_data_upload_lgas_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_school_payment_proof_api_v1_data_schools__code__upload_payment_proof_post */
+        Body_upload_school_payment_proof_api_v1_data_schools__code__upload_payment_proof_post: {
             /** File */
             file: string;
         };
@@ -852,11 +902,11 @@ export interface components {
             /** Name */
             name: string;
             /** State Code */
-            state_code: string;
+            state_code?: string | null;
             /** Lga Code */
-            lga_code: string;
+            lga_code?: string | null;
             /** Custodian Code */
-            custodian_code: string;
+            custodian_code?: string | null;
             /** Email */
             email?: string | null;
             /**
@@ -873,6 +923,8 @@ export interface components {
             category: string;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Payment Url */
+            payment_url?: string | null;
             /**
              * Status
              * @default active
@@ -888,7 +940,7 @@ export interface components {
             /** State Code */
             state_code: string;
             /** Lga Code */
-            lga_code: string;
+            lga_code?: string | null;
             /** Custodian Code */
             custodian_code: string;
             /** Email */
@@ -907,6 +959,8 @@ export interface components {
             category: string;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Payment Url */
+            payment_url?: string | null;
             /**
              * Status
              * @default active
@@ -933,6 +987,8 @@ export interface components {
             category?: string | null;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Payment Url */
+            payment_url?: string | null;
             /** Status */
             status?: string | null;
         };
@@ -2005,6 +2061,80 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_school_payment_proof_api_v1_data_schools__code__upload_payment_proof_post: {
+        parameters: {
+            query?: {
+                dependencies?: unknown;
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_school_payment_proof_api_v1_data_schools__code__upload_payment_proof_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["School"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_bece_school_payment_proof_api_v1_data_bece_schools__code__upload_payment_proof_post: {
+        parameters: {
+            query?: {
+                dependencies?: unknown;
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_bece_school_payment_proof_api_v1_data_bece_schools__code__upload_payment_proof_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECESchool"];
+                };
             };
             /** @description Validation Error */
             422: {

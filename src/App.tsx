@@ -19,6 +19,8 @@ import HeadOfficeFinalApproval from './pages/head-office/FinalApproval';
 import HeadOfficeReports from './pages/head-office/Reports';
 import HeadOfficeUsers from './pages/head-office/Users';
 import StateApplications from './pages/state/Applications';
+import StateCustodians from './pages/state/Custodians';
+import StateReports from './pages/state/Reports';
 import ReviewApplications from './pages/head-office/ReviewApplications';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -50,7 +52,9 @@ export default function App() {
                 <Routes>
                   <Route path="dashboard" element={<StateDashboard />} />
                   <Route path="schools" element={<StateSchools />} />
+                  <Route path="custodians" element={<StateCustodians />} />
                   <Route path="applications" element={<StateApplications />} />
+                  <Route path="reports" element={<StateReports />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
               </DashboardLayout>

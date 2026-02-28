@@ -2,39 +2,58 @@ import client from '../client';
 import { components } from '../types';
 
 export type School = components['schemas']['School'];
+export type BECESchool = components['schemas']['BECESchool'];
 export type State = components['schemas']['State'];
 export type Zone = components['schemas']['Zone'];
 export type LGA = components['schemas']['LGA'];
 export type Custodian = components['schemas']['Custodian'];
 
+let statesCache: State[] | null = null;
+let zonesCache: Zone[] | null = null;
+let lgasCache: Record<string, LGA[]> = {}; // Key: state_code or 'all'
+
+export const clearStaticCache = () => {
+    statesCache = null;
+    zonesCache = null;
+    lgasCache = {};
+};
+
 const DataService = {
     getStates: async (): Promise<State[]> => {
+        if (statesCache) return statesCache;
         const response = await client.get<State[]>('/api/v1/data/states');
-        return response.data;
+        statesCache = response.data;
+        return statesCache;
     },
 
     getZones: async (): Promise<Zone[]> => {
+        if (zonesCache) return zonesCache;
         const response = await client.get<Zone[]>('/api/v1/data/zones');
-        return response.data;
+        zonesCache = response.data;
+        return zonesCache;
     },
 
     createZone: async (zone: components['schemas']['ZoneCreate']): Promise<Zone> => {
         const response = await client.post<Zone>('/api/v1/data/zones', zone);
+        zonesCache = null; // Invalidate cache
         return response.data;
     },
 
     updateZone: async (code: string, zone: components['schemas']['ZoneUpdate']): Promise<Zone> => {
         const response = await client.put<Zone>(`/api/v1/data/zones/${code}`, zone);
+        zonesCache = null; // Invalidate cache
         return response.data;
     },
 
     createState: async (state: components['schemas']['StateCreate']): Promise<State> => {
         const response = await client.post<State>('/api/v1/data/states', state);
+        statesCache = null; // Invalidate cache
         return response.data;
     },
 
     updateState: async (code: string, state: components['schemas']['StateUpdate']): Promise<State> => {
         const response = await client.put<State>(`/api/v1/data/states/${code}`, state);
+        statesCache = null; // Invalidate cache
         return response.data;
     },
 
@@ -46,11 +65,13 @@ const DataService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        statesCache = null; // Invalidate cache
         return response.data;
     },
 
     deleteAllStates: async () => {
         const response = await client.delete('/api/v1/data/states/all');
+        statesCache = null; // Invalidate cache
         return response.data;
     },
 
@@ -83,6 +104,7 @@ const DataService = {
 
     deleteState: async (code: string) => {
         await client.delete(`/api/v1/data/states/${code}`);
+        statesCache = null; // Invalidate cache
     },
 
     getSchools: async (params?: { state_code?: string; lga_code?: string; custodian_code?: string }): Promise<School[]> => {
@@ -137,18 +159,18 @@ const DataService = {
     },
 
     // BECE Schools
-    getBeceSchools: async (params?: { state_code?: string; lga_code?: string; custodian_code?: string }): Promise<School[]> => {
-        const response = await client.get<School[]>('/api/v1/data/bece-schools', { params });
+    getBeceSchools: async (params?: { state_code?: string; lga_code?: string; custodian_code?: string }): Promise<BECESchool[]> => {
+        const response = await client.get<BECESchool[]>('/api/v1/data/bece-schools', { params });
         return response.data;
     },
 
-    createBeceSchool: async (school: components['schemas']['SchoolCreate']): Promise<School> => {
-        const response = await client.post<School>('/api/v1/data/bece-schools', school);
+    createBeceSchool: async (school: components['schemas']['BECESchoolCreate']): Promise<BECESchool> => {
+        const response = await client.post<BECESchool>('/api/v1/data/bece-schools', school);
         return response.data;
     },
 
-    updateBeceSchool: async (code: string, school: components['schemas']['SchoolUpdate']): Promise<School> => {
-        const response = await client.put<School>(`/api/v1/data/bece-schools/${code}`, school);
+    updateBeceSchool: async (code: string, school: components['schemas']['BECESchoolUpdate']): Promise<BECESchool> => {
+        const response = await client.put<BECESchool>(`/api/v1/data/bece-schools/${code}`, school);
         return response.data;
     },
 
@@ -188,19 +210,47 @@ const DataService = {
         await client.delete('/api/v1/data/bece-schools/all');
     },
 
+    uploadSchoolPaymentProof: async (code: string, file: File): Promise<School> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await client.post<School>(`/api/v1/data/schools/${code}/upload-payment-proof`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    uploadBeceSchoolPaymentProof: async (code: string, file: File): Promise<BECESchool> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await client.post<BECESchool>(`/api/v1/data/bece-schools/${code}/upload-payment-proof`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
     // LGAs
     getLGAs: async (params?: { state_code?: string }): Promise<LGA[]> => {
+        const cacheKey = params?.state_code || 'all';
+        if (lgasCache[cacheKey]) return lgasCache[cacheKey];
+
         const response = await client.get<LGA[]>('/api/v1/data/lgas', { params });
-        return response.data;
+        lgasCache[cacheKey] = response.data;
+        return lgasCache[cacheKey];
     },
 
     createLGA: async (lga: components['schemas']['LGACreate']): Promise<LGA> => {
         const response = await client.post<LGA>('/api/v1/data/lgas', lga);
+        lgasCache = {}; // Invalidate cache entirely to be safe
         return response.data;
     },
 
     updateLGA: async (code: string, lga: components['schemas']['LGAUpdate']): Promise<LGA> => {
         const response = await client.put<LGA>(`/api/v1/data/lgas/${code}`, lga);
+        lgasCache = {}; // Invalidate cache entirely to be safe
         return response.data;
     },
 

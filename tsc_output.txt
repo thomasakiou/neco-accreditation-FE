@@ -1,0 +1,3 @@
+src/pages/head-office/Reports.tsx(31,33): error TS2322: Type 'void' is not assignable to type 'Blob'.
+src/pages/head-office/Reports.tsx(32,32): error TS2322: Type 'void' is not assignable to type 'Blob'.
+src/pages/head-office/Reports.tsx(33,30): error TS2322: Type 'void' is not assignable to type 'Blob'.

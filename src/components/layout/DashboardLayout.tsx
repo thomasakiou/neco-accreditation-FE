@@ -26,6 +26,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useTheme } from '../../context/ThemeContext';
 import AuthService from '../../api/services/auth.service';
+import DataService, { State } from '../../api/services/data.service';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -53,6 +54,7 @@ const schoolNavItems: SidebarItem[] = [
 const stateNavItems: SidebarItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/state/dashboard' },
   { icon: School, label: 'Schools', path: '/state/schools' },
+  { icon: ShieldCheck, label: 'Custodians', path: '/state/custodians' },
   { icon: FileText, label: 'Applications', path: '/state/applications' },
   { icon: BarChart3, label: 'Reports', path: '/state/reports' },
 ];
@@ -89,7 +91,9 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           // For now, let's see if we can get it from the schools list or assume it's in the user object
           setEntityName(user.school_name || `School: ${user.school_code}`);
         } else if (role === 'state' && user?.state_code) {
-          setEntityName(user.state_name || `State Office: ${user.state_code}`);
+          const states = await DataService.getStates();
+          const currentState = states.find((s: State) => s.code === user.state_code);
+          setEntityName(currentState?.name ? `${currentState.name} State Office` : `State Office: ${user.state_code}`);
         } else {
           setEntityName('Head Office Portal');
         }
