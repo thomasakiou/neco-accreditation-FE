@@ -9,24 +9,34 @@ import {
     TrendingUp,
     CheckCircle2,
     Clock,
-    MapPin
+    MapPin,
+    Download,
+    FileText
 } from 'lucide-react';
 import { cn } from '../../components/layout/DashboardLayout';
 import DataService from '../../api/services/data.service';
+import ExportService from '../../api/services/export.service';
 import { components } from '../../api/types';
 
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];
+type Zone = components['schemas']['Zone'];
+type LGA = components['schemas']['LGA'];
+type Custodian = components['schemas']['Custodian'];
 
 export default function ReviewApplications() {
     const [schools, setSchools] = React.useState<School[]>([]);
     const [states, setStates] = React.useState<State[]>([]);
+    const [zones, setZones] = React.useState<Zone[]>([]);
+    const [custodians, setCustodians] = React.useState<Custodian[]>([]);
+    const [allLgas, setAllLgas] = React.useState<LGA[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [expandedStates, setExpandedStates] = React.useState<Record<string, boolean>>({});
     const [selectedStateFilter, setSelectedStateFilter] = React.useState<string>('');
     const [selectedPaymentFilter, setSelectedPaymentFilter] = React.useState<string>('');
     const [selectedAccrFilter, setSelectedAccrFilter] = React.useState<string>('');
+    const [isExporting, setIsExporting] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         fetchData();
@@ -35,14 +45,20 @@ export default function ReviewApplications() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [schoolsData, beceSchoolsData, statesData] = await Promise.all([
+            const [schoolsData, beceSchoolsData, statesData, zonesData, lgas, custodians] = await Promise.all([
                 DataService.getSchools(),
                 DataService.getBeceSchools(),
-                DataService.getStates()
+                DataService.getStates(),
+                DataService.getZones(),
+                DataService.getLGAs(),
+                DataService.getCustodians()
             ]);
             // Merge SSCE and BECE schools
             setSchools([...schoolsData, ...beceSchoolsData]);
             setStates(statesData);
+            setZones(zonesData);
+            setAllLgas(lgas);
+            setCustodians(custodians);
         } catch (err) {
             console.error('Failed to fetch data:', err);
         } finally {
@@ -121,6 +137,72 @@ export default function ReviewApplications() {
         }));
     };
 
+    const handleExportExcel = async (state?: string) => {
+        setIsExporting('xlsx');
+        try {
+            const result = await ExportService.exportSchoolsDue(
+                dueSchools,
+                states,
+                zones,
+                allLgas,
+                custodians,
+                state || null,
+                'xlsx'
+            );
+            if (!result.success) {
+                console.error(result.message);
+            }
+        } catch (err) {
+            console.error('Export error:', err);
+        } finally {
+            setIsExporting(null);
+        }
+    };
+
+    const handleExportCSV = async (state?: string) => {
+        setIsExporting('csv');
+        try {
+            const result = await ExportService.exportSchoolsDue(
+                dueSchools,
+                states,
+                zones,
+                allLgas,
+                custodians,
+                state || null,
+                'csv'
+            );
+            if (!result.success) {
+                console.error(result.message);
+            }
+        } catch (err) {
+            console.error('Export error:', err);
+        } finally {
+            setIsExporting(null);
+        }
+    };
+
+    const handleExportPDF = async (state?: string) => {
+        setIsExporting('pdf');
+        try {
+            const result = await ExportService.exportSchoolsDue(
+                dueSchools,
+                states,
+                zones,
+                allLgas,
+                custodians,
+                state || null,
+                'pdf'
+            );
+            if (!result.success) {
+                console.error(result.message);
+            }
+        } catch (err) {
+            console.error('Export error:', err);
+        } finally {
+            setIsExporting(null);
+        }
+    };
+
     const getStatusBadge = (status: string | undefined) => {
         switch (status) {
             case 'Full':
@@ -141,6 +223,47 @@ export default function ReviewApplications() {
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Schools Due for Accreditation</h1>
                     <p className="text-slate-500 dark:text-slate-400">Schools organized by state with payment statistics</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => handleExportExcel()}
+                        disabled={isExporting !== null}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
+                        title="Download as Excel"
+                    >
+                        {isExporting === 'xlsx' ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Download className="w-4 h-4" />
+                        )}
+                        Excel
+                    </button>
+                    <button
+                        onClick={() => handleExportCSV()}
+                        disabled={isExporting !== null}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
+                        title="Download as CSV"
+                    >
+                        {isExporting === 'csv' ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Download className="w-4 h-4" />
+                        )}
+                        CSV
+                    </button>
+                    <button
+                        onClick={() => handleExportPDF()}
+                        disabled={isExporting !== null}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
+                        title="Download as PDF"
+                    >
+                        {isExporting === 'pdf' ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <FileText className="w-4 h-4" />
+                        )}
+                        PDF
+                    </button>
                 </div>
             </div>
 

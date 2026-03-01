@@ -24,9 +24,11 @@ import {
     FileText
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
+import ExportService from '../../api/services/export.service';
 import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
+import ExportModal from '../../components/modals/ExportModal';
 
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];
@@ -62,6 +64,7 @@ export default function HeadOfficeSchools() {
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     const [isDeleting, setIsDeleting] = useState(false);
     const [isExporting, setIsExporting] = useState<string | null>(null);
+    const [showExportModal, setShowExportModal] = useState(false);
 
     const [newSchool, setNewSchool] = useState({
         name: '',
@@ -373,6 +376,27 @@ export default function HeadOfficeSchools() {
         });
     };
 
+    const handleExportSchools = async (selectedState: string | null) => {
+        try {
+            const schoolsToExport = activeTab === 'SSCE' ? schools : schools;
+            const result = await ExportService.exportSchoolsByState(
+                schoolsToExport,
+                states,
+                zones,
+                allLgas,
+                custodians,
+                selectedState
+            );
+            if (result.success) {
+                setShowExportModal(false);
+            } else {
+                setError(result.message);
+            }
+        } catch (err: any) {
+            setError('Failed to export schools: ' + (err.message || 'Unknown error'));
+        }
+    };
+
     const { filteredSchools, totalPages, startIndex, paginatedSchools } = React.useMemo(() => {
         const filtered = schools.filter(school => {
             const matchesSearch =
@@ -503,6 +527,14 @@ export default function HeadOfficeSchools() {
                         >
                             <Plus className="w-4 h-4" />
                             <span>Register School</span>
+                        </button>
+
+                        <button
+                            onClick={() => setShowExportModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
+                        >
+                            <Download className="w-4 h-4" />
+                            <span>Export</span>
                         </button>
 
                         <button
@@ -1359,6 +1391,13 @@ export default function HeadOfficeSchools() {
                 isLoading={isDeleting}
                 onConfirm={confirmDialog.onConfirm}
                 onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+            />
+            <ExportModal
+                isOpen={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                states={states}
+                onExport={handleExportSchools}
+                isExporting={false}
             />
         </>
     );
