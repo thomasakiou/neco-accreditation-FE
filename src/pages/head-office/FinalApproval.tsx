@@ -91,9 +91,12 @@ export default function HeadOfficeFinalApproval() {
                 (selectedProofFilter === 'Pending' && !!school.payment_url && (!school.accreditation_status || ['Pending', 'Unaccredited'].includes(school.accreditation_status)));
 
             const isDue = () => {
-                if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) return false;
+                if (!school.accredited_date || !['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) return false;
                 const accreditedDate = new Date(school.accredited_date);
-                const yearsToAdd = school.accreditation_status === 'Full' ? 5 : 1;
+                let yearsToAdd = 5;
+                if (school.accreditation_status === 'Partial') yearsToAdd = 2;
+                else if (school.accreditation_status === 'Failed') yearsToAdd = 1;
+
                 const expiryDate = new Date(accreditedDate);
                 expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
                 const today = new Date();
@@ -199,9 +202,12 @@ export default function HeadOfficeFinalApproval() {
     const proofCount = schools.filter(s => !!s.payment_url).length;
 
     const dueCount = schools.filter(s => {
-        if (!s.accredited_date || !['Full', 'Partial'].includes(s.accreditation_status || '')) return false;
+        if (!s.accredited_date || !['Full', 'Partial', 'Failed'].includes(s.accreditation_status || '')) return false;
         const accreditedDate = new Date(s.accredited_date);
-        const yearsToAdd = s.accreditation_status === 'Full' ? 5 : 1;
+        let yearsToAdd = 5; // Default for Full
+        if (s.accreditation_status === 'Partial') yearsToAdd = 2;
+        else if (s.accreditation_status === 'Failed') yearsToAdd = 1;
+
         const expiryDate = new Date(accreditedDate);
         expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
 
