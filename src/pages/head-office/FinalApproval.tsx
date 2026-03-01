@@ -238,7 +238,7 @@ export default function HeadOfficeFinalApproval() {
                     <h3 className="text-2xl font-black text-slate-950 dark:text-white">{totalSchools}</h3>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
-                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">Due for Accreditation</p>
+                    <p className="text-[10px] font-black text-red-300 uppercase tracking-widest">Due for Accreditation</p>
                     <h3 className="text-2xl font-black text-slate-950 dark:text-white">{dueCount}</h3>
                 </div>
                 <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg font-bold">

@@ -52,14 +52,46 @@ export default function HeadOfficeDashboard() {
   const totalStates = states.length;
   const totalSsceSchools = ssceSchools.length;
   const totalBeceSchools = beceSchools.length;
-  const accreditedSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial').length;
+  
+  // Calculate schools due for accreditation
+  const isDueForAccreditation = (school: School): boolean => {
+    if (!school.accredited_date || !['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) {
+      return false;
+    }
+    const accreditedDate = new Date(school.accredited_date);
+    let yearsToAdd = 5;
+    if (school.accreditation_status === 'Partial') yearsToAdd = 2;
+    else if (school.accreditation_status === 'Failed') yearsToAdd = 1;
+
+    const expiryDate = new Date(accreditedDate);
+    expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+    const today = new Date();
+    const sixMonthsFromNow = new Date();
+    sixMonthsFromNow.setMonth(today.getMonth() + 6);
+    return expiryDate <= sixMonthsFromNow;
+  };
+
+  // SSCE calculations
+  const accreditedSsceNotDue = ssceSchools.filter(s => 
+    s.accreditation_status === 'Full' && !isDueForAccreditation(s)
+  ).length;
+  const dueSsce = ssceSchools.filter(isDueForAccreditation).length;
+
+  // BECE calculations
+  const accreditedBeceNotDue = beceSchools.filter(s => 
+    s.accreditation_status === 'Full' && !isDueForAccreditation(s)
+  ).length;
+  const beceDue = beceSchools.filter(isDueForAccreditation).length;
+  
   const pendingSsce = ssceSchools.filter(s => s.status === 'pending').length;
 
   const stats = [
-    { icon: Building2, label: 'Total States Active', value: totalStates.toString(), change: '+2', up: true, iconBg: 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400' },
     { icon: Users, label: 'SSCE Schools', value: totalSsceSchools.toLocaleString(), change: 'Total', up: true, iconBg: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400' },
+    { icon: FileCheck, label: 'SSCE Accredited', value: accreditedSsceNotDue.toLocaleString(), change: 'Current', up: true, iconBg: 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400' },
+    { icon: TrendingUp, label: 'SSCE Due', value: dueSsce.toLocaleString(), change: 'Next 6mo', up: false, iconBg: 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400' },
     { icon: GraduationCap, label: 'BECE Schools', value: totalBeceSchools.toLocaleString(), change: 'Total', up: true, iconBg: 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' },
-    { icon: FileCheck, label: 'Accredited SSCE', value: accreditedSsce.toLocaleString(), change: 'YTD', up: true, iconBg: 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400' },
+    { icon: FileCheck, label: 'BECE Accredited', value: accreditedBeceNotDue.toLocaleString(), change: 'Current', up: true, iconBg: 'bg-cyan-100 dark:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400' },
+    { icon: TrendingUp, label: 'BECE Due', value: beceDue.toLocaleString(), change: 'Next 6mo', up: false, iconBg: 'bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400' },
   ];
 
   const activities = [
@@ -72,7 +104,7 @@ export default function HeadOfficeDashboard() {
   const statePerformance = states.map(state => {
     const stateSchools = ssceSchools.filter(s => s.state_code === state.code);
     const total = stateSchools.length;
-    const accredited = stateSchools.filter(s => s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial').length;
+    const accredited = stateSchools.filter(s => s.accreditation_status === 'Full').length;
     const rate = total > 0 ? Math.round((accredited / total) * 100) : 0;
 
     let status = 'New';
@@ -109,7 +141,7 @@ export default function HeadOfficeDashboard() {
         </div>
       )}
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         {stats.map((s) => (
           <div key={s.label} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-300 dark:border-slate-700 shadow-md">
             <div className="flex items-center justify-between mb-4">
