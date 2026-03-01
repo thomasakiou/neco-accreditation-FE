@@ -22,7 +22,8 @@ import {
   LocateFixed,
   Users,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Upload
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -43,7 +44,7 @@ interface SidebarItem {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  role: 'school' | 'state' | 'head-office';
+  role: 'school' | 'state' | 'head-office' | 'viewer';
 }
 
 const schoolNavItems: SidebarItem[] = [
@@ -57,7 +58,8 @@ const stateNavItems: SidebarItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/state/dashboard' },
   { icon: School, label: 'Schools', path: '/state/schools' },
   { icon: ShieldCheck, label: 'Custodians', path: '/state/custodians' },
-  { icon: FileText, label: 'Applications', path: '/state/applications' },
+  { icon: FileText, label: 'Schools Due', path: '/state/schools-due' },
+  { icon: Upload, label: 'Proof of Payment', path: '/state/applications' },
   { icon: BarChart3, label: 'Reports', path: '/state/reports' },
 ];
 
@@ -72,6 +74,16 @@ const headOfficeNavItems: SidebarItem[] = [
   { icon: FileText, label: 'Schools Due', path: '/head-office/review-proofs' },
   { icon: CheckCircle, label: 'Final Approval', path: '/head-office/approvals', badge: 'dynamic_pending_approvals' },
   { icon: BarChart3, label: 'Reports', path: '/head-office/reports' },
+];
+
+const viewerNavItems: SidebarItem[] = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/viewer/dashboard' },
+  { icon: Layers, label: 'Zones', path: '/viewer/zones' },
+  { icon: Map, label: 'States', path: '/viewer/states' },
+  { icon: LocateFixed, label: 'LGAs', path: '/viewer/lgas' },
+  { icon: School, label: 'Schools', path: '/viewer/schools' },
+  { icon: ShieldCheck, label: 'Custodians', path: '/viewer/custodians' },
+  { icon: BarChart3, label: 'Reports', path: '/viewer/reports' },
 ];
 
 export default function DashboardLayout({ children, role }: DashboardLayoutProps) {
@@ -98,6 +110,8 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           const states = await DataService.getStates();
           const currentState = states.find((s: State) => s.code === user.state_code);
           setEntityName(currentState?.name ? `${currentState.name} State Office` : `State Office: ${user.state_code}`);
+        } else if (role === 'viewer') {
+          setEntityName('Accreditation Viewer');
         } else {
           setEntityName('Head Office Portal');
 
@@ -121,15 +135,15 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     fetchUserData();
   }, [role]);
 
-  const navItemsRaw = role === 'school' ? schoolNavItems : role === 'state' ? stateNavItems : headOfficeNavItems;
+  const navItemsRaw = role === 'school' ? schoolNavItems : role === 'state' ? stateNavItems : role === 'viewer' ? viewerNavItems : headOfficeNavItems;
   const navItems = navItemsRaw.map(item => {
     if (item.badge === 'dynamic_pending_approvals') {
       return { ...item, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount.toString() : undefined };
     }
     return item;
   });
-  const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : 'National Admin');
-  const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : 'Head Office Portal');
+  const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : role === 'viewer' ? 'Viewer' : 'National Admin');
+  const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : role === 'viewer' ? 'Accreditation Viewer' : 'Head Office Portal');
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);

@@ -10,6 +10,7 @@ import SchoolDashboard from './pages/school/Dashboard';
 import StateDashboard from './pages/state/Dashboard';
 import HeadOfficeDashboard from './pages/head-office/Dashboard';
 import StateSchools from './pages/state/Schools';
+import StateSchoolsDue from './pages/state/SchoolsDue';
 import HeadOfficeStates from './pages/head-office/States';
 import HeadOfficeSchools from './pages/head-office/Schools';
 import HeadOfficeLGAs from './pages/head-office/LGAs';
@@ -22,6 +23,13 @@ import StateApplications from './pages/state/Applications';
 import StateCustodians from './pages/state/Custodians';
 import StateReports from './pages/state/Reports';
 import ReviewApplications from './pages/head-office/ReviewApplications';
+import ViewerDashboard from './pages/viewer/Dashboard';
+import ViewerZones from './pages/viewer/Zones';
+import ViewerStates from './pages/viewer/States';
+import ViewerLGAs from './pages/viewer/LGAs';
+import ViewerSchools from './pages/viewer/Schools';
+import ViewerCustodians from './pages/viewer/Custodians';
+import ViewerReports from './pages/viewer/Reports';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
@@ -52,6 +60,7 @@ export default function App() {
                 <Routes>
                   <Route path="dashboard" element={<StateDashboard />} />
                   <Route path="schools" element={<StateSchools />} />
+                  <Route path="schools-due" element={<StateSchoolsDue />} />
                   <Route path="custodians" element={<StateCustodians />} />
                   <Route path="applications" element={<StateApplications />} />
                   <Route path="reports" element={<StateReports />} />
@@ -76,6 +85,24 @@ export default function App() {
                   <Route path="approvals" element={<HeadOfficeFinalApproval />} />
                   <Route path="reports" element={<HeadOfficeReports />} />
                   <Route path="users" element={<HeadOfficeUsers />} />
+                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                </Routes>
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Viewer Routes */}
+          <Route path="/viewer/*" element={
+            <ProtectedRoute allowedRoles={['viewer']}>
+              <DashboardLayout role="viewer">
+                <Routes>
+                  <Route path="dashboard" element={<ViewerDashboard />} />
+                  <Route path="zones" element={<ViewerZones />} />
+                  <Route path="states" element={<ViewerStates />} />
+                  <Route path="lgas" element={<ViewerLGAs />} />
+                  <Route path="schools" element={<ViewerSchools />} />
+                  <Route path="custodians" element={<ViewerCustodians />} />
+                  <Route path="reports" element={<ViewerReports />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
               </DashboardLayout>

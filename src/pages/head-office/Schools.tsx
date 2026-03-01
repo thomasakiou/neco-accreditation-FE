@@ -863,9 +863,10 @@ export default function HeadOfficeSchools() {
                                         <input
                                             type="text"
                                             placeholder="e.g. 2024"
+                                            disabled
                                             value={editingSchool.accrd_year || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, accrd_year: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all opacity-60 cursor-not-allowed"
                                         />
                                     </div>
 
@@ -873,9 +874,10 @@ export default function HeadOfficeSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Status</label>
                                         <select
                                             required
+                                            disabled
                                             value={editingSchool.accreditation_status}
                                             onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all opacity-60 cursor-not-allowed"
                                         >
                                             <option value="Unaccredited">Unaccredited</option>
                                             <option value="Accredited">Accredited</option>
@@ -886,10 +888,11 @@ export default function HeadOfficeSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Date</label>
                                         <input
                                             type="date"
+                                            disabled
                                             required={editingSchool.accreditation_status === 'Accredited'}
                                             value={editingSchool.accredited_date || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, accredited_date: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all opacity-60 cursor-not-allowed"
                                         />
                                     </div>
 

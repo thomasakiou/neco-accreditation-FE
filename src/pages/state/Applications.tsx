@@ -333,8 +333,8 @@ export default function StateApplications() {
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{userStateName} Accreditation Applications</h1>
-                        <p className="text-slate-500 dark:text-slate-400">Manage and submit school accreditation proofs for {userStateName}.</p>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{userStateName} Proof of Payment</h1>
+                        <p className="text-slate-500 dark:text-slate-400">Manage and submit proof of payment submissions for {userStateName}.</p>
                     </div>
 
                     <div className="flex flex-col md:flex-row items-center gap-3">

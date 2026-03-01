@@ -24,6 +24,9 @@ export default function ReviewApplications() {
     const [loading, setLoading] = React.useState(true);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [expandedStates, setExpandedStates] = React.useState<Record<string, boolean>>({});
+    const [selectedStateFilter, setSelectedStateFilter] = React.useState<string>('');
+    const [selectedPaymentFilter, setSelectedPaymentFilter] = React.useState<string>('');
+    const [selectedAccrFilter, setSelectedAccrFilter] = React.useState<string>('');
 
     React.useEffect(() => {
         fetchData();
@@ -72,9 +75,15 @@ export default function ReviewApplications() {
             const matchesSearch = !searchQuery ||
                 school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 school.code.toLowerCase().includes(searchQuery.toLowerCase());
-            return isDue && matchesSearch;
+            const matchesState = !selectedStateFilter || school.state_code === selectedStateFilter;
+            const matchesPayment = !selectedPaymentFilter ||
+                (selectedPaymentFilter === 'Paid' && !!school.payment_url) ||
+                (selectedPaymentFilter === 'Unpaid' && !school.payment_url);
+            const matchesAccr = !selectedAccrFilter || school.accreditation_status === selectedAccrFilter;
+            
+            return isDue && matchesSearch && matchesState && matchesPayment && matchesAccr;
         });
-    }, [schools, searchQuery]);
+    }, [schools, searchQuery, selectedStateFilter, selectedPaymentFilter, selectedAccrFilter]);
 
     // Group due schools by state
     const schoolsByState = useMemo(() => {
@@ -136,7 +145,7 @@ export default function ReviewApplications() {
             </div>
 
             {/* Search Bar */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm p-4 space-y-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
@@ -146,6 +155,56 @@ export default function ReviewApplications() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg text-sm transition-all focus:ring-2 focus:ring-emerald-500/20 outline-none"
                     />
+                </div>
+
+                {/* Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {/* State Filter */}
+                    <div className="relative">
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">State</label>
+                        <select
+                            value={selectedStateFilter}
+                            onChange={(e) => setSelectedStateFilter(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer"
+                        >
+                            <option value="">All States</option>
+                            {states.map(state => (
+                                <option key={state.code} value={state.code}>{state.name}</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 translate-y-5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    {/* Payment Status Filter */}
+                    <div className="relative">
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Payment Status</label>
+                        <select
+                            value={selectedPaymentFilter}
+                            onChange={(e) => setSelectedPaymentFilter(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Unpaid">Unpaid</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 translate-y-5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    {/* Accreditation Status Filter */}
+                    <div className="relative">
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Accreditation Status</label>
+                        <select
+                            value={selectedAccrFilter}
+                            onChange={(e) => setSelectedAccrFilter(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="Full">Full (5 Years)</option>
+                            <option value="Partial">Partial (2 Years)</option>
+                            <option value="Failed">Failed (1 Year)</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 translate-y-5 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
                 </div>
             </div>
 

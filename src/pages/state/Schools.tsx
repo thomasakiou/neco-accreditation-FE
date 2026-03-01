@@ -759,20 +759,22 @@ export default function StateSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Year</label>
                                         <input
                                             type="text"
+                                            disabled
                                             placeholder="e.g. 2024"
                                             value={editingSchool.accrd_year || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, accrd_year: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                         />
                                     </div>
 
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation</label>
                                         <select
+                                            disabled
                                             required
                                             value={editingSchool.accreditation_status}
                                             onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                         >
                                             <option value="Unaccredited">Unaccredited</option>
                                             <option value="Accredited">Accredited</option>
@@ -783,9 +785,10 @@ export default function StateSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Date</label>
                                         <input
                                             type="date"
+                                            disabled
                                             value={editingSchool.accredited_date || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, accredited_date: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                         />
                                     </div>
                                 </div>
