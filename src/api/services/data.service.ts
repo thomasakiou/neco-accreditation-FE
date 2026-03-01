@@ -343,6 +343,31 @@ const DataService = {
         DataService.downloadBlob(response.data, `${tableName}_template`, 'csv');
     },
 
+    // Audit Logs
+    getAuditLogs: async (params?: {
+        user_id?: number;
+        action?: string;
+        resource_type?: string;
+        days?: number;
+        limit?: number;
+        offset?: number;
+    }): Promise<any[]> => {
+        const response = await client.get<any[]>('/api/v1/audit/audit-logs', { params });
+        return response.data;
+    },
+
+    deleteAuditLog: async (logId: number): Promise<any> => {
+        const response = await client.delete(`/api/v1/audit/audit-logs/${logId}`);
+        return response.data;
+    },
+
+    bulkDeleteAuditLogs: async (logIds: number[]): Promise<any> => {
+        const response = await client.delete('/api/v1/audit/audit-logs/bulk/delete', {
+            data: { log_ids: logIds },
+        });
+        return response.data;
+    },
+
 };
 
 export default DataService;

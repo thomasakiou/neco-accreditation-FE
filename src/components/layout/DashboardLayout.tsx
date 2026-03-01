@@ -231,6 +231,27 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                 }
                 <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
               </button>
+              {role === 'head-office' && (
+                <NavLink
+                  to="/head-office/audit-logs"
+                  onClick={() => setIsSidebarOpen(false)}
+                  title={isDesktopCollapsed ? 'Audit Logs' : undefined}
+                  className={({ isActive }) => cn(
+                    "flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative group whitespace-nowrap overflow-hidden",
+                    isDesktopCollapsed ? "px-3 justify-center" : "px-3",
+                    isActive
+                      ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                      : "text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200"
+                  )}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <History className={cn("w-5 h-5 shrink-0", isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-600 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300")} />
+                      <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>Audit Logs</span>
+                    </>
+                  )}
+                </NavLink>
+              )}
               <button
                 title={isDesktopCollapsed ? 'Settings' : undefined}
                 className={cn("w-full flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200 transition-colors group overflow-hidden whitespace-nowrap", isDesktopCollapsed ? "px-3 justify-center" : "px-3")}

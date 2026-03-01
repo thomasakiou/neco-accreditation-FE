@@ -19,6 +19,7 @@ import HeadOfficeZones from './pages/head-office/Zones';
 import HeadOfficeFinalApproval from './pages/head-office/FinalApproval';
 import HeadOfficeReports from './pages/head-office/Reports';
 import HeadOfficeUsers from './pages/head-office/Users';
+import HeadOfficeAuditLogs from './pages/head-office/AuditLogs';
 import StateApplications from './pages/state/Applications';
 import StateCustodians from './pages/state/Custodians';
 import StateReports from './pages/state/Reports';
@@ -85,6 +86,7 @@ export default function App() {
                   <Route path="approvals" element={<HeadOfficeFinalApproval />} />
                   <Route path="reports" element={<HeadOfficeReports />} />
                   <Route path="users" element={<HeadOfficeUsers />} />
+                  <Route path="audit-logs" element={<HeadOfficeAuditLogs />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
               </DashboardLayout>
