@@ -210,7 +210,9 @@ export default function StateApplications() {
                 s.code.includes(searchQuery);
 
             const matchesAccreditation = selectedAccreditationStatus === '' ||
-                (selectedAccreditationStatus === 'Accredited' ? (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial') : s.accreditation_status === selectedAccreditationStatus);
+                (selectedAccreditationStatus === 'Accredited' ? (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Full' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial') :
+                    selectedAccreditationStatus === 'Unaccredited' ? s.accreditation_status === 'Failed' || s.accreditation_status === 'Unaccredited' :
+                        s.accreditation_status === selectedAccreditationStatus);
 
             const matchesProof = selectedProofStatus === '' ||
                 (selectedProofStatus === 'Paid' ? s.approval_status === 'Approved' :

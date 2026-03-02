@@ -39,6 +39,7 @@ export default function HeadOfficeFinalApproval() {
     const [selectedAccrFilter, setSelectedAccrFilter] = useState('');
     const [selectedProofFilter, setSelectedProofFilter] = useState('');
     const [selectedDueFilter, setSelectedDueFilter] = useState('');
+    const [selectedYearFilter, setSelectedYearFilter] = useState('');
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
 
     // Review modal
@@ -82,6 +83,19 @@ export default function HeadOfficeFinalApproval() {
         return states.find(s => s.code === code)?.name || code;
     };
 
+    const availableYears = useMemo(() => {
+        const years = new Set<string>();
+        schools.forEach(school => {
+            if (school.accredited_date) {
+                const date = new Date(school.accredited_date);
+                if (!isNaN(date.getFullYear())) {
+                    years.add(date.getFullYear().toString());
+                }
+            }
+        });
+        return Array.from(years).sort((a, b) => b.localeCompare(a));
+    }, [schools]);
+
     const filteredSchools = useMemo(() => {
         return schools.filter(school => {
             const matchesSearch = !searchTerm ||
@@ -118,9 +132,12 @@ export default function HeadOfficeFinalApproval() {
                 (selectedDueFilter === 'Due' && isDue()) ||
                 (selectedDueFilter === 'Not Due' && !isDue());
 
-            return matchesSearch && matchesState && matchesAccr && matchesProof && matchesDue;
+            const schoolYear = school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '';
+            const matchesYear = !selectedYearFilter || schoolYear === selectedYearFilter;
+
+            return matchesSearch && matchesState && matchesAccr && matchesProof && matchesDue && matchesYear;
         });
-    }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter, selectedDueFilter]);
+    }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter, selectedDueFilter, selectedYearFilter]);
 
     // Group filtered schools by state
     const schoolsByState = useMemo(() => {
@@ -283,8 +300,8 @@ export default function HeadOfficeFinalApproval() {
 
             {/* Filters */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-300 dark:border-slate-700 p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                    <div className="relative lg:col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3">
+                    <div className="relative lg:col-span-2 xl:col-span-2">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                             type="text"
@@ -330,6 +347,15 @@ export default function HeadOfficeFinalApproval() {
                             <option value="">Accre. Due</option>
                             <option value="Due">Due</option>
                             <option value="Not Due">Not Due</option>
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl">
+                        <Calendar className="w-4 h-4 text-slate-500" />
+                        <select value={selectedYearFilter} onChange={(e) => setSelectedYearFilter(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200">
+                            <option value="">Accre. Year</option>
+                            {availableYears.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
