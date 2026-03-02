@@ -254,6 +254,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/data/bece-custodians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bece Custodians */
+        get: operations["get_bece_custodians_api_v1_data_bece_custodians_get"];
+        put?: never;
+        /** Create Bece Custodian */
+        post: operations["create_bece_custodian_api_v1_data_bece_custodians_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data/bece-custodians/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bece Custodian */
+        get: operations["get_bece_custodian_api_v1_data_bece_custodians__code__get"];
+        /** Update Bece Custodian */
+        put: operations["update_bece_custodian_api_v1_data_bece_custodians__code__put"];
+        post?: never;
+        /** Delete Bece Custodian */
+        delete: operations["delete_bece_custodian_api_v1_data_bece_custodians__code__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data/bece-custodians/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete All Bece Custodians */
+        delete: operations["delete_all_bece_custodians_api_v1_data_bece_custodians_all_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/data/schools": {
         parameters: {
             query?: never;
@@ -549,6 +603,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/data/upload/bece-custodians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Bece Custodians */
+        post: operations["upload_bece_custodians_api_v1_data_upload_bece_custodians_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/data/export/schools": {
         parameters: {
             query?: never;
@@ -617,6 +688,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/data/export/bece-custodians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Bece Custodians */
+        get: operations["export_bece_custodians_api_v1_data_export_bece_custodians_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/data/export/bece-schools": {
         parameters: {
             query?: never;
@@ -629,6 +717,165 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Audit Logs
+         * @description Get audit logs (Admin, HQ, and State users)
+         *
+         *     Query parameters:
+         *     - user_id: Filter by user ID
+         *     - action: Filter by action (CREATE, READ, UPDATE, DELETE, EXPORT, etc.)
+         *     - resource_type: Filter by resource type (SCHOOL, STATE, CUSTODIAN, etc.)
+         *     - days: Number of days to look back (default: 30)
+         *     - limit: Maximum records to return (default: 100)
+         *     - offset: Pagination offset (default: 0)
+         */
+        get: operations["get_audit_logs_api_v1_audit_audit_logs_get"];
+        put?: never;
+        /**
+         * Create Audit Log
+         * @description Create an audit log entry (can be called from internal services)
+         */
+        post: operations["create_audit_log_api_v1_audit_audit_logs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/audit-logs/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Audit Logs Summary
+         * @description Get a summary of audit logs (Admin, HQ, and State users)
+         *
+         *     Returns:
+         *     - Total number of activities
+         *     - Activities by user role
+         *     - Activities by action type
+         *     - Activities by resource type
+         */
+        get: operations["get_audit_logs_summary_api_v1_audit_audit_logs_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/audit-logs/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Audit Logs
+         * @description Get audit logs for a specific user (Admin, HQ, and State users)
+         *
+         *     Path parameters:
+         *     - user_id: The ID of the user whose activities to retrieve
+         */
+        get: operations["get_user_audit_logs_api_v1_audit_audit_logs__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/audit-logs/{log_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Audit Log
+         * @description Delete a single audit log entry (Admin only)
+         *
+         *     Path parameters:
+         *     - log_id: The ID of the audit log to delete
+         */
+        delete: operations["delete_audit_log_api_v1_audit_audit_logs__log_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/audit-logs/bulk/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Bulk Delete Audit Logs By Ids
+         * @description Delete multiple audit logs by their IDs (Admin only)
+         *
+         *     Request body:
+         *     {
+         *       "log_ids": [1, 2, 3, 4, 5]
+         *     }
+         */
+        delete: operations["bulk_delete_audit_logs_by_ids_api_v1_audit_audit_logs_bulk_delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/audit-logs/bulk/by-filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Bulk Delete Audit Logs By Filters
+         * @description Delete audit logs matching specific filters (Admin only)
+         *
+         *     Request body:
+         *     {
+         *       "user_id": 5,
+         *       "action": "READ",
+         *       "resource_type": "SCHOOL",
+         *       "days": 30
+         *     }
+         *
+         *     All filters are optional. If days is specified, only logs older than that many days are deleted.
+         */
+        delete: operations["bulk_delete_audit_logs_by_filters_api_v1_audit_audit_logs_bulk_by_filters_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -655,6 +902,79 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AuditLogResponse */
+        AuditLogResponse: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** User Role */
+            user_role: string;
+            /** Action */
+            action: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Details */
+            details?: string | null;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Ip Address */
+            ip_address?: string | null;
+        };
+        /** BECECustodian */
+        BECECustodian: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** State Code */
+            state_code?: string | null;
+            /** Lga Code */
+            lga_code?: string | null;
+            /** Town */
+            town?: string | null;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+        };
+        /** BECECustodianCreate */
+        BECECustodianCreate: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** State Code */
+            state_code?: string | null;
+            /** Lga Code */
+            lga_code?: string | null;
+            /** Town */
+            town?: string | null;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+        };
+        /** BECECustodianUpdate */
+        BECECustodianUpdate: {
+            /** Name */
+            name?: string | null;
+            /** State Code */
+            state_code?: string | null;
+            /** Lga Code */
+            lga_code?: string | null;
+            /** Town */
+            town?: string | null;
+            /** Status */
+            status?: string | null;
+        };
         /** BECESchool */
         BECESchool: {
             /** Code */
@@ -776,6 +1096,11 @@ export interface components {
              */
             client_secret?: string | null;
         };
+        /** Body_upload_bece_custodians_api_v1_data_upload_bece_custodians_post */
+        Body_upload_bece_custodians_api_v1_data_upload_bece_custodians_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_bece_school_payment_proof_api_v1_data_bece_schools__code__upload_payment_proof_post */
         Body_upload_bece_school_payment_proof_api_v1_data_bece_schools__code__upload_payment_proof_post: {
             /** File */
@@ -810,6 +1135,31 @@ export interface components {
         Body_upload_states_api_v1_data_upload_states_post: {
             /** File */
             file: string;
+        };
+        /**
+         * BulkDeleteByFiltersRequest
+         * @description Request model for deleting audit logs by filters
+         */
+        BulkDeleteByFiltersRequest: {
+            /** User Id */
+            user_id?: number | null;
+            /** Action */
+            action?: string | null;
+            /** Resource Type */
+            resource_type?: string | null;
+            /**
+             * Days
+             * @default 30
+             */
+            days: number | null;
+        };
+        /**
+         * BulkDeleteRequest
+         * @description Request model for bulk deleting audit logs by IDs
+         */
+        BulkDeleteRequest: {
+            /** Log Ids */
+            log_ids: number[];
         };
         /** Custodian */
         Custodian: {
@@ -860,6 +1210,16 @@ export interface components {
             /** Status */
             status?: string | null;
         };
+        /**
+         * DeleteResponse
+         * @description Response for delete operations
+         */
+        DeleteResponse: {
+            /** Message */
+            message: string;
+            /** Deleted Count */
+            deleted_count: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -872,7 +1232,7 @@ export interface components {
             /** Name */
             name: string;
             /** State Code */
-            state_code: string;
+            state_code?: string | null;
         };
         /** LGACreate */
         LGACreate: {
@@ -881,7 +1241,7 @@ export interface components {
             /** Name */
             name: string;
             /** State Code */
-            state_code: string;
+            state_code?: string | null;
         };
         /** LGAUpdate */
         LGAUpdate: {
@@ -1912,6 +2272,184 @@ export interface operations {
             };
         };
     };
+    get_bece_custodians_api_v1_data_bece_custodians_get: {
+        parameters: {
+            query?: {
+                state_code?: string | null;
+                lga_code?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECECustodian"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_bece_custodian_api_v1_data_bece_custodians_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BECECustodianCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECECustodian"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bece_custodian_api_v1_data_bece_custodians__code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECECustodian"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_bece_custodian_api_v1_data_bece_custodians__code__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BECECustodianUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BECECustodian"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bece_custodian_api_v1_data_bece_custodians__code__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_all_bece_custodians_api_v1_data_bece_custodians_all_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_schools_api_v1_data_schools_get: {
         parameters: {
             query?: {
@@ -2581,6 +3119,39 @@ export interface operations {
             };
         };
     };
+    upload_bece_custodians_api_v1_data_upload_bece_custodians_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_bece_custodians_api_v1_data_upload_bece_custodians_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_schools_api_v1_data_export_schools_get: {
         parameters: {
             query?: {
@@ -2694,6 +3265,37 @@ export interface operations {
             };
         };
     };
+    export_bece_custodians_api_v1_data_export_bece_custodians_get: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_bece_schools_api_v1_data_export_bece_schools_get: {
         parameters: {
             query?: {
@@ -2712,6 +3314,249 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audit_logs_api_v1_audit_audit_logs_get: {
+        parameters: {
+            query?: {
+                user_id?: number | null;
+                action?: string | null;
+                resource_type?: string | null;
+                /** @description Number of days to look back */
+                days?: number | null;
+                /** @description Maximum number of records to return */
+                limit?: number | null;
+                /** @description Number of records to skip */
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_audit_log_api_v1_audit_audit_logs_post: {
+        parameters: {
+            query: {
+                user_id: number;
+                user_role: string;
+                action: string;
+                resource_type: string;
+                resource_id?: string | null;
+                details?: string | null;
+                ip_address?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audit_logs_summary_api_v1_audit_audit_logs_summary_get: {
+        parameters: {
+            query?: {
+                /** @description Number of days to look back */
+                days?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_audit_logs_api_v1_audit_audit_logs__user_id__get: {
+        parameters: {
+            query?: {
+                /** @description Number of days to look back */
+                days?: number | null;
+                /** @description Maximum number of records to return */
+                limit?: number | null;
+            };
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_audit_log_api_v1_audit_audit_logs__log_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                log_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_delete_audit_logs_by_ids_api_v1_audit_audit_logs_bulk_delete_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_delete_audit_logs_by_filters_api_v1_audit_audit_logs_bulk_by_filters_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkDeleteByFiltersRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResponse"];
                 };
             };
             /** @description Validation Error */

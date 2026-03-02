@@ -7,6 +7,7 @@ export type State = components['schemas']['State'];
 export type Zone = components['schemas']['Zone'];
 export type LGA = components['schemas']['LGA'];
 export type Custodian = components['schemas']['Custodian'];
+export type BECECustodian = components['schemas']['BECECustodian'];
 
 let statesCache: State[] | null = null;
 let zonesCache: Zone[] | null = null;
@@ -303,6 +304,45 @@ const DataService = {
 
     deleteCustodian: async (code: string) => {
         await client.delete(`/api/v1/data/custodians/${code}`);
+    },
+
+    // BECE Custodians
+    getBeceCustodians: async (params?: { state_code?: string; lga_code?: string }): Promise<BECECustodian[]> => {
+        const response = await client.get<BECECustodian[]>('/api/v1/data/bece-custodians', { params });
+        return response.data;
+    },
+
+    createBeceCustodian: async (custodian: components['schemas']['BECECustodianCreate']): Promise<BECECustodian> => {
+        const response = await client.post<BECECustodian>('/api/v1/data/bece-custodians', custodian);
+        return response.data;
+    },
+
+    updateBeceCustodian: async (code: string, custodian: components['schemas']['BECECustodianUpdate']): Promise<BECECustodian> => {
+        const response = await client.put<BECECustodian>(`/api/v1/data/bece-custodians/${code}`, custodian);
+        return response.data;
+    },
+
+    exportBeceCustodians: async (format: string = 'excel', params?: { state_code?: string; lga_code?: string }) => {
+        const response = await client.get('/api/v1/data/export/bece-custodians', {
+            params: { format, ...params },
+            responseType: 'blob',
+        });
+        DataService.downloadBlob(response.data, 'bece_custodians', format);
+    },
+
+    deleteBeceCustodian: async (code: string) => {
+        await client.delete(`/api/v1/data/bece-custodians/${code}`);
+    },
+
+    uploadBeceCustodians: async (file: File): Promise<any> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await client.post('/api/v1/data/upload/bece-custodians', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
     },
 
     // Accreditation Applications

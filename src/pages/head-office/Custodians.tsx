@@ -22,6 +22,7 @@ export default function Custodians() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState<'SSCE' | 'BECE'>('SSCE');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingCustodian, setEditingCustodian] = useState<Custodian | null>(null);
@@ -55,7 +56,7 @@ export default function Custodians() {
         try {
             setIsLoading(true);
             const [custodiansData, statesData, lgasData] = await Promise.all([
-                DataService.getCustodians(),
+                activeTab === 'SSCE' ? DataService.getCustodians() : DataService.getBeceCustodians(),
                 DataService.getStates(),
                 DataService.getLGAs()
             ]);
@@ -87,7 +88,7 @@ export default function Custodians() {
 
     useEffect(() => {
         fetchInitialData();
-    }, []);
+    }, [activeTab]);
 
     // Fetch LGAs when state selection changes in modals
     useEffect(() => {
@@ -100,10 +101,15 @@ export default function Custodians() {
         try {
             setIsExporting(format);
             setError(null);
-            await DataService.exportCustodians(format, {
+            const params = {
                 state_code: selectedState || undefined,
                 lga_code: selectedLga || undefined
-            });
+            };
+            if (activeTab === 'SSCE') {
+                await DataService.exportCustodians(format, params);
+            } else {
+                await DataService.exportBeceCustodians(format, params);
+            }
         } catch (err: any) {
             console.error(`Export failed:`, err);
             setError(`Failed to export ${format.toUpperCase()} file. Please try again.`);
@@ -122,7 +128,11 @@ export default function Custodians() {
         e.preventDefault();
         try {
             setIsSubmitting(true);
-            await DataService.createCustodian(newCustodian);
+            if (activeTab === 'SSCE') {
+                await DataService.createCustodian(newCustodian);
+            } else {
+                await DataService.createBeceCustodian(newCustodian);
+            }
             setShowAddModal(false);
             setNewCustodian({
                 name: '',
@@ -151,7 +161,11 @@ export default function Custodians() {
 
         try {
             setIsSubmitting(true);
-            await DataService.updateCustodian(editingCustodian.code, editingCustodian);
+            if (activeTab === 'SSCE') {
+                await DataService.updateCustodian(editingCustodian.code, editingCustodian);
+            } else {
+                await DataService.updateBeceCustodian(editingCustodian.code, editingCustodian);
+            }
             setShowEditModal(false);
             setEditingCustodian(null);
             fetchInitialData();
@@ -165,14 +179,18 @@ export default function Custodians() {
     const handleDeleteCustodian = async (code: string, name: string) => {
         setConfirmDialog({
             isOpen: true,
-            title: 'Delete Custodian',
-            message: `Are you sure you want to delete "${name}"? All associated schools will be affected.`,
+            title: `Delete ${activeTab} Custodian`,
+            message: `Are you sure you want to delete "${name}"? All associated ${activeTab === 'BECE' ? 'BECE' : 'SSCE'} schools will be affected.`,
             confirmLabel: 'Delete',
             variant: 'danger',
             onConfirm: async () => {
                 try {
                     setIsDeleting(true);
-                    await DataService.deleteCustodian(code);
+                    if (activeTab === 'SSCE') {
+                        await DataService.deleteCustodian(code);
+                    } else {
+                        await DataService.deleteBeceCustodian(code);
+                    }
                     fetchInitialData();
                     setConfirmDialog(prev => ({ ...prev, isOpen: false }));
                 } catch (err: any) {
@@ -204,9 +222,9 @@ export default function Custodians() {
                     <div>
                         <h1 className="text-2xl font-bold text-slate-950 dark:text-white flex items-center gap-3">
                             <ShieldCheck className="w-8 h-8 text-emerald-600" />
-                            Accredited Custodians
+                            Custodians Management
                         </h1>
-                        <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Manage school custodians and their accreditation status.</p>
+                        <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Manage {activeTab === 'BECE' ? 'BECE' : 'school'} custodians and their accreditation status.</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -215,9 +233,31 @@ export default function Custodians() {
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
                         >
                             <Plus className="w-4 h-4" />
-                            <span>Add Custodian</span>
+                            <span>Add {activeTab} Custodian</span>
                         </button>
                     </div>
+                </div>
+
+                {/* Tab Interface */}
+                <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
+                    <button
+                        onClick={() => setActiveTab('SSCE')}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'SSCE'
+                            ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                            }`}
+                    >
+                        SSCE Custodians
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('BECE')}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'BECE'
+                            ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
+                            }`}
+                    >
+                        BECE Custodians
+                    </button>
                 </div>
 
                 {error && (
@@ -235,7 +275,7 @@ export default function Custodians() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
                         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-300 dark:border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95">
                             <div className="p-6 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-slate-950 dark:text-white">Add New Custodian</h2>
+                                <h2 className="text-xl font-bold text-slate-950 dark:text-white">Add New {activeTab} Custodian</h2>
                                 <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                     <X className="w-6 h-6" />
                                 </button>

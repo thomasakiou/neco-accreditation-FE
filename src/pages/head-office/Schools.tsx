@@ -106,7 +106,7 @@ export default function HeadOfficeSchools() {
                 DataService.getSchools(),
                 DataService.getBeceSchools(),
                 DataService.getStates(),
-                DataService.getCustodians(),
+                activeTab === 'SSCE' ? DataService.getCustodians() : DataService.getBeceCustodians(),
                 DataService.getLGAs(),
                 DataService.getZones()
             ]);
@@ -125,8 +125,12 @@ export default function HeadOfficeSchools() {
     const fetchSchools = async () => {
         try {
             setIsLoading(true);
-            const data = activeTab === 'SSCE' ? await DataService.getSchools() : await DataService.getBeceSchools();
+            const [data, custodiansData] = await Promise.all([
+                activeTab === 'SSCE' ? DataService.getSchools() : DataService.getBeceSchools(),
+                activeTab === 'SSCE' ? DataService.getCustodians() : DataService.getBeceCustodians()
+            ]);
             setSchools(data);
+            setCustodians(custodiansData);
         } catch (err: any) {
             setError('Failed to refresh schools list.');
         } finally {
@@ -213,7 +217,9 @@ export default function HeadOfficeSchools() {
         }
         try {
             setIsLoadingCustodians(true);
-            const data = await DataService.getCustodians({ lga_code: lgaCode });
+            const data = activeTab === 'SSCE'
+                ? await DataService.getCustodians({ lga_code: lgaCode })
+                : await DataService.getBeceCustodians({ lga_code: lgaCode });
             setModalCustodians(data);
         } catch (err: any) {
             console.error('Failed to fetch custodians:', err);
@@ -378,7 +384,7 @@ export default function HeadOfficeSchools() {
 
     const handleExportSchools = async (selectedState: string | null) => {
         try {
-            const schoolsToExport = activeTab === 'SSCE' ? schools : schools;
+            const schoolsToExport = schools;
             const result = await ExportService.exportSchoolsByState(
                 schoolsToExport,
                 states,

@@ -102,7 +102,6 @@ export default function StateSchools() {
             const user = await AuthService.getCurrentUser();
             if (!user?.state_code) {
                 setError('No state association found for your account.');
-                setIsLoading(false);
                 return;
             }
 
@@ -118,13 +117,15 @@ export default function StateSchools() {
                 setIsPortalLocked(!!currentState.is_locked);
             }
 
-            const schoolsData = await DataService.getSchools({ state_code: user.state_code });
-            const beceSchoolsData = await DataService.getBeceSchools({ state_code: user.state_code });
-            const custodiansData = await DataService.getCustodians({ state_code: user.state_code });
-            const lgasData = await DataService.getLGAs({ state_code: user.state_code });
-
+            const [schoolsData, beceSchoolsData, custodiansData, beceCustodiansData, lgasData] = await Promise.all([
+                DataService.getSchools({ state_code: user.state_code }),
+                DataService.getBeceSchools({ state_code: user.state_code }),
+                DataService.getCustodians({ state_code: user.state_code }),
+                DataService.getBeceCustodians({ state_code: user.state_code }),
+                DataService.getLGAs({ state_code: user.state_code })
+            ]);
             setSchools(activeTab === 'SSCE' ? schoolsData : beceSchoolsData);
-            setCustodians(custodiansData);
+            setCustodians(activeTab === 'SSCE' ? custodiansData : beceCustodiansData);
             setAllLgas(lgasData);
 
             // For modal selects
@@ -141,8 +142,12 @@ export default function StateSchools() {
         try {
             setIsLoading(true);
             const params = { state_code: userStateCode };
-            const data = activeTab === 'SSCE' ? await DataService.getSchools(params) : await DataService.getBeceSchools(params);
+            const [data, custodiansData] = await Promise.all([
+                activeTab === 'SSCE' ? DataService.getSchools(params) : DataService.getBeceSchools(params),
+                activeTab === 'SSCE' ? DataService.getCustodians(params) : DataService.getBeceCustodians(params)
+            ]);
             setSchools(data);
+            setCustodians(custodiansData);
         } catch (err: any) {
             setError('Failed to refresh schools list.');
         } finally {
@@ -163,7 +168,9 @@ export default function StateSchools() {
         }
         try {
             setIsLoadingCustodians(true);
-            const data = await DataService.getCustodians({ lga_code: lgaCode });
+            const data = activeTab === 'SSCE'
+                ? await DataService.getCustodians({ lga_code: lgaCode })
+                : await DataService.getBeceCustodians({ lga_code: lgaCode });
             setModalCustodians(data);
         } catch (err: any) {
             console.error('Failed to fetch custodians:', err);
@@ -474,7 +481,7 @@ export default function StateSchools() {
                                 }`}
                         >
                             <GraduationCap className={`w-4 h-4 ${activeTab === 'SSCE' ? 'text-emerald-600' : ''}`} />
-                            SSCE TRACK
+                            SSCE Schools
                         </button>
                         <button
                             onClick={() => setActiveTab('BECE')}
@@ -484,7 +491,7 @@ export default function StateSchools() {
                                 }`}
                         >
                             <UsersIcon className={`w-4 h-4 ${activeTab === 'BECE' ? 'text-emerald-600' : ''}`} />
-                            BECE TRACK
+                            BECE Schools
                         </button>
                     </div>
                     <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
