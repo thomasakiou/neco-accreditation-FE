@@ -25,6 +25,7 @@ import {
     FileSpreadsheet,
     FileText
 } from 'lucide-react';
+import { cn } from '../../components/layout/DashboardLayout';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
@@ -308,7 +309,9 @@ export default function StateSchools() {
                 (selectedAccreditationStatus === 'Accredited' ? (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') : selectedAccreditationStatus === 'Unaccredited' ? (school.accreditation_status === 'Unaccredited' || school.accreditation_status === 'Failed' || !school.accreditation_status || school.accreditation_status === 'Pending') : school.accreditation_status === selectedAccreditationStatus);
 
             const matchesProof = selectedProofStatus === '' ||
-                (selectedProofStatus === 'Proof' ? !!school.payment_url : !school.payment_url);
+                (selectedProofStatus === 'Paid' ? school.approval_status === 'Approved' :
+                    selectedProofStatus === 'Pending' ? (!!school.payment_url && school.approval_status !== 'Approved') :
+                        !school.payment_url);
 
             return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof;
         });
@@ -862,8 +865,9 @@ export default function StateSchools() {
                             <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
                                 <Upload className="w-4 h-4 text-slate-600" />
                                 <select value={selectedProofStatus} onChange={(e) => setSelectedProofStatus(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
-                                    <option value="" className="dark:bg-slate-800">Proof Status</option>
-                                    <option value="Proof" className="dark:bg-slate-800">Proof Uploaded</option>
+                                    <option value="" className="dark:bg-slate-800">Payment Status</option>
+                                    <option value="Paid" className="dark:bg-slate-800">Paid (Verified)</option>
+                                    <option value="Pending" className="dark:bg-slate-800">Pending Approval</option>
                                     <option value="No Proof" className="dark:bg-slate-800">No Proof</option>
                                 </select>
                             </div>
@@ -986,15 +990,23 @@ export default function StateSchools() {
                                                                     </p>
                                                                     <div className="mt-2 text-[10px]">
                                                                         {school.payment_url ? (
-                                                                            <a
-                                                                                href={school.payment_url.startsWith('http') ? school.payment_url : `${baseURL}/payment-proof/${school.payment_url.split('/').pop()}`}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="inline-flex items-center gap-1.5 px-2 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-bold uppercase tracking-widest rounded transition-colors"
-                                                                            >
-                                                                                <ExternalLink className="w-3 h-3" />
-                                                                                View Proof
-                                                                            </a>
+                                                                            <div className="flex flex-col gap-1.5">
+                                                                                <a
+                                                                                    href={school.payment_url.startsWith('http') ? school.payment_url : `${baseURL}/payment-proof/${school.payment_url.split('/').pop()}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="inline-flex items-center gap-1.5 px-2 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-bold uppercase tracking-widest rounded transition-colors w-fit"
+                                                                                >
+                                                                                    <ExternalLink className="w-3 h-3" />
+                                                                                    View Proof
+                                                                                </a>
+                                                                                <span className={cn(
+                                                                                    "text-[9px] font-black uppercase px-2 py-0.5 rounded w-fit",
+                                                                                    school.approval_status === 'Approved' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30" : "bg-slate-200 text-slate-500"
+                                                                                )}>
+                                                                                    {school.approval_status === 'Approved' ? 'Verified Payment' : 'Verification Pending'}
+                                                                                </span>
+                                                                            </div>
                                                                         ) : (
                                                                             <span className="text-slate-400 font-bold uppercase tracking-widest">No Proof Uploaded</span>
                                                                         )}

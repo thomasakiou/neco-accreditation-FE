@@ -213,7 +213,9 @@ export default function StateApplications() {
                 (selectedAccreditationStatus === 'Accredited' ? (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial') : s.accreditation_status === selectedAccreditationStatus);
 
             const matchesProof = selectedProofStatus === '' ||
-                (selectedProofStatus === 'Proof' ? !!s.payment_url : !s.payment_url);
+                (selectedProofStatus === 'Paid' ? s.approval_status === 'Approved' :
+                    selectedProofStatus === 'Pending' ? (!!s.payment_url && s.approval_status !== 'Approved') :
+                        !s.payment_url);
 
             return matchesSearch && matchesAccreditation && matchesProof;
         });
@@ -435,8 +437,9 @@ export default function StateApplications() {
                                             onChange={(e) => setSelectedProofStatus(e.target.value)}
                                             className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
                                         >
-                                            <option value="" className="dark:bg-slate-800">Proof Status</option>
-                                            <option value="Proof" className="dark:bg-slate-800">Proof Uploaded</option>
+                                            <option value="" className="dark:bg-slate-800">Payment Status</option>
+                                            <option value="Paid" className="dark:bg-slate-800">Paid (Verified)</option>
+                                            <option value="Pending" className="dark:bg-slate-800">Pending Approval</option>
                                             <option value="No Proof" className="dark:bg-slate-800">No Proof</option>
                                         </select>
                                     </div>
@@ -498,17 +501,29 @@ export default function StateApplications() {
                                                             <div className="text-[10px] font-bold text-slate-500 uppercase">{school.accredited_date ? new Date(school.accredited_date).toLocaleDateString() : 'No Date'}</div>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <span className={cn(
-                                                                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                                                                (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
-                                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                                                    : school.accreditation_status === 'Failed'
-                                                                        ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                                                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                                            )}>
-                                                                {(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                                                                {(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? 'Accredited' : school.accreditation_status === 'Failed' ? 'Unaccredited' : school.accreditation_status}
-                                                            </span>
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className={cn(
+                                                                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                                                    (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
+                                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                                                        : school.accreditation_status === 'Failed'
+                                                                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                                                )}>
+                                                                    {(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                                                                    {(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? 'Accredited' : school.accreditation_status === 'Failed' ? 'Unaccredited' : school.accreditation_status}
+                                                                </span>
+                                                                {school.payment_url && (
+                                                                    <span className={cn(
+                                                                        "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase",
+                                                                        school.approval_status === 'Approved'
+                                                                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                                                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                                                    )}>
+                                                                        {school.approval_status === 'Approved' ? 'Paid & Verified' : 'Payment Pending Approval'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
                                                             {school.payment_url && (

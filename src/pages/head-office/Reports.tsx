@@ -94,12 +94,10 @@ export default function HeadOfficeReports() {
             else if (s.accreditation_status === 'Partial') totalPartial++;
             else if (s.accreditation_status === 'Failed') totalFailed++;
 
-            if (s.payment_url) {
+            if (s.approval_status === 'Approved') {
                 totalPaid++;
-                // Pending: Paid but not Full/Partial/Failed
-                if (!['Full', 'Partial', 'Failed'].includes(s.accreditation_status || '')) {
-                    totalPending++;
-                }
+            } else if (s.payment_url) {
+                totalPending++; // Awaiting Approval
             }
         });
 
@@ -155,14 +153,10 @@ export default function HeadOfficeReports() {
             const stateData = map.get(sc)!;
             stateData.total++;
 
-            if (school.payment_url) {
+            if (school.approval_status === 'Approved') {
                 stateData.paid++;
-
-                // Pending Approval: Has paid, but status is not Full/Partial/Failed
-                // This includes "Pending", "Unaccredited", or missing status
-                if (!['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) {
-                    stateData.pending++;
-                }
+            } else if (school.payment_url) {
+                stateData.pending++; // Awaiting Approval
             }
 
             if (school.accreditation_status === 'Full') {
@@ -241,7 +235,7 @@ export default function HeadOfficeReports() {
         { name: 'Full Accreditation', value: aggregatedStats?.totalAccredited || 0, color: '#10b981' }, // emerald-500
         { name: 'Partial Accreditation', value: aggregatedStats?.totalPartial || 0, color: '#f59e0b' }, // amber-500
         { name: 'Failed', value: aggregatedStats?.totalFailed || 0, color: '#ef4444' }, // red-500
-        { name: 'Pending Review', value: aggregatedStats?.totalPending || 0, color: '#94a3b8' }, // slate-400
+        { name: 'Unverified Payment', value: aggregatedStats?.totalPending || 0, color: '#94a3b8' }, // slate-400
     ].filter(d => d.value > 0);
 
     return (
@@ -423,11 +417,11 @@ export default function HeadOfficeReports() {
                                     <tr>
                                         <th className="px-6 py-4 whitespace-nowrap">State</th>
                                         <th className="px-6 py-4 text-center whitespace-nowrap">Total Schools</th>
-                                        <th className="px-6 py-4 text-center whitespace-nowrap">Paid (Proof Uploaded)</th>
+                                        <th className="px-6 py-4 text-center whitespace-nowrap">Paid (Verified)</th>
                                         <th className="px-6 py-4 text-center whitespace-nowrap">Fully Accredited</th>
                                         <th className="px-6 py-4 text-center whitespace-nowrap">Partial Accredited</th>
                                         <th className="px-6 py-4 text-center whitespace-nowrap">Failed</th>
-                                        <th className="px-6 py-4 text-center whitespace-nowrap">Pending Approval</th>
+                                        <th className="px-6 py-4 text-center whitespace-nowrap">Awaiting Approval</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/50">

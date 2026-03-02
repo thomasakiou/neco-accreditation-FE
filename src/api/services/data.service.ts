@@ -233,6 +233,17 @@ const DataService = {
         return response.data;
     },
 
+    approveSchool: async (code: string): Promise<School> => {
+        const response = await client.post<School>(`/api/v1/data/schools/${code}/approve`);
+        schoolsCache = null;
+        return response.data;
+    },
+
+    approveBeceSchool: async (code: string): Promise<BECESchool> => {
+        const response = await client.post<BECESchool>(`/api/v1/data/bece-schools/${code}/approve`);
+        return response.data;
+    },
+
     // LGAs
     getLGAs: async (params?: { state_code?: string }): Promise<LGA[]> => {
         const cacheKey = params?.state_code || 'all';

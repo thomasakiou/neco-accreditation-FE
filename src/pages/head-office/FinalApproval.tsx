@@ -18,7 +18,8 @@ import {
     ShieldAlert,
     ShieldX,
     Calendar,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Printer
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
 import { clearStaticCache } from '../../api/services/data.service';
@@ -26,7 +27,7 @@ import { baseURL } from '../../api/client';
 import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
 
-type School = components['schemas']['School'];
+type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
 type State = components['schemas']['State'];
 
 export default function HeadOfficeFinalApproval() {
@@ -47,6 +48,9 @@ export default function HeadOfficeFinalApproval() {
     const [accrType, setAccrType] = useState<'Full' | 'Partial' | 'Failed'>('Full');
     const [accrDate, setAccrDate] = useState(new Date().toISOString().split('T')[0]);
 
+    const [showVerifyModal, setShowVerifyModal] = useState(false);
+    const [verifyingSchool, setVerifyingSchool] = useState<School | null>(null);
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -59,8 +63,11 @@ export default function HeadOfficeFinalApproval() {
                 DataService.getBeceSchools(),
                 DataService.getStates()
             ]);
-            // Merge SSCE and BECE schools
-            setSchools([...schoolsData, ...beceSchoolsData]);
+            // Merge SSCE and BECE schools and add type for identification
+            setSchools([
+                ...schoolsData.map(s => ({ ...s, school_type: 'SSCE' as const })),
+                ...beceSchoolsData.map(s => ({ ...s, school_type: 'BECE' as const }))
+            ]);
             setStates(statesData);
             // Collapse all states by default for faster rendering
             setExpandedStates({});
@@ -88,7 +95,9 @@ export default function HeadOfficeFinalApproval() {
             const matchesProof = !selectedProofFilter ||
                 (selectedProofFilter === 'Proof' && !!school.payment_url) ||
                 (selectedProofFilter === 'No Proof' && !school.payment_url) ||
-                (selectedProofFilter === 'Pending' && !!school.payment_url && (!school.accreditation_status || ['Pending', 'Unaccredited'].includes(school.accreditation_status)));
+                (selectedProofFilter === 'Pending' && !!school.payment_url && (!school.accreditation_status || ['Pending', 'Unaccredited'].includes(school.accreditation_status))) ||
+                (selectedProofFilter === 'Approved' && school.approval_status === 'Approved') ||
+                (selectedProofFilter === 'Unapproved' && !!school.payment_url && school.approval_status !== 'Approved');
 
             const isDue = () => {
                 if (!school.accredited_date || !['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) return false;
@@ -171,10 +180,17 @@ export default function HeadOfficeFinalApproval() {
         if (!selectedSchool) return;
         try {
             setIsSubmitting(true);
-            await DataService.updateSchool(selectedSchool.code, {
-                accreditation_status: accrType,
-                accredited_date: accrDate
-            });
+            if (selectedSchool.school_type === 'BECE') {
+                await DataService.updateBeceSchool(selectedSchool.code, {
+                    accreditation_status: accrType,
+                    accredited_date: accrDate
+                });
+            } else {
+                await DataService.updateSchool(selectedSchool.code, {
+                    accreditation_status: accrType,
+                    accredited_date: accrDate
+                });
+            }
             // Clear schools cache to force fresh fetch after update
             clearStaticCache();
             await fetchData();
@@ -200,6 +216,8 @@ export default function HeadOfficeFinalApproval() {
     const accreditedCount = schools.filter(s => s.accreditation_status === 'Full' || s.accreditation_status === 'Partial').length;
     const pendingCount = schools.filter(s => !s.accreditation_status || s.accreditation_status === 'Pending').length;
     const proofCount = schools.filter(s => !!s.payment_url).length;
+    const approvedPayments = schools.filter(s => s.approval_status === 'Approved').length;
+    const unapprovedPayments = schools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
 
     const dueCount = schools.filter(s => {
         if (!s.accredited_date || !['Full', 'Partial', 'Failed'].includes(s.accreditation_status || '')) return false;
@@ -225,33 +243,41 @@ export default function HeadOfficeFinalApproval() {
                 <div>
                     <h1 className="text-2xl font-bold text-slate-950 dark:text-white flex items-center gap-2">
                         <CheckCircle className="w-8 h-8 text-emerald-600" />
-                        Final Approval
+                        Approval/Accreditation
                     </h1>
                     <p className="text-slate-700 dark:text-slate-400 font-medium">Review proof of payment and grant accreditation status. Schools are grouped by State.</p>
                 </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Schools</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-wrap">Total Schools</p>
                     <h3 className="text-2xl font-black text-slate-950 dark:text-white">{totalSchools}</h3>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
-                    <p className="text-[10px] font-black text-red-300 uppercase tracking-widest">Due for Accreditation</p>
+                    <p className="text-[10px] font-black text-red-300 uppercase tracking-widest text-wrap">Due for Accre.</p>
                     <h3 className="text-2xl font-black text-slate-950 dark:text-white">{dueCount}</h3>
                 </div>
                 <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg font-bold">
-                    <p className="text-[10px] font-black text-emerald-100 uppercase tracking-widest">Accredited</p>
+                    <p className="text-[10px] font-black text-emerald-100 uppercase tracking-widest text-wrap">Accredited</p>
                     <h3 className="text-2xl font-black">{accreditedCount}</h3>
                 </div>
-                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
-                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Pending</p>
+                {/* <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
+                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest text-wrap">Pending Accre.</p>
                     <h3 className="text-2xl font-black text-slate-950 dark:text-white">{pendingCount}</h3>
+                </div> */}
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
+                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest text-wrap">Proof Uploaded</p>
+                    <h3 className="text-2xl font-black text-slate-950 dark:text-white">{proofCount}</h3>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Proof Uploaded</p>
-                    <h3 className="text-2xl font-black text-slate-950 dark:text-white">{proofCount}</h3>
+                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest text-wrap">Approved Payments</p>
+                    <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{approvedPayments}</h3>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-sm">
+                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest text-wrap">Unapproved Pymts</p>
+                    <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400">{unapprovedPayments}</h3>
                 </div>
             </div>
 
@@ -292,7 +318,9 @@ export default function HeadOfficeFinalApproval() {
                         <select value={selectedProofFilter} onChange={(e) => setSelectedProofFilter(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200">
                             <option value="">Proof Status</option>
                             <option value="Proof">Proof Uploaded</option>
-                            <option value="Pending">Pending Approval</option>
+                            <option value="Approved">Approved Payments</option>
+                            <option value="Unapproved">Unapproved Payments</option>
+                            <option value="Pending">Pending Accred.</option>
                             <option value="No Proof">No Proof</option>
                         </select>
                     </div>
@@ -367,7 +395,9 @@ export default function HeadOfficeFinalApproval() {
                                     <span>•</span>
                                     <span className="text-red-500">{stateSchools.filter(s => s.accreditation_status === 'Failed').length} failed</span>
                                     <span>•</span>
-                                    <span className="text-blue-300">{stateSchools.filter(s => !!s.payment_url).length} Paid</span>
+                                    <span className="text-blue-600 font-black">{stateSchools.filter(s => s.approval_status === 'Approved').length} Paid (Verified)</span>
+                                    <span>•</span>
+                                    <span className="text-amber-500">{stateSchools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length} Unverified</span>
                                 </div>
                             </button>
 
@@ -423,13 +453,28 @@ export default function HeadOfficeFinalApproval() {
                                                         {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString() : '—'}
                                                     </td>
                                                     <td className="px-6 py-3">
-                                                        <button
-                                                            onClick={() => openReviewModal(school)}
-                                                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2"
-                                                        >
-                                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                                            Review
-                                                        </button>
+                                                        <div className="flex items-center gap-2">
+                                                            {school.approval_status !== 'Approved' && school.payment_url && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setVerifyingSchool(school);
+                                                                        setShowVerifyModal(true);
+                                                                    }}
+                                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2"
+                                                                >
+                                                                    <ShieldCheck className="w-3.5 h-3.5" />
+                                                                    Verify
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={() => openReviewModal(school)}
+                                                                disabled={school.approval_status !== 'Approved'}
+                                                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                                            >
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                Accredit
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -441,6 +486,7 @@ export default function HeadOfficeFinalApproval() {
                     ))
                 )}
             </div>
+
 
             {/* Review / Accreditation Modal */}
             {showReviewModal && selectedSchool && (
@@ -580,6 +626,96 @@ export default function HeadOfficeFinalApproval() {
                     </div>
                 </div>
             )}
-        </div>
+
+            {/* Verification Modal */}
+            {showVerifyModal && verifyingSchool && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                            <div>
+                                <h2 className="text-xl font-black text-slate-950 dark:text-white uppercase tracking-tight">Verify Payment Receipt</h2>
+                                <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">{verifyingSchool.name} ({verifyingSchool.code})</p>
+                            </div>
+                            <button
+                                onClick={() => setShowVerifyModal(false)}
+                                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-500"
+                            >
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row h-[550px]">
+                            {/* Proof View */}
+                            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-6 overflow-y-auto border-r border-slate-100 dark:border-slate-800 flex flex-col">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 block">Proof of Payment</span>
+                                <div className="flex-1 relative rounded-2xl overflow-hidden shadow-lg border-2 border-white dark:border-slate-800 bg-white dark:bg-slate-900">
+                                    <img
+                                        src={verifyingSchool.payment_url?.startsWith('http') ? verifyingSchool.payment_url : `${baseURL}${verifyingSchool.payment_url}`}
+                                        alt="Payment Proof"
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="w-full md:w-[320px] p-8 space-y-6 flex flex-col justify-between bg-white dark:bg-slate-900">
+                                <div className="space-y-6">
+                                    <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-100 dark:border-amber-900/30">
+                                        <h4 className="text-xs font-black text-amber-600 dark:text-amber-400 uppercase mb-2">Instructions</h4>
+                                        <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400 leading-relaxed">
+                                            Please carefully inspect the payment receipt. If it matches the school's details and the expected amount, click <strong>Approve</strong> to enable accreditation.
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        onClick={() => window.open(verifyingSchool.payment_url?.startsWith('http') ? verifyingSchool.payment_url : `${baseURL}${verifyingSchool.payment_url}`, '_blank')}
+                                        className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Printer className="w-5 h-5" />
+                                        Print / Pop-out
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                setIsSubmitting(true);
+                                                if (verifyingSchool.school_type === 'BECE') {
+                                                    await DataService.approveBeceSchool(verifyingSchool.code);
+                                                } else {
+                                                    await DataService.approveSchool(verifyingSchool.code);
+                                                }
+                                                // Clear cache and refetch
+                                                clearStaticCache();
+                                                await fetchData();
+                                                setShowVerifyModal(false);
+                                                setVerifyingSchool(null);
+                                            } catch (err) {
+                                                console.error('Failed to verify payment:', err);
+                                                alert('Verification failed. Please try again.');
+                                            } finally {
+                                                setIsSubmitting(false);
+                                            }
+                                        }}
+                                        disabled={isSubmitting}
+                                        className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                                        {isSubmitting ? 'Processing...' : 'Approve'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowVerifyModal(false)}
+                                        className="w-full py-4 text-slate-500 font-black uppercase tracking-widest hover:text-red-500 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div >
     );
 }

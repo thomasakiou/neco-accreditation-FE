@@ -72,7 +72,7 @@ const headOfficeNavItems: SidebarItem[] = [
   { icon: ShieldCheck, label: 'Custodians', path: '/head-office/custodians' },
   { icon: Users, label: 'Users', path: '/head-office/users' },
   { icon: FileText, label: 'Schools Due', path: '/head-office/review-proofs' },
-  { icon: CheckCircle, label: 'Final Approval', path: '/head-office/approvals', badge: 'dynamic_pending_approvals' },
+  { icon: CheckCircle, label: 'Approval/Accreditation', path: '/head-office/approvals', badge: 'dynamic_pending_approvals' },
   { icon: BarChart3, label: 'Reports', path: '/head-office/reports' },
 ];
 

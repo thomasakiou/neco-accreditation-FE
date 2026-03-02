@@ -1003,6 +1003,8 @@ export interface components {
             category: string;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Approval Status */
+            approval_status?: string | null;
             /** Payment Url */
             payment_url?: string | null;
             /**
@@ -1039,6 +1041,8 @@ export interface components {
             category: string;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Approval Status */
+            approval_status?: string | null;
             /** Payment Url */
             payment_url?: string | null;
             /**
@@ -1067,6 +1071,8 @@ export interface components {
             category?: string | null;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Approval Status */
+            approval_status?: string | null;
             /** Payment Url */
             payment_url?: string | null;
             /** Status */
@@ -1283,6 +1289,8 @@ export interface components {
             category: string;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Approval Status */
+            approval_status?: string | null;
             /** Payment Url */
             payment_url?: string | null;
             /**
@@ -1319,6 +1327,8 @@ export interface components {
             category: string;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Approval Status */
+            approval_status?: string | null;
             /** Payment Url */
             payment_url?: string | null;
             /**
@@ -1347,6 +1357,8 @@ export interface components {
             category?: string | null;
             /** Accrd Year */
             accrd_year?: string | null;
+            /** Approval Status */
+            approval_status?: string | null;
             /** Payment Url */
             payment_url?: string | null;
             /** Status */

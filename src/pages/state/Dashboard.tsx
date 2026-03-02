@@ -90,14 +90,14 @@ export default function StateDashboard() {
     const partialSsce = ssceSchools.filter(s => s.accreditation_status === 'Partial').length;
     const failedSsce = ssceSchools.filter(s => s.accreditation_status === 'Failed').length;
     const activeSsce = fullSsce + partialSsce;
-    const pendingSsce = ssceSchools.filter(s => !!s.payment_url && (!s.accreditation_status || ['Pending', 'Unaccredited'].includes(s.accreditation_status))).length;
+    const pendingSsce = ssceSchools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
 
     // BECE Stats logic
     const fullBece = beceSchools.filter(s => s.accreditation_status === 'Full').length;
     const partialBece = beceSchools.filter(s => s.accreditation_status === 'Partial').length;
     const failedBece = beceSchools.filter(s => s.accreditation_status === 'Failed').length;
     const activeBece = fullBece + partialBece;
-    const pendingBece = beceSchools.filter(s => !!s.payment_url && (!s.accreditation_status || ['Pending', 'Unaccredited'].includes(s.accreditation_status))).length;
+    const pendingBece = beceSchools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
 
     const statsCards = [
       // SSCE Group
@@ -105,14 +105,14 @@ export default function StateDashboard() {
       { icon: CheckCircle, label: 'Full (SSCE)', value: fullSsce.toLocaleString(), change: 'Valid', changeColor: 'emerald', iconBg: 'emerald' },
       { icon: CheckCircle, label: 'Partial (SSCE)', value: partialSsce.toLocaleString(), change: 'Valid', changeColor: 'amber', iconBg: 'amber' },
       { icon: AlertCircle, label: 'Failed (SSCE)', value: failedSsce.toLocaleString(), change: 'Failed', changeColor: 'red', iconBg: 'red' },
-      { icon: Clock, label: 'Pending (SSCE)', value: pendingSsce.toLocaleString(), change: 'Awaiting', changeColor: 'slate', iconBg: 'slate' },
+      { icon: Clock, label: 'Unverified (SSCE)', value: pendingSsce.toLocaleString(), change: 'Awaiting', changeColor: 'slate', iconBg: 'slate' },
 
       // BECE Group
       { icon: GraduationCap, label: 'Total BECE', value: totalBece.toLocaleString(), change: 'BECE', changeColor: 'blue', iconBg: 'blue' },
       { icon: CheckCircle, label: 'Full (BECE)', value: fullBece.toLocaleString(), change: 'Valid', changeColor: 'blue', iconBg: 'blue' },
       { icon: CheckCircle, label: 'Partial (BECE)', value: partialBece.toLocaleString(), change: 'Valid', changeColor: 'amber', iconBg: 'amber' },
       { icon: AlertCircle, label: 'Failed (BECE)', value: failedBece.toLocaleString(), change: 'Failed', changeColor: 'red', iconBg: 'red' },
-      { icon: Clock, label: 'Pending (BECE)', value: pendingBece.toLocaleString(), change: 'Awaiting', changeColor: 'slate', iconBg: 'slate' },
+      { icon: Clock, label: 'Unverified (BECE)', value: pendingBece.toLocaleString(), change: 'Awaiting', changeColor: 'slate', iconBg: 'slate' },
     ];
 
     // Group schools by LGA (using SSCE for distribution overview)
@@ -144,8 +144,8 @@ export default function StateDashboard() {
         lga: lgas.find(l => l.code === s.lga_code)?.name || s.lga_code,
         type: 'SSCE Accreditation',
         date: s.accredited_date ? new Date(s.accredited_date).toLocaleDateString() : 'Pending',
-        status: (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial') ? 'Accredited' : s.accreditation_status === 'Failed' ? 'Fail' : 'Pending Review',
-        statusColor: (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Partial') ? 'emerald' : s.accreditation_status === 'Failed' ? 'red' : 'amber'
+        status: (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Full' || s.accreditation_status === 'Partial') ? 'Accredited' : s.approval_status === 'Approved' ? 'Paid & Verified' : s.payment_url ? 'Pymt Review' : 'Pending',
+        statusColor: (s.accreditation_status === 'Accredited' || s.accreditation_status === 'Passed' || s.accreditation_status === 'Full' || s.accreditation_status === 'Partial') ? 'emerald' : s.approval_status === 'Approved' ? 'blue' : s.payment_url ? 'amber' : 'slate'
       }));
 
     return {

@@ -84,10 +84,11 @@ export default function StateSchoolsDue() {
                 school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 school.code.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesPayment = !selectedPaymentFilter ||
-                (selectedPaymentFilter === 'Paid' && !!school.payment_url) ||
+                (selectedPaymentFilter === 'Paid' && school.approval_status === 'Approved') ||
+                (selectedPaymentFilter === 'Pending' && !!school.payment_url && school.approval_status !== 'Approved') ||
                 (selectedPaymentFilter === 'Unpaid' && !school.payment_url);
             const matchesAccr = !selectedAccrFilter || school.accreditation_status === selectedAccrFilter;
-            
+
             return isDue && matchesSearch && matchesPayment && matchesAccr;
         });
     }, [schools, searchQuery, selectedPaymentFilter, selectedAccrFilter]);
@@ -95,10 +96,11 @@ export default function StateSchoolsDue() {
     // Get statistics
     const getStats = (schoolsList: School[]) => {
         const total = schoolsList.length;
-        const paid = schoolsList.filter(s => !!s.payment_url).length;
-        const unpaid = total - paid;
+        const paid = schoolsList.filter(s => s.approval_status === 'Approved').length;
+        const pending = schoolsList.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
+        const unpaid = total - paid - pending;
         const paymentRate = total > 0 ? Math.round((paid / total) * 100) : 0;
-        return { total, paid, unpaid, paymentRate };
+        return { total, paid, pending, unpaid, paymentRate };
     };
 
     const toggleAllStates = () => {
@@ -164,8 +166,9 @@ export default function StateSchoolsDue() {
                             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer"
                         >
                             <option value="">All Statuses</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Unpaid">Unpaid</option>
+                            <option value="Paid">Paid (Verified)</option>
+                            <option value="Pending">Pending Approval</option>
+                            <option value="Unpaid">No Proof</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 translate-y-5 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
@@ -190,7 +193,7 @@ export default function StateSchoolsDue() {
 
             {/* Summary Stats */}
             {!loading && dueSchools.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm p-4">
                         <div className="flex items-center justify-between">
                             <div>
@@ -203,10 +206,19 @@ export default function StateSchoolsDue() {
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Schools with Payment Proof</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Schools with Verified Payment</p>
                                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{stats.paid}</p>
                             </div>
                             <CheckCircle2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400 opacity-20" />
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Schools with Unverified Payment</p>
+                                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{stats.pending}</p>
+                            </div>
+                            <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400 opacity-20" />
                         </div>
                     </div>
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm p-4">
@@ -276,10 +288,15 @@ export default function StateSchoolsDue() {
                                                     </p>
                                                 </div>
                                                 <div className="text-right">
-                                                    {school.payment_url ? (
+                                                    {school.approval_status === 'Approved' ? (
                                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                                                             <CheckCircle2 className="w-3 h-3" />
-                                                            Paid
+                                                            Verified
+                                                        </span>
+                                                    ) : school.payment_url ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                                            <Clock className="w-3 h-3" />
+                                                            Pending
                                                         </span>
                                                     ) : (
                                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
