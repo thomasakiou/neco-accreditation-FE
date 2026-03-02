@@ -52,7 +52,7 @@ export default function HeadOfficeDashboard() {
   const totalStates = states.length;
   const totalSsceSchools = ssceSchools.length;
   const totalBeceSchools = beceSchools.length;
-  
+
   // Calculate schools due for accreditation
   const isDueForAccreditation = (school: School): boolean => {
     if (!school.accredited_date || !['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) {
@@ -72,17 +72,17 @@ export default function HeadOfficeDashboard() {
   };
 
   // SSCE calculations
-  const accreditedSsceNotDue = ssceSchools.filter(s => 
-    s.accreditation_status === 'Full' && !isDueForAccreditation(s)
+  const accreditedSsceNotDue = ssceSchools.filter(s =>
+    (s.accreditation_status === 'Full' || s.accreditation_status === 'Partial') && !isDueForAccreditation(s)
   ).length;
   const dueSsce = ssceSchools.filter(isDueForAccreditation).length;
 
   // BECE calculations
-  const accreditedBeceNotDue = beceSchools.filter(s => 
-    s.accreditation_status === 'Full' && !isDueForAccreditation(s)
+  const accreditedBeceNotDue = beceSchools.filter(s =>
+    (s.accreditation_status === 'Full' || s.accreditation_status === 'Partial') && !isDueForAccreditation(s)
   ).length;
   const beceDue = beceSchools.filter(isDueForAccreditation).length;
-  
+
   const pendingSsce = ssceSchools.filter(s => s.status === 'pending').length;
 
   const stats = [
