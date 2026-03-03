@@ -191,6 +191,14 @@ export default function HeadOfficeSchools() {
     };
 
     useEffect(() => {
+        setSelectedZone('');
+        setSelectedState('');
+        setSelectedLga('');
+        setSelectedCustodian('');
+        setSelectedAccreditationStatus('');
+        setSelectedCategory('');
+        setSearchTerm('');
+        setCurrentPage(1);
         fetchSchools();
     }, [activeTab]);
 
@@ -983,7 +991,7 @@ export default function HeadOfficeSchools() {
                                 type="text"
                                 placeholder="Search by school name or center number..."
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                                 className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm outline-none shadow-sm font-medium whitespace-nowrap overflow-hidden"
                             />
                         </div>
@@ -999,6 +1007,7 @@ export default function HeadOfficeSchools() {
                                         setSelectedState('');
                                         setSelectedLga('');
                                         setSelectedCustodian('');
+                                        setCurrentPage(1);
                                     }}
                                     className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
                                 >
@@ -1017,6 +1026,7 @@ export default function HeadOfficeSchools() {
                                     setSelectedState(val);
                                     setSelectedLga('');
                                     setSelectedCustodian('');
+                                    setCurrentPage(1);
                                 }}
                                 options={states
                                     .filter(s => selectedZone === '' || s.zone_code === selectedZone)
@@ -1031,6 +1041,7 @@ export default function HeadOfficeSchools() {
                                 onChange={(val) => {
                                     setSelectedLga(val);
                                     setSelectedCustodian('');
+                                    setCurrentPage(1);
                                 }}
                                 options={allLgas
                                     .filter(l => selectedState === '' || l.state_code === selectedState)
@@ -1042,7 +1053,7 @@ export default function HeadOfficeSchools() {
 
                             <SearchableSelect
                                 value={selectedCustodian}
-                                onChange={setSelectedCustodian}
+                                onChange={(val) => { setSelectedCustodian(val); setCurrentPage(1); }}
                                 options={custodians
                                     .filter(c => selectedLga === '' || c.lga_code === selectedLga)
                                     .map(custodian => ({ value: custodian.code, label: custodian.name }))}
@@ -1055,7 +1066,7 @@ export default function HeadOfficeSchools() {
                                 <CheckSquare className="w-4 h-4 text-slate-600" />
                                 <select
                                     value={selectedAccreditationStatus}
-                                    onChange={(e) => setSelectedAccreditationStatus(e.target.value)}
+                                    onChange={(e) => { setSelectedAccreditationStatus(e.target.value); setCurrentPage(1); }}
                                     className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
                                 >
                                     <option value="" className="dark:bg-slate-800">
@@ -1070,7 +1081,7 @@ export default function HeadOfficeSchools() {
                                 <GraduationCap className="w-4 h-4 text-slate-600" />
                                 <select
                                     value={selectedCategory}
-                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                    onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
                                     className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
                                 >
                                     <option value="" className="dark:bg-slate-800">
