@@ -4,6 +4,7 @@ import {
     ChevronDown,
     ChevronRight,
     School as SchoolIcon,
+    GraduationCap,
     Loader2,
     AlertCircle,
     CheckCircle2,
@@ -14,17 +15,19 @@ import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
 
-type School = components['schemas']['School'];
+type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
 type State = components['schemas']['State'];
 
 export default function StateSchoolsDue() {
     const [schools, setSchools] = React.useState<School[]>([]);
     const [userState, setUserState] = React.useState<State | null>(null);
+    const [zones, setZones] = React.useState<components['schemas']['Zone'][]>([]);
     const [loading, setLoading] = React.useState(true);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [expandedStates, setExpandedStates] = React.useState<Record<string, boolean>>({});
     const [selectedPaymentFilter, setSelectedPaymentFilter] = React.useState<string>('');
     const [selectedAccrFilter, setSelectedAccrFilter] = React.useState<string>('');
+    const [activeTab, setActiveTab] = React.useState<'SSCE' | 'BECE'>('SSCE');
 
     React.useEffect(() => {
         fetchData();
@@ -39,14 +42,20 @@ export default function StateSchoolsDue() {
                 return;
             }
 
-            const [schoolsData, beceSchoolsData, statesData] = await Promise.all([
+            const [schoolsData, beceSchoolsData, statesData, zonesData] = await Promise.all([
                 DataService.getSchools({ state_code: user.state_code }),
                 DataService.getBeceSchools({ state_code: user.state_code }),
-                DataService.getStates()
+                DataService.getStates(),
+                DataService.getZones()
             ]);
 
-            // Merge SSCE and BECE schools
-            setSchools([...schoolsData, ...beceSchoolsData]);
+            setZones(zonesData);
+
+            // Merge SSCE and BECE schools and add type for identification
+            setSchools([
+                ...schoolsData.map(s => ({ ...s, school_type: 'SSCE' as const })),
+                ...beceSchoolsData.map(s => ({ ...s, school_type: 'BECE' as const }))
+            ]);
 
             // Get current state info
             const currentState = statesData.find(s => s.code === user.state_code);
@@ -60,13 +69,23 @@ export default function StateSchoolsDue() {
 
     // Determine if a school is due for accreditation
     const isDueForAccreditation = (school: School): boolean => {
-        if (!school.accredited_date || !['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) {
+        if (school.accreditation_status === 'Failed') return true;
+        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
             return false;
         }
         const accreditedDate = new Date(school.accredited_date);
         let yearsToAdd = 5;
-        if (school.accreditation_status === 'Partial') yearsToAdd = 2;
-        else if (school.accreditation_status === 'Failed') yearsToAdd = 1;
+
+        // Check if school is in a foreign zone
+        const schoolState = userState || { code: school.state_code, zone_code: '' };
+        const zone = zones.find(z => z.code === (schoolState as any).zone_code);
+        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+        if (isForeign) {
+            yearsToAdd = 10;
+        } else if (school.accreditation_status === 'Partial') {
+            yearsToAdd = 1;
+        }
 
         const expiryDate = new Date(accreditedDate);
         expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
@@ -79,6 +98,9 @@ export default function StateSchoolsDue() {
     // Filter schools that are due for accreditation
     const dueSchools = useMemo(() => {
         return schools.filter(school => {
+            const matchesType = school.school_type === activeTab;
+            if (!matchesType) return false;
+
             const isDue = isDueForAccreditation(school);
             const matchesSearch = !searchQuery ||
                 school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,7 +113,7 @@ export default function StateSchoolsDue() {
 
             return isDue && matchesSearch && matchesPayment && matchesAccr;
         });
-    }, [schools, searchQuery, selectedPaymentFilter, selectedAccrFilter]);
+    }, [schools, searchQuery, selectedPaymentFilter, selectedAccrFilter, activeTab]);
 
     // Get statistics
     const getStats = (schoolsList: School[]) => {
@@ -120,9 +142,9 @@ export default function StateSchoolsDue() {
             case 'Full':
                 return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">Full (5 Yrs)</span>;
             case 'Partial':
-                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Partial (2 Yrs)</span>;
+                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Partial (1 Yr)</span>;
             case 'Failed':
-                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">Failed (1 Yr)</span>;
+                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">Failed</span>;
             default:
                 return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Pending</span>;
         }
@@ -139,6 +161,48 @@ export default function StateSchoolsDue() {
                     <p className="text-slate-500 dark:text-slate-400">
                         {userState ? `Schools in ${userState.name} with payment statistics` : 'Schools with payment statistics'}
                     </p>
+                </div>
+            </div>
+
+            {/* School Type Tabs */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex p-1 bg-slate-200 dark:bg-slate-800 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
+                    <button
+                        onClick={() => setActiveTab('SSCE')}
+                        className={cn(
+                            "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                            activeTab === 'SSCE'
+                                ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105"
+                                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                        )}
+                    >
+                        <SchoolIcon className={cn("w-4 h-4", activeTab === 'SSCE' ? "text-emerald-600" : "text-slate-400")} />
+                        SSCE Schools
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('BECE')}
+                        className={cn(
+                            "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                            activeTab === 'BECE'
+                                ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105"
+                                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                        )}
+                    >
+                        <GraduationCap className={cn("w-4 h-4", activeTab === 'BECE' ? "text-emerald-600" : "text-slate-400")} />
+                        BECE Schools
+                    </button>
+                </div>
+
+                <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                    <div className="flex -space-x-2">
+                        <div className="w-8 h-8 rounded-full bg-emerald-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                            {activeTab[0]}
+                        </div>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-tighter text-emerald-800 dark:text-emerald-400 leading-none">Viewing Mode</p>
+                        <p className="text-xs font-bold text-emerald-950 dark:text-emerald-200">{activeTab === 'SSCE' ? 'Senior Secondary' : 'Basic Education'}</p>
+                    </div>
                 </div>
             </div>
 
@@ -183,8 +247,8 @@ export default function StateSchoolsDue() {
                         >
                             <option value="">All Statuses</option>
                             <option value="Full">Full (5 Years)</option>
-                            <option value="Partial">Partial (2 Years)</option>
-                            <option value="Failed">Failed (1 Year)</option>
+                            <option value="Partial">Partial (1 Year)</option>
+                            <option value="Failed">Failed (Immediately Due)</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 translate-y-5 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>

@@ -27,7 +27,6 @@ import AuthService from '../../api/services/auth.service';
 import { baseURL } from '../../api/client';
 
 export default function StateApplications() {
-    const [schools, setSchools] = React.useState<School[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedSchool, setSelectedSchool] = React.useState<School | null>(null);
@@ -50,6 +49,8 @@ export default function StateApplications() {
     const videoRef = React.useRef<HTMLVideoElement>(null);
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
+    const [allSchools, setAllSchools] = React.useState<School[]>([]);
+
     const toggleRow = (code: string) => {
         const next = new Set(expandedRows);
         if (next.has(code)) next.delete(code);
@@ -58,15 +59,14 @@ export default function StateApplications() {
     };
 
     React.useEffect(() => {
-        setCurrentPage(1);
         fetchData();
-    }, [schoolType]);
+    }, []);
 
     const [userStateName, setUserStateName] = React.useState<string>('');
 
     React.useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery]);
+    }, [searchQuery, schoolType]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -85,12 +85,17 @@ export default function StateApplications() {
 
             const params = stateCode ? { state_code: stateCode } : {};
 
-            // Fetch schools independently so applications failure doesn't block them
+            // Fetch both SSCE and BECE schools for instant switching
             try {
-                const schoolsData = await (schoolType === 'SSCE'
-                    ? DataService.getSchools(params)
-                    : DataService.getBeceSchools(params));
-                setSchools(schoolsData);
+                const [ssceData, beceData] = await Promise.all([
+                    DataService.getSchools(params),
+                    DataService.getBeceSchools(params)
+                ]);
+
+                setAllSchools([
+                    ...ssceData.map(s => ({ ...s, school_type: 'SSCE' as const })),
+                    ...beceData.map(s => ({ ...s, school_type: 'BECE' as const }))
+                ]);
             } catch (err) {
                 console.error('Failed to fetch schools:', err);
             }
@@ -204,8 +209,12 @@ export default function StateApplications() {
         }
     };
 
-    const { filteredSchools, totalPages, startIndex, paginatedSchools } = React.useMemo(() => {
-        const filtered = schools.filter(s => {
+    const { filteredSchools, totalPages, startIndex, paginatedSchools, schools } = React.useMemo(() => {
+        const currentSchools = allSchools.filter(s => (s as any).school_type === schoolType);
+        const filtered = allSchools.filter(s => {
+            const matchesType = (s as any).school_type === schoolType;
+            if (!matchesType) return false;
+
             const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 s.code.includes(searchQuery);
 
@@ -231,9 +240,10 @@ export default function StateApplications() {
             filteredSchools: filtered,
             totalPages,
             startIndex,
-            paginatedSchools: paginated
+            paginatedSchools: paginated,
+            schools: currentSchools
         };
-    }, [schools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus]);
+    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, schoolType]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {

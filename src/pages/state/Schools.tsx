@@ -35,7 +35,6 @@ import { baseURL } from '../../api/client';
 type School = components['schemas']['School'];
 
 export default function StateSchools() {
-    const [schools, setSchools] = useState<School[]>([]);
     const [userStateCode, setUserStateCode] = useState<string>('');
     const [userStateName, setUserStateName] = useState<string>('');
     const [isPortalLocked, setIsPortalLocked] = useState(false);
@@ -60,8 +59,6 @@ export default function StateSchools() {
 
     const [allLgas, setAllLgas] = useState<LGA[]>([]);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-    const [custodians, setCustodians] = useState<Custodian[]>([]);
-
     const toggleRow = (code: string) => {
         const next = new Set(expandedRows);
         if (next.has(code)) next.delete(code);
@@ -91,6 +88,9 @@ export default function StateSchools() {
         status: 'active'
     });
 
+    const [allSchools, setAllSchools] = useState<School[]>([]);
+    const [allCustodians, setAllCustodians] = useState<Custodian[]>([]);
+
     useEffect(() => {
         fetchInitialData();
     }, []);
@@ -118,18 +118,25 @@ export default function StateSchools() {
                 setIsPortalLocked(!!currentState.is_locked);
             }
 
-            const [schoolsData, beceSchoolsData, custodiansData, beceCustodiansData, lgasData] = await Promise.all([
+            const [ssceSchools, beceSchools, ssceCustodians, beceCustodians, lgasData] = await Promise.all([
                 DataService.getSchools({ state_code: user.state_code }),
                 DataService.getBeceSchools({ state_code: user.state_code }),
                 DataService.getCustodians({ state_code: user.state_code }),
                 DataService.getBeceCustodians({ state_code: user.state_code }),
                 DataService.getLGAs({ state_code: user.state_code })
             ]);
-            setSchools(activeTab === 'SSCE' ? schoolsData : beceSchoolsData);
-            setCustodians(activeTab === 'SSCE' ? custodiansData : beceCustodiansData);
-            setAllLgas(lgasData);
 
-            // For modal selects
+            setAllSchools([
+                ...ssceSchools.map(s => ({ ...s, school_type: 'SSCE' as const })),
+                ...beceSchools.map(s => ({ ...s, school_type: 'BECE' as const }))
+            ]);
+
+            setAllCustodians([
+                ...ssceCustodians.map(c => ({ ...c, school_type: 'SSCE' as const })),
+                ...beceCustodians.map(c => ({ ...c, school_type: 'BECE' as const }))
+            ]);
+
+            setAllLgas(lgasData);
             setModalLgas(lgasData);
 
         } catch (err: any) {
@@ -140,27 +147,12 @@ export default function StateSchools() {
     };
 
     const fetchSchools = async () => {
-        try {
-            setIsLoading(true);
-            const params = { state_code: userStateCode };
-            const [data, custodiansData] = await Promise.all([
-                activeTab === 'SSCE' ? DataService.getSchools(params) : DataService.getBeceSchools(params),
-                activeTab === 'SSCE' ? DataService.getCustodians(params) : DataService.getBeceCustodians(params)
-            ]);
-            setSchools(data);
-            setCustodians(custodiansData);
-        } catch (err: any) {
-            setError('Failed to refresh schools list.');
-        } finally {
-            setIsLoading(false);
-        }
+        // Keeping this for compatibility or explicit refresh if needed, but we'll use fetchData mostly
+        await fetchInitialData();
     };
 
-    useEffect(() => {
-        if (userStateCode) {
-            fetchSchools();
-        }
-    }, [activeTab, userStateCode]);
+    // No longer need this useEffect as we fetch all on init
+    // useEffect(() => { ... }, [activeTab, userStateCode]);
 
     const fetchCustodiansForLga = async (lgaCode: string) => {
         if (!lgaCode) {
@@ -297,7 +289,10 @@ export default function StateSchools() {
         }
     };
 
-    const { filteredSchools, totalPages, startIndex, paginatedSchools } = React.useMemo(() => {
+    const { filteredSchools, totalPages, startIndex, paginatedSchools, schools, custodians } = React.useMemo(() => {
+        const schools = allSchools.filter(s => (s as any).school_type === activeTab);
+        const custodians = allCustodians.filter(c => (c as any).school_type === activeTab);
+
         const filtered = schools.filter(school => {
             const matchesSearch =
                 school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -325,9 +320,11 @@ export default function StateSchools() {
             filteredSchools: filtered,
             totalPages,
             startIndex,
-            paginatedSchools: paginated
+            paginatedSchools: paginated,
+            schools,
+            custodians
         };
-    }, [schools, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, currentPage, rowsPerPage]);
+    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, currentPage, rowsPerPage, activeTab]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {

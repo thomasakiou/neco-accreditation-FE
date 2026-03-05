@@ -22,6 +22,7 @@ type State = components['schemas']['State'];
 
 export default function HeadOfficeDashboard() {
   const [states, setStates] = React.useState<State[]>([]);
+  const [zones, setZones] = React.useState<components['schemas']['Zone'][]>([]);
   const [ssceSchools, setSsceSchools] = React.useState<School[]>([]);
   const [beceSchools, setBeceSchools] = React.useState<School[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -32,12 +33,14 @@ export default function HeadOfficeDashboard() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [statesData, ssceSchoolsData, beceSchoolsData] = await Promise.all([
+        const [statesData, zonesData, ssceSchoolsData, beceSchoolsData] = await Promise.all([
           DataService.getStates(),
+          DataService.getZones(),
           DataService.getSchools(),
           DataService.getBeceSchools()
         ]);
         setStates(statesData);
+        setZones(zonesData);
         setSsceSchools(ssceSchoolsData);
         setBeceSchools(beceSchoolsData);
       } catch (err: any) {
@@ -55,13 +58,23 @@ export default function HeadOfficeDashboard() {
 
   // Calculate schools due for accreditation
   const isDueForAccreditation = (school: School): boolean => {
-    if (!school.accredited_date || !['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) {
+    if (school.accreditation_status === 'Failed') return true;
+    if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
       return false;
     }
     const accreditedDate = new Date(school.accredited_date);
     let yearsToAdd = 5;
-    if (school.accreditation_status === 'Partial') yearsToAdd = 2;
-    else if (school.accreditation_status === 'Failed') yearsToAdd = 1;
+
+    // Check if school is in a foreign zone
+    const schoolState = states.find(s => s.code === school.state_code);
+    const zone = zones.find(z => z.code === schoolState?.zone_code);
+    const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+    if (isForeign) {
+      yearsToAdd = 10;
+    } else if (school.accreditation_status === 'Partial') {
+      yearsToAdd = 1;
+    }
 
     const expiryDate = new Date(accreditedDate);
     expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);

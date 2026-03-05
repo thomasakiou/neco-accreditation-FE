@@ -33,8 +33,10 @@ type State = components['schemas']['State'];
 export default function HeadOfficeFinalApproval() {
     const [schools, setSchools] = useState<School[]>([]);
     const [states, setStates] = useState<State[]>([]);
+    const [zones, setZones] = useState<components['schemas']['Zone'][]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSchoolType, setSelectedSchoolType] = useState<'SSCE' | 'BECE'>('SSCE');
     const [selectedStateFilter, setSelectedStateFilter] = useState('');
     const [selectedAccrFilter, setSelectedAccrFilter] = useState('');
     const [selectedProofFilter, setSelectedProofFilter] = useState('');
@@ -59,10 +61,11 @@ export default function HeadOfficeFinalApproval() {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [schoolsData, beceSchoolsData, statesData] = await Promise.all([
+            const [schoolsData, beceSchoolsData, statesData, zonesData] = await Promise.all([
                 DataService.getSchools(),
                 DataService.getBeceSchools(),
-                DataService.getStates()
+                DataService.getStates(),
+                DataService.getZones()
             ]);
             // Merge SSCE and BECE schools and add type for identification
             setSchools([
@@ -70,6 +73,7 @@ export default function HeadOfficeFinalApproval() {
                 ...beceSchoolsData.map(s => ({ ...s, school_type: 'BECE' as const }))
             ]);
             setStates(statesData);
+            setZones(zonesData);
             // Collapse all states by default for faster rendering
             setExpandedStates({});
         } catch (err) {
@@ -98,6 +102,9 @@ export default function HeadOfficeFinalApproval() {
 
     const filteredSchools = useMemo(() => {
         return schools.filter(school => {
+            const matchesType = school.school_type === selectedSchoolType;
+            if (!matchesType) return false;
+
             const matchesSearch = !searchTerm ||
                 school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 school.code.toLowerCase().includes(searchTerm.toLowerCase());
@@ -114,11 +121,21 @@ export default function HeadOfficeFinalApproval() {
                 (selectedProofFilter === 'Unapproved' && !!school.payment_url && school.approval_status !== 'Approved');
 
             const isDue = () => {
-                if (!school.accredited_date || !['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) return false;
+                if (school.accreditation_status === 'Failed') return true;
+                if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) return false;
                 const accreditedDate = new Date(school.accredited_date);
                 let yearsToAdd = 5;
-                if (school.accreditation_status === 'Partial') yearsToAdd = 2;
-                else if (school.accreditation_status === 'Failed') yearsToAdd = 1;
+
+                // Check if school is in a foreign zone
+                const schoolState = states.find(s => s.code === school.state_code);
+                const zone = zones.find(z => z.code === schoolState?.zone_code);
+                const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+                if (isForeign) {
+                    yearsToAdd = 10;
+                } else if (school.accreditation_status === 'Partial') {
+                    yearsToAdd = 1;
+                }
 
                 const expiryDate = new Date(accreditedDate);
                 expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
@@ -137,7 +154,7 @@ export default function HeadOfficeFinalApproval() {
 
             return matchesSearch && matchesState && matchesAccr && matchesProof && matchesDue && matchesYear;
         });
-    }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter, selectedDueFilter, selectedYearFilter]);
+    }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter, selectedDueFilter, selectedYearFilter, selectedSchoolType]);
 
     // Group filtered schools by state
     const schoolsByState = useMemo(() => {
@@ -228,20 +245,32 @@ export default function HeadOfficeFinalApproval() {
         setShowReviewModal(true);
     };
 
-    // Stats
-    const totalSchools = schools.length;
-    const accreditedCount = schools.filter(s => s.accreditation_status === 'Full' || s.accreditation_status === 'Partial').length;
-    const pendingCount = schools.filter(s => !s.accreditation_status || s.accreditation_status === 'Pending').length;
-    const proofCount = schools.filter(s => !!s.payment_url).length;
-    const approvedPayments = schools.filter(s => s.approval_status === 'Approved').length;
-    const unapprovedPayments = schools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
+    // Stats - Scoped to selected school type
+    const typedSchools = schools.filter(s => s.school_type === selectedSchoolType);
+    const totalSchools = typedSchools.length;
+    const accreditedCount = typedSchools.filter(s => s.accreditation_status === 'Full' || s.accreditation_status === 'Partial').length;
+    const pendingCount = typedSchools.filter(s => !s.accreditation_status || s.accreditation_status === 'Pending').length;
+    const proofCount = typedSchools.filter(s => !!s.payment_url).length;
+    const approvedPayments = typedSchools.filter(s => s.approval_status === 'Approved').length;
+    const unapprovedPayments = typedSchools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
+    const unapprovedPaymentsTotal = schools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
 
-    const dueCount = schools.filter(s => {
-        if (!s.accredited_date || !['Full', 'Partial', 'Failed'].includes(s.accreditation_status || '')) return false;
+    const dueCount = typedSchools.filter(s => {
+        if (s.accreditation_status === 'Failed') return true;
+        if (!s.accredited_date || !['Full', 'Partial'].includes(s.accreditation_status || '')) return false;
         const accreditedDate = new Date(s.accredited_date);
         let yearsToAdd = 5; // Default for Full
-        if (s.accreditation_status === 'Partial') yearsToAdd = 2;
-        else if (s.accreditation_status === 'Failed') yearsToAdd = 1;
+
+        // Check if school is in a foreign zone
+        const schoolState = states.find(st => st.code === s.state_code);
+        const zone = zones.find(z => z.code === schoolState?.zone_code);
+        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+        if (isForeign) {
+            yearsToAdd = 10;
+        } else if (s.accreditation_status === 'Partial') {
+            yearsToAdd = 1;
+        }
 
         const expiryDate = new Date(accreditedDate);
         expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
@@ -264,6 +293,28 @@ export default function HeadOfficeFinalApproval() {
                     </h1>
                     <p className="text-slate-700 dark:text-slate-400 font-medium">Review proof of payment and grant accreditation status. Schools are grouped by State.</p>
                 </div>
+            </div>
+
+            {/* School Type Tabs */}
+            <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-fit border border-slate-300 dark:border-slate-700">
+                <button
+                    onClick={() => setSelectedSchoolType('SSCE')}
+                    className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${selectedSchoolType === 'SSCE'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                        }`}
+                >
+                    SSCE Schools
+                </button>
+                <button
+                    onClick={() => setSelectedSchoolType('BECE')}
+                    className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${selectedSchoolType === 'BECE'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                        }`}
+                >
+                    BECE Schools
+                </button>
             </div>
 
             {/* Stats Cards */}

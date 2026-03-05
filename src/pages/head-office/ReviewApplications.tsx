@@ -18,7 +18,7 @@ import DataService from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
 import { components } from '../../api/types';
 
-type School = components['schemas']['School'];
+type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
 type State = components['schemas']['State'];
 type Zone = components['schemas']['Zone'];
 type LGA = components['schemas']['LGA'];
@@ -36,6 +36,7 @@ export default function ReviewApplications() {
     const [selectedStateFilter, setSelectedStateFilter] = React.useState<string>('');
     const [selectedPaymentFilter, setSelectedPaymentFilter] = React.useState<string>('');
     const [selectedAccrFilter, setSelectedAccrFilter] = React.useState<string>('');
+    const [activeTab, setActiveTab] = React.useState<'SSCE' | 'BECE'>('SSCE');
     const [isExporting, setIsExporting] = React.useState<string | null>(null);
 
     React.useEffect(() => {
@@ -53,8 +54,11 @@ export default function ReviewApplications() {
                 DataService.getLGAs(),
                 DataService.getCustodians()
             ]);
-            // Merge SSCE and BECE schools
-            setSchools([...schoolsData, ...beceSchoolsData]);
+            // Merge SSCE and BECE schools and add type for identification
+            setSchools([
+                ...schoolsData.map(s => ({ ...s, school_type: 'SSCE' as const })),
+                ...beceSchoolsData.map(s => ({ ...s, school_type: 'BECE' as const }))
+            ]);
             setStates(statesData);
             setZones(zonesData);
             setAllLgas(lgas);
@@ -68,13 +72,23 @@ export default function ReviewApplications() {
 
     // Determine if a school is due for accreditation
     const isDueForAccreditation = (school: School): boolean => {
-        if (!school.accredited_date || !['Full', 'Partial', 'Failed'].includes(school.accreditation_status || '')) {
+        if (school.accreditation_status === 'Failed') return true;
+        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
             return false;
         }
         const accreditedDate = new Date(school.accredited_date);
         let yearsToAdd = 5;
-        if (school.accreditation_status === 'Partial') yearsToAdd = 2;
-        else if (school.accreditation_status === 'Failed') yearsToAdd = 1;
+
+        // Check if school is in a foreign zone
+        const schoolState = states.find(s => s.code === school.state_code);
+        const zone = zones.find(z => z.code === schoolState?.zone_code);
+        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+        if (isForeign) {
+            yearsToAdd = 10;
+        } else if (school.accreditation_status === 'Partial') {
+            yearsToAdd = 1;
+        }
 
         const expiryDate = new Date(accreditedDate);
         expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
@@ -87,6 +101,9 @@ export default function ReviewApplications() {
     // Filter schools that are due for accreditation
     const dueSchools = useMemo(() => {
         return schools.filter(school => {
+            const matchesType = school.school_type === activeTab;
+            if (!matchesType) return false;
+
             const isDue = isDueForAccreditation(school);
             const matchesSearch = !searchQuery ||
                 school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -100,7 +117,7 @@ export default function ReviewApplications() {
 
             return isDue && matchesSearch && matchesState && matchesPayment && matchesAccr;
         });
-    }, [schools, searchQuery, selectedStateFilter, selectedPaymentFilter, selectedAccrFilter]);
+    }, [schools, searchQuery, selectedStateFilter, selectedPaymentFilter, selectedAccrFilter, activeTab]);
 
     // Group due schools by state
     const schoolsByState = useMemo(() => {
@@ -210,9 +227,9 @@ export default function ReviewApplications() {
             case 'Full':
                 return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">Full (5 Yrs)</span>;
             case 'Partial':
-                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Partial (2 Yrs)</span>;
+                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Partial (1 Yr)</span>;
             case 'Failed':
-                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">Failed (1 Yr)</span>;
+                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">Failed</span>;
             default:
                 return <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Pending</span>;
         }
@@ -267,6 +284,32 @@ export default function ReviewApplications() {
                         PDF
                     </button>
                 </div>
+            </div>
+
+            {/* School Type Tabs */}
+            <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-fit border border-slate-300 dark:border-slate-800">
+                <button
+                    onClick={() => setActiveTab('SSCE')}
+                    className={cn(
+                        "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                        activeTab === 'SSCE'
+                            ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-sm"
+                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                >
+                    SSCE Schools
+                </button>
+                <button
+                    onClick={() => setActiveTab('BECE')}
+                    className={cn(
+                        "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                        activeTab === 'BECE'
+                            ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-sm"
+                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    )}
+                >
+                    BECE Schools
+                </button>
             </div>
 
             {/* Search Bar */}
@@ -326,8 +369,8 @@ export default function ReviewApplications() {
                         >
                             <option value="">All Statuses</option>
                             <option value="Full">Full (5 Years)</option>
-                            <option value="Partial">Partial (2 Years)</option>
-                            <option value="Failed">Failed (1 Year)</option>
+                            <option value="Partial">Partial (1 Year)</option>
+                            <option value="Failed">Failed (Immediately Due)</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 translate-y-5 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
