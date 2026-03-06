@@ -100,16 +100,16 @@ const generateFilename = (
   const timestamp = new Date().toISOString().split('T')[0];
   const stateMap = new Map(states.map(s => [s.code, s]));
   let filename = 'Schools_Export';
-  
+
   if (selectedState && selectedState !== 'ALL') {
     const selectedStateName = stateMap.get(selectedState)?.name || selectedState;
     filename += `_${selectedStateName}`;
   } else {
     filename += '_All_States';
   }
-  
+
   filename += `_${timestamp}`;
-  
+
   switch (format) {
     case 'xlsx':
       return `${filename}.xlsx`;
@@ -233,7 +233,7 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
   doc.setFontSize(18);
   doc.setFont(undefined, 'bold');
   doc.text('NATIONAL EXAMINATIONS COUNCIL (NECO)', pageWidth / 2, 15, { align: 'center' });
-  
+
   // Add subtitle in black
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
@@ -284,7 +284,7 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
   doc.save(generateFilename([], null, 'pdf'));
 };
 
-export const ExportService = {
+const ExportService = {
   exportSchoolsByState: async (
     schools: School[],
     states: State[],

@@ -7,7 +7,7 @@ export type State = components['schemas']['State'];
 export type Zone = components['schemas']['Zone'];
 export type LGA = components['schemas']['LGA'];
 export type Custodian = components['schemas']['Custodian'];
-export type BECECustodian = components['schemas']['BECECustodian'];
+type BECECustodian = components['schemas']['BECECustodian'];
 
 let statesCache: State[] | null = null;
 let zonesCache: Zone[] | null = null;
