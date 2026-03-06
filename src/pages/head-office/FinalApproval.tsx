@@ -503,7 +503,10 @@ export default function HeadOfficeFinalApproval() {
                                                         <span className="text-sm font-bold text-slate-900 dark:text-white">{school.name}</span>
                                                     </td>
                                                     <td className="px-6 py-3 text-xs font-bold text-slate-500">
-                                                        {school.category === 'PUB' ? 'Public' : 'Private'}
+                                                        {school.category === 'PUB' ? 'Public' :
+                                                            school.category === 'FED' ? 'Federal' :
+                                                                school.category === 'PRI' || school.category === 'PRV' ? 'Private' :
+                                                                    school.category || 'N/A'}
                                                     </td>
                                                     <td className="px-6 py-3">
                                                         {school.payment_url ? (

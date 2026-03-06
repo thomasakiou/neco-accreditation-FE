@@ -175,14 +175,16 @@ export default function HeadOfficeReports() {
 
     // Calculate Category stats (PUB vs PRI)
     const categoryStats = useMemo(() => {
-        const stats = { PUB: 0, PRI: 0 };
+        const stats = { PUB: 0, PRI: 0, FED: 0 };
         schools.forEach(s => {
             if (s.category === 'PUB') stats.PUB++;
-            else if (s.category === 'PRV') stats.PRI++;
+            else if (s.category === 'PRV' || s.category === 'PRI') stats.PRI++;
+            else if (s.category === 'FED') stats.FED++;
         });
         return [
             { name: 'Public Schools', value: stats.PUB, color: '#3b82f6' }, // blue-500
             { name: 'Private Schools', value: stats.PRI, color: '#ec4899' }, // pink-500
+            { name: 'Federal Schools', value: stats.FED, color: '#8b5cf6' }, // violet-500
         ];
     }, [schools]);
 

@@ -47,6 +47,7 @@ export default function StateSchools() {
     const [selectedCustodian, setSelectedCustodian] = useState<string>('');
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = useState<string>('');
     const [selectedProofStatus, setSelectedProofStatus] = useState<string>('');
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
 
 
     // Pagination
@@ -94,6 +95,10 @@ export default function StateSchools() {
     useEffect(() => {
         fetchInitialData();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, activeTab]);
 
     const fetchInitialData = async () => {
         try {
@@ -308,7 +313,12 @@ export default function StateSchools() {
                     selectedProofStatus === 'Pending' ? (!!school.payment_url && school.approval_status !== 'Approved') :
                         !school.payment_url);
 
-            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof;
+            const matchesCategory = selectedCategory === '' ||
+                (selectedCategory === 'Public' ? school.category === 'PUB' || school.category === 'Public' :
+                    selectedCategory === 'Private' ? (school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private') :
+                        selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
+
+            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory;
         });
 
 
@@ -324,7 +334,7 @@ export default function StateSchools() {
             schools,
             custodians
         };
-    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, currentPage, rowsPerPage, activeTab]);
+    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, currentPage, rowsPerPage, activeTab]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {
@@ -340,7 +350,7 @@ export default function StateSchools() {
                     `"${school.name.replace(/"/g, '""')}"`,
                     lgaName,
                     custodianName,
-                    school.category === 'PUB' ? 'Public' : 'Private',
+                    school.category === 'PUB' ? 'Public' : (school.category === 'FED' ? 'Federal' : 'Private'),
                     (school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status,
                     school.accredited_date || 'N/A',
                     school.email || 'N/A'
@@ -366,7 +376,7 @@ export default function StateSchools() {
                     <td style="font-weight:600">${school.name}</td>
                     <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
                     <td>${custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</td>
-                    <td>${school.category === 'PUB' ? 'Public' : 'Private'}</td>
+                    <td>${school.category === 'PUB' ? 'Public' : (school.category === 'FED' ? 'Federal' : 'Private')}</td>
                     <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}</td>
                     <td>${school.accredited_date || 'N/A'}</td>
                 </tr>
@@ -629,8 +639,9 @@ export default function StateSchools() {
                                             onChange={e => setNewSchool({ ...newSchool, category: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
-                                            <option value="Public">Public</option>
-                                            <option value="Private">Private</option>
+                                            <option value="PUB">Public</option>
+                                            <option value="PRV">Private</option>
+                                            <option value="FED">Federal</option>
                                         </select>
                                     </div>
 
@@ -757,8 +768,9 @@ export default function StateSchools() {
                                             onChange={e => setEditingSchool({ ...editingSchool, category: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
-                                            <option value="Public">Public</option>
-                                            <option value="Private">Private</option>
+                                            <option value="PUB">Public</option>
+                                            <option value="PRV">Private</option>
+                                            <option value="FED">Federal</option>
                                         </select>
                                     </div>
 
@@ -869,6 +881,16 @@ export default function StateSchools() {
                                 </select>
                             </div>
 
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
+                                <GraduationCap className="w-4 h-4 text-slate-600" />
+                                <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
+                                    <option value="" className="dark:bg-slate-800">All Categories</option>
+                                    <option value="Public" className="dark:bg-slate-800">Public</option>
+                                    <option value="Private" className="dark:bg-slate-800">Private</option>
+                                    <option value="Federal" className="dark:bg-slate-800">Federal</option>
+                                </select>
+                            </div>
+
 
                             <div className="relative group">
                                 <button className="flex items-center justify-center gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm font-black text-[10px] uppercase tracking-widest text-slate-900 dark:text-white" title="Download Report">
@@ -913,6 +935,7 @@ export default function StateSchools() {
                                     <th className="px-4 py-4 w-10"></th>
                                     <th className="px-6 py-4 text-center">ID Code</th>
                                     <th className="px-6 py-4">Educational Institution</th>
+                                    <th className="px-6 py-4">Category</th>
                                     <th className="px-6 py-4">Accre. Date</th>
                                     <th className="px-6 py-4">Status</th>
                                     {!isPortalLocked && <th className="px-6 py-4 text-right">Actions</th>}
@@ -920,9 +943,9 @@ export default function StateSchools() {
                             </thead>
                             <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
                                 {isLoading ? (
-                                    <tr><td colSpan={6} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></td></tr>
+                                    <tr><td colSpan={7} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></td></tr>
                                 ) : filteredSchools.length === 0 ? (
-                                    <tr><td colSpan={6} className="py-20 text-center text-slate-500">No schools found for this selection.</td></tr>
+                                    <tr><td colSpan={7} className="py-20 text-center text-slate-500">No schools found for this selection.</td></tr>
                                 ) : (
                                     paginatedSchools.map(school => {
                                         const isExpanded = expandedRows.has(school.code);
@@ -940,6 +963,16 @@ export default function StateSchools() {
                                                     <td className="px-6 py-4"><span className="text-xs font-mono font-black text-slate-900 dark:text-emerald-400 bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">{school.code}</span></td>
                                                     <td className="px-6 py-4">
                                                         <p className="font-black text-slate-950 dark:text-white uppercase tracking-tight">{school.name}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest leading-tight">
+                                                                {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
+                                                                    school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
+                                                                        school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
+                                                                            school.category || 'N/A'}
+                                                            </span>
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-xs font-black text-slate-900 dark:text-slate-300 uppercase">
                                                         {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
@@ -962,10 +995,11 @@ export default function StateSchools() {
                                                 </tr>
                                                 {isExpanded && (
                                                     <tr className="bg-slate-50 dark:bg-slate-800/20 border-l-4 border-emerald-500 animate-in slide-in-from-top-1">
-                                                        <td colSpan={6} className="px-6 py-4">
+                                                        <td colSpan={isPortalLocked ? 6 : 7} className="px-6 py-4">
                                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                                 <div>
                                                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Custodian</p>
+                                                                    <div className="text-[10px] uppercase font-black tracking-widest text-slate-500 underline decoration-slate-200 underline-offset-4">{allLgas.find(l => l.code === school.lga_code)?.name || 'AREA CODE: ' + school.lga_code}</div>
                                                                     <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">{custodians.find(c => c.code.toString() === school.custodian_code?.toString())?.name || school.custodian_code}</p>
                                                                 </div>
                                                                 <div>
@@ -973,7 +1007,10 @@ export default function StateSchools() {
                                                                     <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 underline decoration-slate-300 underline-offset-2 uppercase">{school.email || 'NO EMAIL REGISTERED'}</p>
                                                                     <div className="flex items-center gap-2 mt-1">
                                                                         <p className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase">
-                                                                            {school.category === 'PUB' || school.category === 'Public' ? 'Public' : school.category === 'PRI' || school.category === 'Private' ? 'Private' : school.category || 'N/A'}
+                                                                            {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
+                                                                                school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
+                                                                                    school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
+                                                                                        school.category || 'N/A'}
                                                                         </p>
                                                                     </div>
                                                                 </div>
@@ -1138,7 +1175,12 @@ export default function StateSchools() {
                                 <td className="font-semibold">{school.name}</td>
                                 <td>{allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
                                 <td>{custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</td>
-                                <td>{school.category === 'PUB' ? 'Public' : 'Private'}</td>
+                                <td>
+                                    {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
+                                        school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
+                                            school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
+                                                school.category || 'N/A'}
+                                </td>
                                 <td>{(school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' ? 'Full' : 'Partial'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}</td>
                                 <td>{school.accredited_date || 'N/A'}</td>
                             </tr>

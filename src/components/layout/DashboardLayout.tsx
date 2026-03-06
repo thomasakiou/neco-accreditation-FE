@@ -42,48 +42,117 @@ interface SidebarItem {
   badge?: string;
 }
 
+interface NavGroup {
+  label?: string;
+  items: SidebarItem[];
+}
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
   role: 'school' | 'state' | 'head-office' | 'viewer';
 }
 
-const schoolNavItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/school/dashboard' },
-  { icon: FileText, label: 'Accreditation', path: '/school/application' },
-  { icon: History, label: 'History', path: '/school/history' },
-  { icon: User, label: 'Profile', path: '/school/profile' },
+const schoolNavGroups: NavGroup[] = [
+  {
+    items: [
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/school/dashboard' },
+      { icon: FileText, label: 'Accreditation', path: '/school/application' },
+    ]
+  },
+  {
+    label: 'Activity',
+    items: [
+      { icon: History, label: 'History', path: '/school/history' },
+    ]
+  },
+  {
+    label: 'User',
+    items: [
+      { icon: User, label: 'Profile', path: '/school/profile' },
+    ]
+  }
 ];
 
-const stateNavItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/state/dashboard' },
-  { icon: School, label: 'Schools', path: '/state/schools' },
-  { icon: ShieldCheck, label: 'Custodians', path: '/state/custodians' },
-  { icon: FileText, label: 'Schools Due', path: '/state/schools-due' },
-  { icon: Upload, label: 'Proof of Payment', path: '/state/applications' },
-  { icon: BarChart3, label: 'Reports', path: '/state/reports' },
+const stateNavGroups: NavGroup[] = [
+  {
+    label: 'Operations',
+    items: [
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/state/dashboard' },
+      { icon: School, label: 'Schools', path: '/state/schools' },
+      { icon: ShieldCheck, label: 'Custodians', path: '/state/custodians' },
+    ]
+  },
+  {
+    label: 'Accreditation',
+    items: [
+      { icon: FileText, label: 'Schools Due', path: '/state/schools-due' },
+      { icon: Upload, label: 'Proof of Payment', path: '/state/applications' },
+    ]
+  },
+  {
+    label: 'Analysis',
+    items: [
+      { icon: BarChart3, label: 'Reports', path: '/state/reports' },
+    ]
+  }
 ];
 
-const headOfficeNavItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/head-office/dashboard' },
-  { icon: Layers, label: 'Zones', path: '/head-office/zones' },
-  { icon: Map, label: 'States', path: '/head-office/states' },
-  { icon: LocateFixed, label: 'LGAs', path: '/head-office/lgas' },
-  { icon: School, label: 'Schools', path: '/head-office/schools' },
-  { icon: ShieldCheck, label: 'Custodians', path: '/head-office/custodians' },
-  { icon: Users, label: 'Users', path: '/head-office/users' },
-  { icon: FileText, label: 'Schools Due', path: '/head-office/review-proofs' },
-  { icon: CheckCircle, label: 'Approval/Accreditation', path: '/head-office/approvals', badge: 'dynamic_pending_approvals' },
-  { icon: BarChart3, label: 'Reports', path: '/head-office/reports' },
+const headOfficeNavGroups: NavGroup[] = [
+  {
+    label: 'Core',
+    items: [
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/head-office/dashboard' },
+      { icon: Layers, label: 'Zones', path: '/head-office/zones' },
+      { icon: Map, label: 'States', path: '/head-office/states' },
+      { icon: LocateFixed, label: 'LGAs', path: '/head-office/lgas' },
+    ]
+  },
+  {
+    label: 'Management',
+    items: [
+      { icon: School, label: 'Schools', path: '/head-office/schools' },
+      { icon: ShieldCheck, label: 'Custodians', path: '/head-office/custodians' },
+      { icon: Users, label: 'Users', path: '/head-office/users' },
+    ]
+  },
+  {
+    label: 'Accreditation',
+    items: [
+      { icon: FileText, label: 'Schools Due', path: '/head-office/review-proofs' },
+      { icon: CheckCircle, label: 'Approval/Accreditation', path: '/head-office/approvals', badge: 'dynamic_pending_approvals' },
+    ]
+  },
+  {
+    label: 'Analysis',
+    items: [
+      { icon: BarChart3, label: 'Reports', path: '/head-office/reports' },
+    ]
+  }
 ];
 
-const viewerNavItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/viewer/dashboard' },
-  { icon: Layers, label: 'Zones', path: '/viewer/zones' },
-  { icon: Map, label: 'States', path: '/viewer/states' },
-  { icon: LocateFixed, label: 'LGAs', path: '/viewer/lgas' },
-  { icon: School, label: 'Schools', path: '/viewer/schools' },
-  { icon: ShieldCheck, label: 'Custodians', path: '/viewer/custodians' },
-  { icon: BarChart3, label: 'Reports', path: '/viewer/reports' },
+const viewerNavGroups: NavGroup[] = [
+  {
+    label: 'Monitoring',
+    items: [
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/viewer/dashboard' },
+      { icon: Layers, label: 'Zones', path: '/viewer/zones' },
+      { icon: Map, label: 'States', path: '/viewer/states' },
+      { icon: LocateFixed, label: 'LGAs', path: '/viewer/lgas' },
+    ]
+  },
+  {
+    label: 'Directory',
+    items: [
+      { icon: School, label: 'Schools', path: '/viewer/schools' },
+      { icon: ShieldCheck, label: 'Custodians', path: '/viewer/custodians' },
+    ]
+  },
+  {
+    label: 'Analysis',
+    items: [
+      { icon: BarChart3, label: 'Reports', path: '/viewer/reports' },
+    ]
+  }
 ];
 
 export default function DashboardLayout({ children, role }: DashboardLayoutProps) {
@@ -135,13 +204,17 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     fetchUserData();
   }, [role]);
 
-  const navItemsRaw = role === 'school' ? schoolNavItems : role === 'state' ? stateNavItems : role === 'viewer' ? viewerNavItems : headOfficeNavItems;
-  const navItems = navItemsRaw.map(item => {
-    if (item.badge === 'dynamic_pending_approvals') {
-      return { ...item, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount.toString() : undefined };
-    }
-    return item;
-  });
+  const navGroupsRaw = role === 'school' ? schoolNavGroups : role === 'state' ? stateNavGroups : role === 'viewer' ? viewerNavGroups : headOfficeNavGroups;
+  const navGroups = navGroupsRaw.map(group => ({
+    ...group,
+    items: group.items.map(item => {
+      if (item.badge === 'dynamic_pending_approvals') {
+        return { ...item, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount.toString() : undefined };
+      }
+      return item;
+    })
+  }));
+
   const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : role === 'viewer' ? 'Viewer' : 'National Admin');
   const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : role === 'viewer' ? 'Accreditation Viewer' : 'Head Office Portal');
 
@@ -184,36 +257,45 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         </div>
 
         <div className={cn("flex-1 overflow-y-auto py-6 custom-scrollbar", isDesktopCollapsed ? "px-2" : "px-3")}>
-          <nav className="space-y-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsSidebarOpen(false)}
-                title={isDesktopCollapsed ? item.label : undefined}
-                className={({ isActive }) => cn(
-                  "flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative group whitespace-nowrap overflow-hidden",
-                  isDesktopCollapsed ? "px-3 justify-center" : "px-3",
-                  isActive
-                    ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                    : "text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200"
+          <nav className="space-y-6">
+            {navGroups.map((group, groupIdx) => (
+              <div key={groupIdx} className="space-y-1">
+                {group.label && !isDesktopCollapsed && (
+                  <p className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 opacity-60">
+                    {group.label}
+                  </p>
                 )}
-              >
-                {({ isActive }) => (
-                  <>
-                    <item.icon className={cn("w-5 h-5 shrink-0", isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-600 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300")} />
-                    <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>{item.label}</span>
-                    {item.badge && !isDesktopCollapsed && (
-                      <span className="ml-auto bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                        {item.badge}
-                      </span>
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsSidebarOpen(false)}
+                    title={isDesktopCollapsed ? item.label : undefined}
+                    className={({ isActive }) => cn(
+                      "flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative group whitespace-nowrap overflow-hidden",
+                      isDesktopCollapsed ? "px-3 justify-center" : "px-3",
+                      isActive
+                        ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                        : "text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200"
                     )}
-                    {item.badge && isDesktopCollapsed && (
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <item.icon className={cn("w-5 h-5 shrink-0", isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-600 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300")} />
+                        <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>{item.label}</span>
+                        {item.badge && !isDesktopCollapsed && (
+                          <span className="ml-auto bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                        {item.badge && isDesktopCollapsed && (
+                          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </NavLink>
+                  </NavLink>
+                ))}
+              </div>
             ))}
           </nav>
 

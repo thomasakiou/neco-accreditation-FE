@@ -40,6 +40,7 @@ export default function StateApplications() {
     const [rowsPerPage, setRowsPerPage] = React.useState(10);
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = React.useState<string>('');
     const [selectedProofStatus, setSelectedProofStatus] = React.useState<string>('');
+    const [selectedCategory, setSelectedCategory] = React.useState<string>('');
 
 
     // Camera State
@@ -66,7 +67,7 @@ export default function StateApplications() {
 
     React.useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, schoolType]);
+    }, [searchQuery, schoolType, selectedAccreditationStatus, selectedProofStatus, selectedCategory]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -228,7 +229,12 @@ export default function StateApplications() {
                     selectedProofStatus === 'Pending' ? (!!s.payment_url && s.approval_status !== 'Approved') :
                         !s.payment_url);
 
-            return matchesSearch && matchesAccreditation && matchesProof;
+            const matchesCategory = selectedCategory === '' ||
+                (selectedCategory === 'Public' ? s.category === 'PUB' || s.category === 'Public' :
+                    selectedCategory === 'Private' ? s.category === 'PRI' || s.category === 'PRV' || s.category === 'Private' :
+                        selectedCategory === 'Federal' ? s.category === 'FED' || s.category === 'Federal' : false);
+
+            return matchesSearch && matchesAccreditation && matchesProof && matchesCategory;
         });
 
 
@@ -243,7 +249,7 @@ export default function StateApplications() {
             paginatedSchools: paginated,
             schools: currentSchools
         };
-    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, schoolType]);
+    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, selectedCategory, schoolType]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {
@@ -277,6 +283,12 @@ export default function StateApplications() {
                     <td>${idx + 1}</td>
                     <td style="font-family:monospace;font-weight:bold">${school.code}</td>
                     <td style="font-weight:600">${school.name}</td>
+                    <td>
+                        ${school.category === 'PUB' || school.category === 'Public' ? 'Public' :
+                    school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
+                        school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
+                            school.category || 'N/A'}
+                    </td>
                     <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited' : school.accreditation_status}</td>
                     <td>${school.payment_url ? 'Uploaded' : 'No Proof'}</td>
                     <td>${school.accredited_date ? new Date(school.accredited_date).toLocaleDateString() : 'N/A'}</td>
@@ -320,7 +332,7 @@ export default function StateApplications() {
                 <span>Total: ${filteredSchools.length} schools</span>
             </div>
             <table>
-                <thead><tr><th style="background-color:#059669;color:white">S/N</th><th style="background-color:#059669;color:white">Center Code</th><th style="background-color:#059669;color:white">School Name</th><th style="background-color:#059669;color:white">Accreditation Status</th><th style="background-color:#059669;color:white">Proof of Payment</th><th style="background-color:#059669;color:white">Accrd. Date</th></tr></thead>
+                <thead><tr><th style="background-color:#059669;color:white">S/N</th><th style="background-color:#059669;color:white">Center Code</th><th style="background-color:#059669;color:white">School Name</th><th style="background-color:#059669;color:white">Category</th><th style="background-color:#059669;color:white">Accreditation Status</th><th style="background-color:#059669;color:white">Proof of Payment</th><th style="background-color:#059669;color:white">Accrd. Date</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
             <div class="footer">
@@ -457,6 +469,20 @@ export default function StateApplications() {
                                     </div>
 
 
+                                    <div className="flex-1 md:flex-none flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[140px]">
+                                        <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                                        <select
+                                            value={selectedCategory}
+                                            onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+                                            className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
+                                        >
+                                            <option value="" className="dark:bg-slate-800">Category</option>
+                                            <option value="Public" className="dark:bg-slate-800">Public</option>
+                                            <option value="Private" className="dark:bg-slate-800">Private</option>
+                                            <option value="Federal" className="dark:bg-slate-800">Federal</option>
+                                        </select>
+                                    </div>
+
                                     <div className="flex-1 md:flex-none flex items-center justify-between md:justify-start gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[100px]">
                                         <span className="text-[10px] font-black text-slate-500 uppercase">Rows:</span>
                                         <select
@@ -479,8 +505,9 @@ export default function StateApplications() {
                                             <th className="px-4 py-4 w-10"></th>
                                             <th className="px-6 py-4">ID Code</th>
                                             <th className="px-6 py-4">School</th>
+                                            <th className="px-6 py-4">Category</th>
                                             <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4">Action</th>
+                                            <th className="px-6 py-4 text-right">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -490,7 +517,7 @@ export default function StateApplications() {
                                             </tr>
                                         ) : filteredSchools.length === 0 ? (
                                             <tr>
-                                                <td colSpan={3} className="px-6 py-8 text-center text-slate-500">No schools found</td>
+                                                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No schools found</td>
                                             </tr>
                                         ) : paginatedSchools.map((school) => {
                                             const isExpanded = expandedRows.has(school.code);
@@ -511,6 +538,16 @@ export default function StateApplications() {
                                                         <td className="px-6 py-4">
                                                             <div className="font-semibold text-slate-900 dark:text-white">{school.name}</div>
                                                             <div className="text-[10px] font-bold text-slate-500 uppercase">{school.accredited_date ? new Date(school.accredited_date).toLocaleDateString() : 'No Date'}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest leading-tight">
+                                                                    {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
+                                                                        school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
+                                                                            school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
+                                                                                school.category || 'N/A'}
+                                                                </span>
+                                                            </div>
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <div className="flex flex-col gap-1">
@@ -573,7 +610,10 @@ export default function StateApplications() {
                                                                     <div className="flex flex-col justify-center">
                                                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Category & Year</p>
                                                                         <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">
-                                                                            {school.category === 'PUB' ? 'Public' : school.category === 'PRI' ? 'Private' : school.category || 'N/A'} — {school.accrd_year || 'N/A'}
+                                                                            {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
+                                                                                school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
+                                                                                    school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
+                                                                                        school.category || 'N/A'} — {school.accrd_year || 'N/A'}
                                                                         </p>
                                                                     </div>
                                                                 </div>

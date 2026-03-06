@@ -75,7 +75,7 @@ export default function HeadOfficeSchools() {
         email: '',
         accreditation_status: 'Unaccredited',
         accredited_date: '',
-        category: 'Public',
+        category: 'PUB',
         accrd_year: '',
         status: 'active'
     });
@@ -310,7 +310,7 @@ export default function HeadOfficeSchools() {
                 email: '',
                 accreditation_status: 'Unaccredited',
                 accredited_date: '',
-                category: 'Public',
+                category: 'PUB',
                 accrd_year: '',
                 status: 'active'
             });
@@ -343,7 +343,7 @@ export default function HeadOfficeSchools() {
                 email: editingSchool.email || null,
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
-                category: editingSchool.category || 'Public',
+                category: editingSchool.category || 'PUB',
                 accrd_year: editingSchool.accrd_year || null,
                 status: editingSchool.status
             };
@@ -428,7 +428,8 @@ export default function HeadOfficeSchools() {
                         school.accreditation_status === selectedAccreditationStatus);
             const matchesCategory = selectedCategory === '' ||
                 (selectedCategory === 'Public' ? school.category === 'PUB' || school.category === 'Public' :
-                    selectedCategory === 'Private' ? school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' : false);
+                    selectedCategory === 'Private' ? school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' :
+                        selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
 
             return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory;
         });
@@ -454,7 +455,7 @@ export default function HeadOfficeSchools() {
                 <td>${states.find(s => s.code === school.state_code)?.name || school.state_code}</td>
                 <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
                 <td>${custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</td>
-                <td>${school.category === 'PUB' || school.category === 'Public' ? 'Public' : 'Private'}</td>
+                <td>${school.category === 'PUB' || school.category === 'Public' ? 'Public' : (school.category === 'FED' || school.category === 'Federal' ? 'Federal' : 'Private')}</td>
                 <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status || 'Unaccredited'}</td>
                 <td>${school.accredited_date || 'N/A'}</td>
             </tr>
@@ -734,8 +735,9 @@ export default function HeadOfficeSchools() {
                                             onChange={e => setNewSchool({ ...newSchool, category: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
-                                            <option value="Public">Public</option>
-                                            <option value="Private">Private</option>
+                                            <option value="PUB">Public</option>
+                                            <option value="PRV">Private</option>
+                                            <option value="FED">Federal</option>
                                         </select>
                                     </div>
 
@@ -899,8 +901,9 @@ export default function HeadOfficeSchools() {
                                             onChange={e => setEditingSchool({ ...editingSchool, category: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
-                                            <option value="Public">Public</option>
-                                            <option value="Private">Private</option>
+                                            <option value="PUB">Public</option>
+                                            <option value="PRV">Private</option>
+                                            <option value="FED">Federal</option>
                                         </select>
                                     </div>
 
@@ -1089,6 +1092,7 @@ export default function HeadOfficeSchools() {
                                     </option>
                                     <option value="Public" className="dark:bg-slate-800">Public</option>
                                     <option value="Private" className="dark:bg-slate-800">Private</option>
+                                    <option value="Federal" className="dark:bg-slate-800">Federal</option>
                                 </select>
                             </div>
 
@@ -1224,7 +1228,10 @@ export default function HeadOfficeSchools() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="text-sm font-bold text-slate-900 dark:text-slate-300">
-                                                        {school.category === 'PUB' ? 'Public' : school.category === 'PRI' || school.category === 'PRV' ? 'Private' : school.category || 'Public'}
+                                                        {school.category === 'PUB' ? 'Public' :
+                                                            school.category === 'PRI' || school.category === 'PRV' ? 'Private' :
+                                                                school.category === 'FED' ? 'Federal' :
+                                                                    school.category || 'Public'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
