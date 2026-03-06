@@ -7,13 +7,14 @@ import {
     Loader2,
     AlertCircle,
     CheckCircle,
-    School,
+    School as SchoolIcon,
     Calendar,
     ChevronRight,
     Users,
-    ShieldCheck
+    ShieldCheck,
+    Printer
 } from 'lucide-react';
-import DataService from '../../api/services/data.service';
+import DataService, { School, BECESchool, State } from '../../api/services/data.service';
 import { components } from '../../api/types';
 import {
     BarChart,
@@ -30,26 +31,30 @@ import {
 } from 'recharts';
 
 type SchoolType = components['schemas']['School'];
-type State = components['schemas']['State'];
+type StateType = State;
 
 export default function HeadOfficeReports() {
-    const [schools, setSchools] = useState<SchoolType[]>([]);
-    const [states, setStates] = useState<State[]>([]);
+    const [ssceSchools, setSsceSchools] = useState<School[]>([]);
+    const [beceSchools, setBeceSchools] = useState<BECESchool[]>([]);
+    const [states, setStates] = useState<StateType[]>([]);
     const [zones, setZones] = useState<components['schemas']['Zone'][]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isExporting, setIsExporting] = useState<string | null>(null);
+    const [isPrintingSummary, setIsPrintingSummary] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setIsLoading(true);
-                const [sData, stData, zData] = await Promise.all([
+                const [ssceData, beceData, stData, zData] = await Promise.all([
                     DataService.getSchools(),
+                    DataService.getBeceSchools(),
                     DataService.getStates(),
                     DataService.getZones()
                 ]);
-                setSchools(sData);
+                setSsceSchools(ssceData);
+                setBeceSchools(beceData);
                 setStates(stData);
                 setZones(zData);
             } catch (err) {
@@ -81,7 +86,7 @@ export default function HeadOfficeReports() {
 
     // Calculate aggregated stats
     const aggregatedStats = useMemo(() => {
-        if (!schools.length) return null;
+        if (!ssceSchools.length && !beceSchools.length) return null;
 
         let totalAccredited = 0;
         let totalPartial = 0;
@@ -89,7 +94,9 @@ export default function HeadOfficeReports() {
         let totalPending = 0;
         let totalPaid = 0;
 
-        schools.forEach(s => {
+        const allSchools = [...ssceSchools, ...beceSchools];
+
+        allSchools.forEach(s => {
             if (s.accreditation_status === 'Full') totalAccredited++;
             else if (s.accreditation_status === 'Partial') totalPartial++;
             else if (s.accreditation_status === 'Failed') totalFailed++;
@@ -101,7 +108,7 @@ export default function HeadOfficeReports() {
             }
         });
 
-        const total = schools.length;
+        const total = allSchools.length;
         const completionRate = Math.round(((totalAccredited + totalPartial) / total) * 100) || 0;
 
         return {
@@ -113,7 +120,92 @@ export default function HeadOfficeReports() {
             totalPaid,
             completionRate
         };
-    }, [schools]);
+    }, [ssceSchools, beceSchools]);
+
+    // Determine if a school is due for accreditation
+    const isDueForAccreditation = (school: any): boolean => {
+        // A school is DUE if:
+        // 1. Its status is explicitly 'Failed'
+        // 2. It has NO accreditation date record
+        // 3. Its status is 'Partial' (expires in 1 yr) or 'Full' (5/10 yrs) AND it's expired or expiring within 6 months
+
+        if (school.accreditation_status === 'Failed') return true;
+
+        if (!school.accredited_date || !['Full', 'Partial', 'Passed'].includes(school.accreditation_status || '')) {
+            return true; // If no record exists yet, it's due
+        }
+
+        const accreditedDate = new Date(school.accredited_date);
+        let yearsToAdd = 5;
+
+        // Check if school is in a foreign zone
+        const zone = zones.find(z => z.code === states.find(st => st.code === school.state_code)?.zone_code);
+        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+        if (isForeign) {
+            yearsToAdd = 10;
+        } else if (school.accreditation_status === 'Partial') {
+            yearsToAdd = 1;
+        }
+
+        const expiryDate = new Date(accreditedDate);
+        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+
+        const today = new Date();
+        const sixMonthsFromNow = new Date();
+        sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+        return expiryDate <= sixMonthsFromNow;
+    };
+
+    // Calculate Summary Report Stats (matching report.png)
+    const summaryReportStats = useMemo(() => {
+        interface SummaryStat {
+            code: string;
+            name: string;
+            ssceDue: number;
+            sscePaid: number;
+            beceDue: number;
+            becePaid: number;
+        }
+
+        const map = new Map<string, SummaryStat>();
+
+        states.forEach(state => {
+            map.set(state.code, {
+                code: state.code,
+                name: state.name,
+                ssceDue: 0,
+                sscePaid: 0,
+                beceDue: 0,
+                becePaid: 0
+            });
+        });
+
+        ssceSchools.forEach(s => {
+            const sc = s.state_code || 'UNKNOWN';
+            const stateData = map.get(sc);
+            if (stateData && isDueForAccreditation(s)) {
+                stateData.ssceDue++;
+                if (s.approval_status === 'Approved') {
+                    stateData.sscePaid++;
+                }
+            }
+        });
+
+        beceSchools.forEach(s => {
+            const sc = s.state_code || 'UNKNOWN';
+            const stateData = map.get(sc);
+            if (stateData && isDueForAccreditation(s)) {
+                stateData.beceDue++;
+                if (s.approval_status === 'Approved') {
+                    stateData.becePaid++;
+                }
+            }
+        });
+
+        return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    }, [ssceSchools, beceSchools, states, zones]);
 
     // Calculate state-by-state stats
     const stateStats = useMemo(() => {
@@ -144,7 +236,9 @@ export default function HeadOfficeReports() {
             });
         });
 
-        schools.forEach(school => {
+        const allSchools = [...ssceSchools, ...beceSchools];
+
+        allSchools.forEach(school => {
             const sc = school.state_code || 'UNKNOWN';
             if (!map.has(sc)) {
                 map.set(sc, { code: sc, name: sc, total: 0, full: 0, partial: 0, failed: 0, paid: 0, pending: 0 });
@@ -171,12 +265,13 @@ export default function HeadOfficeReports() {
         return Array.from(map.values())
             .filter((s: StateStat) => s.total > 0)
             .sort((a: StateStat, b: StateStat) => b.total - a.total); // Sort by highest total schools
-    }, [schools, states]);
+    }, [ssceSchools, beceSchools, states]);
 
     // Calculate Category stats (PUB vs PRI)
     const categoryStats = useMemo(() => {
         const stats = { PUB: 0, PRI: 0, FED: 0 };
-        schools.forEach(s => {
+        const allSchools = [...ssceSchools, ...beceSchools];
+        allSchools.forEach(s => {
             if (s.category === 'PUB') stats.PUB++;
             else if (s.category === 'PRV' || s.category === 'PRI') stats.PRI++;
             else if (s.category === 'FED') stats.FED++;
@@ -186,7 +281,7 @@ export default function HeadOfficeReports() {
             { name: 'Private Schools', value: stats.PRI, color: '#ec4899' }, // pink-500
             { name: 'Federal Schools', value: stats.FED, color: '#8b5cf6' }, // violet-500
         ];
-    }, [schools]);
+    }, [ssceSchools, beceSchools]);
 
     // Calculate Zone stats
     const zoneStats = useMemo(() => {
@@ -208,7 +303,9 @@ export default function HeadOfficeReports() {
             if (s.zone_code) stateToZone.set(s.code, s.zone_code);
         });
 
-        schools.forEach(s => {
+        const allSchools = [...ssceSchools, ...beceSchools];
+
+        allSchools.forEach(s => {
             const zCode = stateToZone.get(s.state_code || '');
             if (zCode && zoneMap.has(zCode)) {
                 const zData = zoneMap.get(zCode)!;
@@ -218,7 +315,7 @@ export default function HeadOfficeReports() {
         });
 
         return Array.from(zoneMap.values()).filter((z: ZoneStat) => z.total > 0);
-    }, [schools, states, zones]);
+    }, [ssceSchools, beceSchools, states, zones]);
 
     // Utility to format percentages
     const pct = (val: number, total: number) => {
@@ -227,11 +324,22 @@ export default function HeadOfficeReports() {
     };
 
     const reportCards = [
-        { id: 'schools', title: 'All Schools Report', description: 'Comprehensive list of all schools with current statuses.', icon: School, color: 'bg-emerald-500' },
+        { id: 'schools', title: 'All Schools Report', description: 'Comprehensive list of all schools with current statuses.', icon: SchoolIcon, color: 'bg-emerald-500' },
         { id: 'states', title: 'State Performance', description: 'Analytics broken down by states and zones.', icon: LucideMap, color: 'bg-blue-500' },
         { id: 'lgas', title: 'LGA Distribution', description: 'Breakdown of local government areas and centers.', icon: BarChart3, color: 'bg-purple-500' },
         { id: 'custodians', title: 'Custodians Report', description: 'List of all custodians and their assigned points.', icon: Users, color: 'bg-amber-500' },
     ];
+
+    const handlePrintSummary = () => {
+        setIsPrintingSummary(true);
+        const originalTitle = document.title;
+        document.title = ' ';  // Suppress browser header text
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+            setIsPrintingSummary(false);
+        }, 100);
+    };
 
     const pieData = [
         { name: 'Full Accreditation', value: aggregatedStats?.totalAccredited || 0, color: '#10b981' }, // emerald-500
@@ -276,7 +384,7 @@ export default function HeadOfficeReports() {
                     {/* Main Stats Row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            { label: 'Total Schools', value: aggregatedStats?.total || 0, icon: School, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+                            { label: 'Total Schools', value: aggregatedStats?.total || 0, icon: SchoolIcon, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
                             { label: 'Fully Accredited', value: aggregatedStats?.totalAccredited || 0, icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
                             { label: 'Active States', value: stateStats.length, icon: LucideMap, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
                             { label: 'Completion Rate', value: `${aggregatedStats?.completionRate}%`, icon: CheckCircle, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20' },
@@ -497,7 +605,16 @@ export default function HeadOfficeReports() {
 
                     {/* Report Cards Grid */}
                     <div className="mt-8">
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white px-2 mb-4">Export Reports</h2>
+                        <div className="flex items-center justify-between px-2 mb-4">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Export Reports</h2>
+                            <button
+                                onClick={handlePrintSummary}
+                                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
+                            >
+                                <Printer className="w-4 h-4" />
+                                <span>Generate Summary Report</span>
+                            </button>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {reportCards.map((report) => (
                                 <div key={report.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-[28px] overflow-hidden shadow-sm group hover:border-emerald-500/50 transition-all flex flex-col">
@@ -539,6 +656,150 @@ export default function HeadOfficeReports() {
                     </div>
                 </>
             )}
+
+            {/* Printable Summary Report (matching report.png) */}
+            <div id="summary-report-print" className={`hidden ${isPrintingSummary ? 'print:block' : ''} p-8 bg-white text-black font-sans min-h-screen`}>
+                <style dangerouslySetInnerHTML={{
+                    __html: `
+                    @media print {
+                        @page { size: portrait; margin: 1.5cm; }
+                        body * { visibility: hidden !important; }
+                        #summary-report-print, #summary-report-print * { visibility: visible !important; }
+                        #summary-report-print {
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            display: block !important;
+                            padding: 0;
+                            background: white;
+                        }
+                        .summary-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; background: transparent !important; }
+                        .summary-table th, .summary-table td { border: 1px solid black; padding: 4px 6px; text-align: left; background: transparent !important; }
+                        .summary-table th { background-color: rgba(241, 245, 249, 0.5) !important; text-transform: uppercase; font-weight: 800; font-size: 10px; }
+                        .text-center { text-align: center !important; }
+                        .font-bold { font-weight: 800; }
+                        tr { background: transparent !important; }
+                        .watermark {
+                            position: fixed;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            width: 120%;
+                            opacity: 0.04 !important;
+                            z-index: -1;
+                            pointer-events: none;
+                        }
+                        .report-header {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 20px;
+                            margin-bottom: 20px;
+                        }
+                        .header-logo {
+                            width: 60px;
+                            height: 60px;
+                            object-fit: contain;
+                        }
+                        .report-footer {
+                            margin-top: 30px;
+                            display: flex;
+                            justify-content: space-between;
+                            font-size: 10px;
+                            font-weight: 700;
+                            color: #64748b;
+                            border-top: 1px solid #e2e8f0;
+                            padding-top: 10px;
+                        }
+                    }
+                ` }} />
+
+                <div className="report-header">
+                    <img src="/images/neco.png" alt="NECO Logo" className="header-logo" />
+                    <div className="text-center space-y-1">
+                        <h1 className="text-xl font-black uppercase tracking-tight text-[#059669]">National Examinations Council (NECO)</h1>
+                        <h2 className="text-lg font-bold uppercase">Quality Assurance Department</h2>
+                        <h3 className="text-md font-bold uppercase">Accreditation Division</h3>
+                        <div className="mt-2 py-1 border-y-2 border-black inline-block px-8">
+                            <h4 className="text-sm font-black uppercase">Schools Due for Accreditation Report</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <img src="/images/neco.png" alt="Watermark" className="watermark" />
+
+                <table className="summary-table">
+                    <thead>
+                        <tr>
+                            <th rowSpan={2} className="text-center w-8">S/N</th>
+                            <th rowSpan={2}>State</th>
+                            <th colSpan={3} className="text-center">SSCE</th>
+                            <th colSpan={3} className="text-center">BECE</th>
+                        </tr>
+                        <tr>
+                            <th className="text-center">Schools Due</th>
+                            <th className="text-center">No. Paid</th>
+                            <th className="text-center">Percentage (%)</th>
+                            <th className="text-center">Schools Due</th>
+                            <th className="text-center">No. Paid</th>
+                            <th className="text-center">Percentage (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {summaryReportStats.map((st, idx) => (
+                            <tr key={st.code}>
+                                <td className="text-center">{idx + 1}</td>
+                                <td className="font-bold uppercase">{st.name}</td>
+                                <td className="text-center">{st.ssceDue}</td>
+                                <td className="text-center">{st.sscePaid}</td>
+                                <td className="text-center font-bold">
+                                    {st.ssceDue > 0 ? ((st.sscePaid / st.ssceDue) * 100).toFixed(2) + '%' : '0.00%'}
+                                </td>
+                                <td className="text-center">{st.beceDue}</td>
+                                <td className="text-center">{st.becePaid}</td>
+                                <td className="text-center font-bold">
+                                    {st.beceDue > 0 ? ((st.becePaid / st.beceDue) * 100).toFixed(2) + '%' : '0.00%'}
+                                </td>
+                            </tr>
+                        ))}
+                        <tr className="bg-slate-50 font-black">
+                            <td colSpan={2} className="text-right">TOTAL</td>
+                            <td className="text-center">
+                                {summaryReportStats.reduce((sum, s) => sum + s.ssceDue, 0)}
+                            </td>
+                            <td className="text-center">
+                                {summaryReportStats.reduce((sum, s) => sum + s.sscePaid, 0)}
+                            </td>
+                            <td className="text-center">
+                                {(() => {
+                                    const totalDue = summaryReportStats.reduce((sum, s) => sum + s.ssceDue, 0);
+                                    const totalPaid = summaryReportStats.reduce((sum, s) => sum + s.sscePaid, 0);
+                                    return totalDue > 0 ? ((totalPaid / totalDue) * 100).toFixed(2) + '%' : '0.00%';
+                                })()}
+                            </td>
+                            <td className="text-center">
+                                {summaryReportStats.reduce((sum, s) => sum + s.beceDue, 0)}
+                            </td>
+                            <td className="text-center">
+                                {summaryReportStats.reduce((sum, s) => sum + s.becePaid, 0)}
+                            </td>
+                            <td className="text-center">
+                                {(() => {
+                                    const totalDue = summaryReportStats.reduce((sum, s) => sum + s.beceDue, 0);
+                                    const totalPaid = summaryReportStats.reduce((sum, s) => sum + s.becePaid, 0);
+                                    return totalDue > 0 ? ((totalPaid / totalDue) * 100).toFixed(2) + '%' : '0.00%';
+                                })()}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div className="report-footer">
+                    <span>Generated: {new Date().toLocaleDateString('en-GB')}</span>
+                    <span>By: NECO Accreditation Management System</span>
+                </div>
+            </div>
         </div>
     );
 }

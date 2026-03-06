@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     BarChart3,
-    Printer,
     School,
     GraduationCap,
     CheckCircle,
@@ -10,7 +9,8 @@ import {
     Loader2,
     AlertCircle,
     ChevronRight,
-    PieChart
+    PieChart,
+    Printer
 } from 'lucide-react';
 import DataService, { LGA } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
@@ -23,7 +23,9 @@ export default function StateReports() {
     const [ssceSchools, setSsceSchools] = useState<SchoolType[]>([]);
     const [beceSchools, setBeceSchools] = useState<BECESchoolType[]>([]);
     const [lgas, setLgas] = useState<LGA[]>([]);
+    const [zones, setZones] = useState<components['schemas']['Zone'][]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isPrintingSummary, setIsPrintingSummary] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [stateName, setStateName] = useState('State Office');
 
@@ -45,10 +47,12 @@ export default function StateReports() {
                 const ssceData = await DataService.getSchools({ state_code: user.state_code });
                 const beceData = await DataService.getBeceSchools({ state_code: user.state_code });
                 const lgasData = await DataService.getLGAs({ state_code: user.state_code });
+                const zonesData = await DataService.getZones();
 
                 setSsceSchools(ssceData);
                 setBeceSchools(beceData);
                 setLgas(lgasData);
+                setZones(zonesData);
 
             } catch (err: any) {
                 setError('Failed to load report data.');
@@ -60,11 +64,63 @@ export default function StateReports() {
         fetchInitialData();
     }, []);
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrintSummary = () => {
+        setIsPrintingSummary(true);
+        const originalTitle = document.title;
+        document.title = ' ';  // Suppress browser header text
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+            setIsPrintingSummary(false);
+        }, 100);
     };
 
-    // Derived Statistics
+    // Determine if a school is due for accreditation
+    const isDueForAccreditation = (school: any): boolean => {
+        if (school.accreditation_status === 'Failed') return true;
+        if (!school.accredited_date || !['Full', 'Partial', 'Passed', 'Accredited'].includes(school.accreditation_status || '')) {
+            return true;
+        }
+        const accreditedDate = new Date(school.accredited_date);
+        let yearsToAdd = 5;
+
+        // Check if school is in a foreign zone
+        const stateZoneCode = zones.find(z => ssceSchools.some(s => s.state_code === school.state_code))?.code; // Simplified for state office
+        const zone = zones.find(z => z.code === stateZoneCode);
+        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+        if (isForeign) {
+            yearsToAdd = 10;
+        } else if (school.accreditation_status === 'Partial') {
+            yearsToAdd = 1;
+        }
+
+        const expiryDate = new Date(accreditedDate);
+        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+        const today = new Date();
+        const sixMonthsFromNow = new Date();
+        sixMonthsFromNow.setMonth(today.getMonth() + 6);
+        return expiryDate <= sixMonthsFromNow;
+    };
+
+    // Summary Report Stats (matching report.png)
+    const summaryReportStats = useMemo(() => {
+        return lgas.map(lga => {
+            const lgaSsceDue = ssceSchools.filter(s => s.lga_code === lga.code && isDueForAccreditation(s));
+            const lgaBeceDue = beceSchools.filter(s => s.lga_code === lga.code && isDueForAccreditation(s));
+
+            return {
+                lgaCode: lga.code,
+                lgaName: lga.name,
+                ssceDue: lgaSsceDue.length,
+                sscePaid: lgaSsceDue.filter(s => s.approval_status === 'Approved').length,
+                beceDue: lgaBeceDue.length,
+                becePaid: lgaBeceDue.filter(s => s.approval_status === 'Approved').length,
+            };
+        }).sort((a, b) => a.lgaName.localeCompare(b.lgaName));
+    }, [ssceSchools, beceSchools, lgas, zones]);
+
+    // Derived Statistics (Existing UI)
     const {
         totalSsce,
         totalBece,
@@ -134,11 +190,11 @@ export default function StateReports() {
 
                 <div className="flex items-center gap-3 print:hidden">
                     <button
-                        onClick={handlePrint}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
+                        onClick={handlePrintSummary}
+                        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
                     >
                         <Printer className="w-4 h-4" />
-                        <span>Print PDF Report</span>
+                        <span>Generate Summary Report</span>
                     </button>
                     <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-semibold text-slate-600 dark:text-slate-300">
                         <Calendar className="w-4 h-4 text-slate-400" />
@@ -294,6 +350,150 @@ export default function StateReports() {
             <div className="hidden print:block mt-8 text-center text-[10px] text-slate-500 border-t border-black pt-4">
                 <p>This report is system generated and does not require a signature.</p>
                 <p>NECO Accreditation System &copy; {new Date().getFullYear()}</p>
+            </div>
+
+            {/* Printable Summary Report (matching report.png) */}
+            <div id="summary-report-print" className={`hidden ${isPrintingSummary ? 'print:block' : ''} p-8 bg-white text-black font-sans min-h-screen`}>
+                <style dangerouslySetInnerHTML={{
+                    __html: `
+                    @media print {
+                        @page { size: portrait; margin: 1.5cm; }
+                        body * { visibility: hidden !important; }
+                        #summary-report-print, #summary-report-print * { visibility: visible !important; }
+                        #summary-report-print {
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            display: block !important;
+                            padding: 0;
+                            background: white;
+                        }
+                        .summary-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; background: transparent !important; }
+                        .summary-table th, .summary-table td { border: 1px solid black; padding: 4px 6px; text-align: left; background: transparent !important; }
+                        .summary-table th { background-color: rgba(241, 245, 249, 0.5) !important; text-transform: uppercase; font-weight: 800; font-size: 10px; }
+                        .text-center { text-align: center !important; }
+                        .font-bold { font-weight: 800; }
+                        tr { background: transparent !important; }
+                        .watermark {
+                            position: fixed;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            width: 120%;
+                            opacity: 0.04 !important;
+                            z-index: -1;
+                            pointer-events: none;
+                        }
+                        .report-header {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 20px;
+                            margin-bottom: 20px;
+                        }
+                        .header-logo {
+                            width: 60px;
+                            height: 60px;
+                            object-fit: contain;
+                        }
+                        .report-footer {
+                            margin-top: 30px;
+                            display: flex;
+                            justify-content: space-between;
+                            font-size: 10px;
+                            font-weight: 700;
+                            color: #64748b;
+                            border-top: 1px solid #e2e8f0;
+                            padding-top: 10px;
+                        }
+                    }
+                ` }} />
+
+                <div className="report-header">
+                    <img src="/images/neco.png" alt="NECO Logo" className="header-logo" />
+                    <div className="text-center space-y-1">
+                        <h1 className="text-xl font-black uppercase tracking-tight text-[#059669]">National Examinations Council (NECO)</h1>
+                        <h2 className="text-lg font-bold uppercase">Quality Assurance Department</h2>
+                        <h3 className="text-md font-bold uppercase">Accreditation Division</h3>
+                        <div className="mt-2 py-1 border-y-2 border-black inline-block px-8">
+                            <h4 className="text-sm font-black uppercase">Accreditation Summary: {stateName} State</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <img src="/images/neco.png" alt="Watermark" className="watermark" />
+
+                <table className="summary-table">
+                    <thead>
+                        <tr>
+                            <th rowSpan={2} className="text-center w-8">S/N</th>
+                            <th rowSpan={2}>LGA Name</th>
+                            <th colSpan={3} className="text-center">SSCE</th>
+                            <th colSpan={3} className="text-center">BECE</th>
+                        </tr>
+                        <tr>
+                            <th className="text-center">Schools Due</th>
+                            <th className="text-center">No. Paid</th>
+                            <th className="text-center">Percentage (%)</th>
+                            <th className="text-center">Schools Due</th>
+                            <th className="text-center">No. Paid</th>
+                            <th className="text-center">Percentage (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {summaryReportStats.map((st, idx) => (
+                            <tr key={st.lgaCode}>
+                                <td className="text-center">{idx + 1}</td>
+                                <td className="font-bold uppercase">{st.lgaName}</td>
+                                <td className="text-center">{st.ssceDue}</td>
+                                <td className="text-center">{st.sscePaid}</td>
+                                <td className="text-center font-bold">
+                                    {st.ssceDue > 0 ? ((st.sscePaid / st.ssceDue) * 100).toFixed(2) + '%' : '0.00%'}
+                                </td>
+                                <td className="text-center">{st.beceDue}</td>
+                                <td className="text-center">{st.becePaid}</td>
+                                <td className="text-center font-bold">
+                                    {st.beceDue > 0 ? ((st.becePaid / st.beceDue) * 100).toFixed(2) + '%' : '0.00%'}
+                                </td>
+                            </tr>
+                        ))}
+                        <tr className="bg-slate-50 font-black">
+                            <td colSpan={2} className="text-right">TOTAL</td>
+                            <td className="text-center">
+                                {summaryReportStats.reduce((sum, s) => sum + s.ssceDue, 0)}
+                            </td>
+                            <td className="text-center">
+                                {summaryReportStats.reduce((sum, s) => sum + s.sscePaid, 0)}
+                            </td>
+                            <td className="text-center">
+                                {(() => {
+                                    const totalDue = summaryReportStats.reduce((sum, s) => sum + s.ssceDue, 0);
+                                    const totalPaid = summaryReportStats.reduce((sum, s) => sum + s.sscePaid, 0);
+                                    return totalDue > 0 ? ((totalPaid / totalDue) * 100).toFixed(2) + '%' : '0.00%';
+                                })()}
+                            </td>
+                            <td className="text-center">
+                                {summaryReportStats.reduce((sum, s) => sum + s.beceDue, 0)}
+                            </td>
+                            <td className="text-center">
+                                {summaryReportStats.reduce((sum, s) => sum + s.becePaid, 0)}
+                            </td>
+                            <td className="text-center">
+                                {(() => {
+                                    const totalDue = summaryReportStats.reduce((sum, s) => sum + s.beceDue, 0);
+                                    const totalPaid = summaryReportStats.reduce((sum, s) => sum + s.becePaid, 0);
+                                    return totalDue > 0 ? ((totalPaid / totalDue) * 100).toFixed(2) + '%' : '0.00%';
+                                })()}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div className="report-footer">
+                    <span>Generated: {new Date().toLocaleDateString('en-GB')}</span>
+                    <span>By: NECO Accreditation Management System</span>
+                </div>
             </div>
         </div>
     );
