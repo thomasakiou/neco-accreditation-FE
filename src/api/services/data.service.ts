@@ -118,8 +118,10 @@ const DataService = {
         return response.data;
     },
 
-    updateSchool: async (code: string, school: components['schemas']['SchoolUpdate']): Promise<School> => {
-        const response = await client.put<School>(`/api/v1/data/schools/${code}`, school);
+    updateSchool: async (code: string, school: components['schemas']['SchoolUpdate'], accrd_year?: string | number): Promise<School> => {
+        const response = await client.put<School>(`/api/v1/data/schools/${code}`, school, {
+            params: { accrd_year }
+        });
         schoolsCache = null;
         return response.data;
     },
@@ -158,8 +160,10 @@ const DataService = {
         DataService.downloadBlob(response.data, 'ssce_schools', format);
     },
 
-    deleteSchool: async (code: string) => {
-        await client.delete(`/api/v1/data/schools/${code}`);
+    deleteSchool: async (code: string, accrd_year?: string | number) => {
+        await client.delete(`/api/v1/data/schools/${code}`, {
+            params: { accrd_year }
+        });
         schoolsCache = null;
     },
 
@@ -179,8 +183,10 @@ const DataService = {
         return response.data;
     },
 
-    updateBeceSchool: async (code: string, school: components['schemas']['BECESchoolUpdate']): Promise<BECESchool> => {
-        const response = await client.put<BECESchool>(`/api/v1/data/bece-schools/${code}`, school);
+    updateBeceSchool: async (code: string, school: components['schemas']['BECESchoolUpdate'], accrd_year?: string | number): Promise<BECESchool> => {
+        const response = await client.put<BECESchool>(`/api/v1/data/bece-schools/${code}`, school, {
+            params: { accrd_year }
+        });
         return response.data;
     },
 
@@ -203,44 +209,52 @@ const DataService = {
         DataService.downloadBlob(response.data, 'bece_schools', format);
     },
 
-    deleteBeceSchool: async (code: string) => {
-        await client.delete(`/api/v1/data/bece-schools/${code}`);
+    deleteBeceSchool: async (code: string, accrd_year?: string | number) => {
+        await client.delete(`/api/v1/data/bece-schools/${code}`, {
+            params: { accrd_year }
+        });
     },
 
     deleteAllBeceSchools: async () => {
         await client.delete('/api/v1/data/bece-schools/all');
     },
 
-    uploadSchoolPaymentProof: async (code: string, file: File): Promise<School> => {
+    uploadSchoolPaymentProof: async (code: string, file: File, accrd_year?: string | number): Promise<School> => {
         const formData = new FormData();
         formData.append('file', file);
         const response = await client.post<School>(`/api/v1/data/schools/${code}/upload-payment-proof`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            params: { accrd_year }
         });
         return response.data;
     },
 
-    uploadBeceSchoolPaymentProof: async (code: string, file: File): Promise<BECESchool> => {
+    uploadBeceSchoolPaymentProof: async (code: string, file: File, accrd_year?: string | number): Promise<BECESchool> => {
         const formData = new FormData();
         formData.append('file', file);
         const response = await client.post<BECESchool>(`/api/v1/data/bece-schools/${code}/upload-payment-proof`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            params: { accrd_year }
         });
         return response.data;
     },
 
-    approveSchool: async (code: string): Promise<School> => {
-        const response = await client.post<School>(`/api/v1/data/schools/${code}/approve`);
+    approveSchool: async (code: string, accrd_year?: string | number): Promise<School> => {
+        const response = await client.post<School>(`/api/v1/data/schools/${code}/approve`, null, {
+            params: { accrd_year }
+        });
         schoolsCache = null;
         return response.data;
     },
 
-    approveBeceSchool: async (code: string): Promise<BECESchool> => {
-        const response = await client.post<BECESchool>(`/api/v1/data/bece-schools/${code}/approve`);
+    approveBeceSchool: async (code: string, accrd_year?: string | number): Promise<BECESchool> => {
+        const response = await client.post<BECESchool>(`/api/v1/data/bece-schools/${code}/approve`, null, {
+            params: { accrd_year }
+        });
         return response.data;
     },
 
@@ -416,6 +430,16 @@ const DataService = {
         const response = await client.delete('/api/v1/audit/audit-logs/bulk/delete', {
             data: { log_ids: logIds },
         });
+        return response.data;
+    },
+
+    duplicateSchoolsForYear: async (targetYear: string, fromYear?: string): Promise<any> => {
+        const params: any = { target_year: targetYear };
+        if (fromYear) params.from_year = fromYear;
+        const response = await client.post('/api/v1/data/schools/duplicate-for-year', null, {
+            params
+        });
+        schoolsCache = null; // Invalidate cache
         return response.data;
     },
 

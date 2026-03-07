@@ -17,6 +17,7 @@ import { cn } from '../../components/layout/DashboardLayout';
 import DataService from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
 import { components } from '../../api/types';
+import { useFilterContext } from '../../context/FilterContext';
 
 type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
 type State = components['schemas']['State'];
@@ -39,9 +40,33 @@ export default function ReviewApplications() {
     const [activeTab, setActiveTab] = React.useState<'SSCE' | 'BECE'>('SSCE');
     const [isExporting, setIsExporting] = React.useState<string | null>(null);
 
+    const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
+
     React.useEffect(() => {
         fetchData();
+        return () => {
+            // Reset header filter on unmount
+            setHeaderAvailableYears([]);
+            setHeaderYearFilter('');
+        };
     }, []);
+
+    React.useEffect(() => {
+        if (schools.length > 0) {
+            const years = new Set<string>();
+            schools.forEach(school => {
+                if (school.accrd_year) {
+                    years.add(school.accrd_year.toString());
+                } else if (school.accredited_date) {
+                    const date = new Date(school.accredited_date);
+                    if (!isNaN(date.getFullYear())) {
+                        years.add(date.getFullYear().toString());
+                    }
+                }
+            });
+            setHeaderAvailableYears(Array.from(years).sort((a, b) => b.localeCompare(a)));
+        }
+    }, [schools]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -114,10 +139,17 @@ export default function ReviewApplications() {
                 (selectedPaymentFilter === 'Pending' && !!school.payment_url && school.approval_status !== 'Approved') ||
                 (selectedPaymentFilter === 'Unpaid' && !school.payment_url);
             const matchesAccr = !selectedAccrFilter || school.accreditation_status === selectedAccrFilter;
+            const schoolYear = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
+            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
 
-            return isDue && matchesSearch && matchesState && matchesPayment && matchesAccr;
+            // Debug log to trace what year string is being checked
+            if (schoolYear && headerYearFilter) {
+                // console.log(`Comparing school year ${schoolYear} with header filter ${headerYearFilter}`);
+            }
+
+            return isDue && matchesSearch && matchesState && matchesPayment && matchesAccr && matchesYear;
         });
-    }, [schools, searchQuery, selectedStateFilter, selectedPaymentFilter, selectedAccrFilter, activeTab]);
+    }, [schools, searchQuery, selectedStateFilter, selectedPaymentFilter, selectedAccrFilter, activeTab, headerYearFilter]);
 
     // Group due schools by state
     const schoolsByState = useMemo(() => {
@@ -492,7 +524,7 @@ export default function ReviewApplications() {
                                             </thead>
                                             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                                                 {stateSchools.map((school) => (
-                                                    <tr key={school.code} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                    <tr key={school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                         <td className="px-6 py-4">
                                                             <span className="font-medium text-slate-900 dark:text-white">{school.name}</span>
                                                         </td>

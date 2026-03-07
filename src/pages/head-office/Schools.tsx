@@ -29,6 +29,8 @@ import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import ExportModal from '../../components/modals/ExportModal';
+import { useFilterContext } from '../../context/FilterContext';
+import { useRef } from 'react';
 
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];
@@ -83,20 +85,92 @@ export default function HeadOfficeSchools() {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
 
-    const toggleRow = (schoolCode: string) => {
+    const toggleRow = (schoolCode: string, accrdYear?: string | number) => {
+        const rowId = accrdYear ? `${schoolCode}-${accrdYear}` : schoolCode;
         const newExpandedRows = new Set(expandedRows);
-        if (newExpandedRows.has(schoolCode)) {
-            newExpandedRows.delete(schoolCode);
+        if (newExpandedRows.has(rowId)) {
+            newExpandedRows.delete(rowId);
         } else {
-            newExpandedRows.add(schoolCode);
+            newExpandedRows.add(rowId);
         }
         setExpandedRows(newExpandedRows);
     };
 
+    const toggleSelectSchool = (schoolCode: string, accrdYear?: string | number) => {
+        const rowId = accrdYear ? `${schoolCode}-${accrdYear}` : schoolCode;
+        const newSelected = new Set(selectedSchools);
+        if (newSelected.has(rowId)) {
+            newSelected.delete(rowId);
+        } else {
+            newSelected.add(rowId);
+        }
+        setSelectedSchools(newSelected);
+    };
+
+    const toggleSelectAll = (filteredSchools: School[]) => {
+        const allFilteredIds = filteredSchools.map(s => s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code));
+        const allSelected = allFilteredIds.every(id => selectedSchools.has(id));
+
+        if (allSelected && allFilteredIds.length > 0) {
+            // Deselect all filtered
+            const newSelected = new Set(selectedSchools);
+            allFilteredIds.forEach(id => newSelected.delete(id));
+            setSelectedSchools(newSelected);
+        } else {
+            // Select all filtered
+            const newSelected = new Set(selectedSchools);
+            allFilteredIds.forEach(id => newSelected.add(id));
+            setSelectedSchools(newSelected);
+        }
+    };
+
+    const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
+    const hasInitializedYear = useRef(false);
+
     useEffect(() => {
         fetchInitialData();
+        return () => {
+            // Reset header filter on unmount
+            setHeaderAvailableYears([]);
+            setHeaderYearFilter('');
+            hasInitializedYear.current = false;
+        };
     }, []);
+
+    useEffect(() => {
+        if (schools.length > 0) {
+            const years = new Set<string>();
+            schools.forEach(school => {
+                if (school.accrd_year) {
+                    years.add(school.accrd_year.toString());
+                } else if (school.accredited_date) {
+                    const date = new Date(school.accredited_date);
+                    if (!isNaN(date.getFullYear())) {
+                        years.add(date.getFullYear().toString());
+                    }
+                }
+            });
+            const sortedYears = Array.from(years).sort((a, b) => b.localeCompare(a));
+            setHeaderAvailableYears(sortedYears);
+
+            // Default to current or previous year on initial load
+            if (!hasInitializedYear.current && sortedYears.length > 0) {
+                const currentYear = new Date().getFullYear().toString();
+                const prevYear = (new Date().getFullYear() - 1).toString();
+
+                if (sortedYears.includes(currentYear)) {
+                    setHeaderYearFilter(currentYear);
+                } else if (sortedYears.includes(prevYear)) {
+                    setHeaderYearFilter(prevYear);
+                } else {
+                    setHeaderYearFilter(sortedYears[0]);
+                }
+                hasInitializedYear.current = true;
+            }
+        }
+    }, [schools, setHeaderAvailableYears, setHeaderYearFilter]);
 
     const fetchInitialData = async () => {
         try {
@@ -131,6 +205,7 @@ export default function HeadOfficeSchools() {
             ]);
             setSchools(data);
             setCustodians(custodiansData);
+            setSelectedSchools(new Set()); // Reset selection on refresh
         } catch (err: any) {
             setError('Failed to refresh schools list.');
         } finally {
@@ -163,7 +238,7 @@ export default function HeadOfficeSchools() {
         }
     };
 
-    const handleDeleteSchool = async (code: string, name: string) => {
+    const handleDeleteSchool = async (code: string, name: string, accrd_year?: string | number) => {
         const type = activeTab === 'SSCE' ? 'SSCE' : 'BECE';
         setConfirmDialog({
             isOpen: true,
@@ -175,9 +250,9 @@ export default function HeadOfficeSchools() {
                 try {
                     setIsDeleting(true);
                     if (activeTab === 'SSCE') {
-                        await DataService.deleteSchool(code);
+                        await DataService.deleteSchool(code, accrd_year);
                     } else {
-                        await DataService.deleteBeceSchool(code);
+                        await DataService.deleteBeceSchool(code, accrd_year);
                     }
                     fetchSchools();
                     setConfirmDialog(prev => ({ ...prev, isOpen: false }));
@@ -349,9 +424,9 @@ export default function HeadOfficeSchools() {
             };
 
             if (activeTab === 'SSCE') {
-                await DataService.updateSchool(editingSchool.code, payload);
+                await DataService.updateSchool(editingSchool.code, payload, editingSchool.accrd_year);
             } else {
-                await DataService.updateBeceSchool(editingSchool.code, payload);
+                await DataService.updateBeceSchool(editingSchool.code, payload, editingSchool.accrd_year);
             }
             setShowEditModal(false);
             setEditingSchool(null);
@@ -383,6 +458,44 @@ export default function HeadOfficeSchools() {
                     setConfirmDialog(prev => ({ ...prev, isOpen: false }));
                 } catch (err: any) {
                     setError(`Failed to delete ${activeTab} schools.`);
+                } finally {
+                    setIsDeleting(false);
+                }
+            },
+        });
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedSchools.size === 0) return;
+
+        setConfirmDialog({
+            isOpen: true,
+            title: `Delete Selected ${activeTab} Schools`,
+            message: `Are you sure you want to delete the ${selectedSchools.size} selected schools? This action cannot be undone.`,
+            confirmLabel: 'Delete Selected',
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    setIsDeleting(true);
+                    setError(null);
+                    const idsToDelete: string[] = Array.from(selectedSchools);
+
+                    // Delete schools one by one as there is no bulk endpoint
+                    for (const id of idsToDelete) {
+                        const [code, accrd_year] = id.includes('-') ? id.split('-') : [id, undefined];
+                        if (activeTab === 'SSCE') {
+                            await DataService.deleteSchool(code, accrd_year);
+                        } else {
+                            await DataService.deleteBeceSchool(code, accrd_year);
+                        }
+                    }
+
+                    // Refresh data
+                    await fetchSchools();
+                    setSelectedSchools(new Set());
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                } catch (err: any) {
+                    setError(`Failed to delete some selected schools. Please refresh and try again.`);
                 } finally {
                     setIsDeleting(false);
                 }
@@ -431,7 +544,10 @@ export default function HeadOfficeSchools() {
                     selectedCategory === 'Private' ? school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' :
                         selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
 
-            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory;
+            const schoolYear = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
+            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
+
+            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesYear;
         });
 
         const totalPages = Math.ceil(filtered.length / rowsPerPage);
@@ -444,7 +560,7 @@ export default function HeadOfficeSchools() {
             startIndex,
             paginatedSchools: paginated
         };
-    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, states, currentPage, rowsPerPage]);
+    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, states, currentPage, rowsPerPage, headerYearFilter]);
 
     const handleExportReport = () => {
         const rows = filteredSchools.map((school, idx) => `
@@ -1026,7 +1142,7 @@ export default function HeadOfficeSchools() {
                             <SearchableSelect
                                 value={selectedState}
                                 onChange={(val) => {
-                                    setSelectedState(val);
+                                    setSelectedState(val as string);
                                     setSelectedLga('');
                                     setSelectedCustodian('');
                                     setCurrentPage(1);
@@ -1042,7 +1158,7 @@ export default function HeadOfficeSchools() {
                             <SearchableSelect
                                 value={selectedLga}
                                 onChange={(val) => {
-                                    setSelectedLga(val);
+                                    setSelectedLga(val as string);
                                     setSelectedCustodian('');
                                     setCurrentPage(1);
                                 }}
@@ -1056,7 +1172,7 @@ export default function HeadOfficeSchools() {
 
                             <SearchableSelect
                                 value={selectedCustodian}
-                                onChange={(val) => { setSelectedCustodian(val); setCurrentPage(1); }}
+                                onChange={(val) => { setSelectedCustodian(val as string); setCurrentPage(1); }}
                                 options={custodians
                                     .filter(c => selectedLga === '' || c.lga_code === selectedLga)
                                     .map(custodian => ({ value: custodian.code, label: custodian.name }))}
@@ -1133,6 +1249,17 @@ export default function HeadOfficeSchools() {
                                         <FileText className="w-4 h-4" />
                                         PDF REPORT
                                     </button>
+
+                                    {selectedSchools.size > 0 && (
+                                        <button
+                                            onClick={handleBulkDelete}
+                                            disabled={isDeleting}
+                                            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                            DELETE SELECTED ({selectedSchools.size})
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-3 sm:border-l sm:border-slate-300 sm:dark:border-slate-700 sm:pl-4">
@@ -1156,6 +1283,14 @@ export default function HeadOfficeSchools() {
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-slate-200/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
                                 <tr>
+                                    <th className="px-4 py-4 w-10">
+                                        <input
+                                            type="checkbox"
+                                            checked={filteredSchools.length > 0 && filteredSchools.every(s => selectedSchools.has(s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code)))}
+                                            onChange={() => toggleSelectAll(filteredSchools)}
+                                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                        />
+                                    </th>
                                     <th className="px-4 py-4 w-10"></th>
                                     <th className="px-6 py-4 text-center">Code</th>
                                     <th className="px-6 py-4">School</th>
@@ -1169,7 +1304,7 @@ export default function HeadOfficeSchools() {
                             <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-20 text-center">
+                                        <td colSpan={9} className="px-6 py-20 text-center">
                                             <div className="flex flex-col items-center gap-3">
                                                 <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
                                                 <p className="text-slate-500 font-medium">Synchronizing schools data...</p>
@@ -1178,7 +1313,7 @@ export default function HeadOfficeSchools() {
                                     </tr>
                                 ) : paginatedSchools.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-20 text-center">
+                                        <td colSpan={9} className="px-6 py-20 text-center">
                                             <div className="max-w-xs mx-auto space-y-3">
                                                 <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto">
                                                     <GraduationCap className="w-8 h-8 text-slate-300" />
@@ -1189,155 +1324,166 @@ export default function HeadOfficeSchools() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    paginatedSchools.map((school) => (
-                                        <React.Fragment key={school.code}>
-                                            <tr className="group hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-300 dark:border-slate-800 last:border-0">
-                                                <td className="px-4 py-4 text-center">
-                                                    <button
-                                                        onClick={() => toggleRow(school.code)}
-                                                        className="p-1 hover:bg-slate-300 dark:hover:bg-slate-700 rounded transition-colors"
-                                                    >
-                                                        {expandedRows.has(school.code) ? (
-                                                            <ChevronDown className="w-4 h-4 text-emerald-600" />
-                                                        ) : (
-                                                            <ChevronRight className="w-4 h-4 text-slate-400" />
-                                                        )}
-                                                    </button>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-400 text-sm font-mono font-bold">
-                                                        {school.code}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-base font-bold text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors">
-                                                            {school.name}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm font-bold text-slate-900 dark:text-slate-300">
-                                                        {states.find(s => s.code === school.state_code)?.name || school.state_code}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                                                        {custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm font-bold text-slate-900 dark:text-slate-300">
-                                                        {school.category === 'PUB' ? 'Public' :
-                                                            school.category === 'PRI' || school.category === 'PRV' ? 'Private' :
-                                                                school.category === 'FED' ? 'Federal' :
-                                                                    school.category || 'Public'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm w-fit ${(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
-                                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                            : school.accreditation_status === 'Failed'
-                                                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                                            }`}>
-                                                            {(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                                                            {(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
+                                    paginatedSchools.map((school) => {
+                                        const schoolId = school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code;
+                                        return (
+                                            <React.Fragment key={schoolId}>
+                                                <tr className="group hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-300 dark:border-slate-800 last:border-0">
+                                                    <td className="px-4 py-4 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedSchools.has(schoolId)}
+                                                            onChange={() => toggleSelectSchool(school.code, school.accrd_year)}
+                                                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-4 text-center">
                                                         <button
-                                                            onClick={() => handleEditClick(school)}
-                                                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
-                                                            title="Edit School"
+                                                            onClick={() => toggleRow(school.code, school.accrd_year)}
+                                                            className="p-1 hover:bg-slate-300 dark:hover:bg-slate-700 rounded transition-colors"
                                                         >
-                                                            <Edit2 className="w-4 h-4" />
+                                                            {expandedRows.has(schoolId) ? (
+                                                                <ChevronDown className="w-4 h-4 text-emerald-600" />
+                                                            ) : (
+                                                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                                                            )}
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleDeleteSchool(school.code, school.name)}
-                                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
-                                                            title="Delete School"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {expandedRows.has(school.code) && (
-                                                <tr className="bg-slate-50 dark:bg-slate-900/50 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                    <td colSpan={8} className="px-10 py-6 border-b border-slate-300 dark:border-slate-800">
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                                            <div className="space-y-4">
-                                                                <div>
-                                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Location Details</label>
-                                                                    <div className="space-y-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <MapPin className="w-4 h-4 text-emerald-600" />
-                                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                                                Zone: {zones.find(z => z.code === (states.find(s => s.code === school.state_code)?.zone_code))?.name || 'N/A'}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-2 pl-6">
-                                                                            <Filter className="w-3.5 h-3.5 text-slate-400" />
-                                                                            <span className="text-sm text-slate-600 dark:text-slate-400">
-                                                                                LGA: {allLgas.find(l => l.code === school.lga_code)?.name || 'N/A'}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="space-y-4">
-                                                                <div>
-                                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Accreditation Info</label>
-                                                                    <div className="space-y-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Calendar className="w-4 h-4 text-emerald-600" />
-                                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                                                Year: {(school as any).accrd_year || 'N/A'}
-                                                                            </span>
-                                                                        </div>
-                                                                        {school.accredited_date && (
-                                                                            <div className="flex items-center gap-2 pl-6">
-                                                                                <CheckSquare className="w-3.5 h-3.5 text-slate-400" />
-                                                                                <span className="text-sm text-slate-600 dark:text-slate-400">
-                                                                                    Date: {new Date(school.accredited_date).toLocaleDateString()}
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="space-y-4">
-                                                                <div>
-                                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Contact & Status</label>
-                                                                    <div className="space-y-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Building2 className="w-4 h-4 text-emerald-600" />
-                                                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 break-all">
-                                                                                {school.email || 'No email provided'}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-2 pl-6">
-                                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter ${school.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30' :
-                                                                                'bg-slate-100 text-slate-600 dark:bg-slate-800'
-                                                                                }`}>
-                                                                                System: {school.status}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-400 text-sm font-mono font-bold">
+                                                            {school.code}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-base font-bold text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors">
+                                                                {school.name}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-sm font-bold text-slate-900 dark:text-slate-300">
+                                                            {states.find(s => s.code === school.state_code)?.name || school.state_code}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                                            {custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-sm font-bold text-slate-900 dark:text-slate-300">
+                                                            {school.category === 'PUB' ? 'Public' :
+                                                                school.category === 'PRI' || school.category === 'PRV' ? 'Private' :
+                                                                    school.category === 'FED' ? 'Federal' :
+                                                                        school.category || 'Public'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm w-fit ${(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
+                                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                                : school.accreditation_status === 'Failed'
+                                                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                                }`}>
+                                                                {(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                                                                {(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                onClick={() => handleEditClick(school)}
+                                                                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
+                                                                title="Edit School"
+                                                            >
+                                                                <Edit2 className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteSchool(school.code, school.name, school.accrd_year)}
+                                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
+                                                                title="Delete School"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
                                                         </div>
                                                     </td>
                                                 </tr>
-                                            )}
-                                        </React.Fragment>
-                                    ))
+                                                {expandedRows.has(schoolId) && (
+                                                    <tr className="bg-slate-50 dark:bg-slate-900/50 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                        <td colSpan={9} className="px-10 py-6 border-b border-slate-300 dark:border-slate-800">
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                                <div className="space-y-4">
+                                                                    <div>
+                                                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Location Details</label>
+                                                                        <div className="space-y-2">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <MapPin className="w-4 h-4 text-emerald-600" />
+                                                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                                                    Zone: {zones.find(z => z.code === (states.find(s => s.code === school.state_code)?.zone_code))?.name || 'N/A'}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2 pl-6">
+                                                                                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                                                                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                                                                    LGA: {allLgas.find(l => l.code === school.lga_code)?.name || 'N/A'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-4">
+                                                                    <div>
+                                                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Accreditation Info</label>
+                                                                        <div className="space-y-2">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Calendar className="w-4 h-4 text-emerald-600" />
+                                                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                                                    Year: {(school as any).accrd_year || 'N/A'}
+                                                                                </span>
+                                                                            </div>
+                                                                            {school.accredited_date && (
+                                                                                <div className="flex items-center gap-2 pl-6">
+                                                                                    <CheckSquare className="w-3.5 h-3.5 text-slate-400" />
+                                                                                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                                                                                        Date: {new Date(school.accredited_date).toLocaleDateString()}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-4">
+                                                                    <div>
+                                                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Contact & Status</label>
+                                                                        <div className="space-y-2">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Building2 className="w-4 h-4 text-emerald-600" />
+                                                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 break-all">
+                                                                                    {school.email || 'No email provided'}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2 pl-6">
+                                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter ${school.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30' :
+                                                                                    'bg-slate-100 text-slate-600 dark:bg-slate-800'
+                                                                                    }`}>
+                                                                                    System: {school.status}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

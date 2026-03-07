@@ -18,12 +18,15 @@ import {
     Check,
     Download,
     FileSpreadsheet,
-    FileText
+    FileText,
+    Trash2
 } from 'lucide-react';
 
 import { cn } from '../../components/layout/DashboardLayout';
 import DataService, { School } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
+import { useFilterContext } from '../../context/FilterContext';
+import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import { baseURL } from '../../api/client';
 
 export default function StateApplications() {
@@ -41,6 +44,17 @@ export default function StateApplications() {
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = React.useState<string>('');
     const [selectedProofStatus, setSelectedProofStatus] = React.useState<string>('');
     const [selectedCategory, setSelectedCategory] = React.useState<string>('');
+    const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
+    const [selectedSchools, setSelectedSchools] = React.useState<Set<string>>(new Set());
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [confirmDialog, setConfirmDialog] = React.useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        confirmLabel: 'Confirm',
+        variant: 'primary' as 'primary' | 'danger',
+        onConfirm: () => { },
+    });
 
 
     // Camera State
@@ -59,8 +73,96 @@ export default function StateApplications() {
         setExpandedRows(next);
     };
 
+    const toggleSelectSchool = (schoolCode: string) => {
+        const code = String(schoolCode);
+        const newSelected = new Set(selectedSchools);
+        if (newSelected.has(code)) {
+            newSelected.delete(code);
+        } else {
+            newSelected.add(code);
+        }
+        setSelectedSchools(newSelected);
+    };
+
+    const toggleSelectAll = (filteredSchools: School[]) => {
+        const allFilteredCodes = filteredSchools.map(s => String(s.code));
+        const allSelected = allFilteredCodes.every(code => selectedSchools.has(code));
+
+        if (allSelected && allFilteredCodes.length > 0) {
+            const newSelected = new Set(selectedSchools);
+            allFilteredCodes.forEach(code => newSelected.delete(code));
+            setSelectedSchools(newSelected);
+        } else {
+            const newSelected = new Set(selectedSchools);
+            allFilteredCodes.forEach(code => newSelected.add(code));
+            setSelectedSchools(newSelected);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedSchools.size === 0) return;
+
+        setConfirmDialog({
+            isOpen: true,
+            title: `Delete Selected ${schoolType} Schools`,
+            message: `Are you sure you want to delete the ${selectedSchools.size} selected schools? This action cannot be undone.`,
+            confirmLabel: 'Delete Selected',
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    setIsDeleting(true);
+                    const codesToDelete: string[] = Array.from(selectedSchools);
+
+                    for (const code of codesToDelete) {
+                        if (schoolType === 'SSCE') {
+                            await DataService.deleteSchool(code);
+                        } else {
+                            await DataService.deleteBeceSchool(code);
+                        }
+                    }
+
+                    await fetchData();
+                    setSelectedSchools(new Set());
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                } catch (err: any) {
+                    console.error('Failed to delete schools:', err);
+                    alert('Failed to delete some selected schools. Please refresh and try again.');
+                } finally {
+                    setIsDeleting(false);
+                }
+            },
+        });
+    };
+
     React.useEffect(() => {
         fetchData();
+    }, []);
+
+    React.useEffect(() => {
+        if (allSchools.length > 0) {
+            const years = Array.from(new Set(allSchools
+                .filter(s => (s as any).school_type === schoolType)
+                .map(s => (s as any).accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : ''))
+                .filter(Boolean)
+            )).sort((a, b) => (b as string).localeCompare(a as string));
+
+            setHeaderAvailableYears(years);
+
+            if (!headerYearFilter && years.length > 0) {
+                const currentYear = new Date().getFullYear().toString();
+                const prevYear = (new Date().getFullYear() - 1).toString();
+                if (years.includes(currentYear)) setHeaderYearFilter(currentYear);
+                else if (years.includes(prevYear)) setHeaderYearFilter(prevYear);
+                else setHeaderYearFilter(years[0]);
+            }
+        }
+    }, [allSchools, schoolType]);
+
+    React.useEffect(() => {
+        return () => {
+            setHeaderAvailableYears([]);
+            setHeaderYearFilter('');
+        };
     }, []);
 
     const [userStateName, setUserStateName] = React.useState<string>('');
@@ -234,7 +336,10 @@ export default function StateApplications() {
                     selectedCategory === 'Private' ? s.category === 'PRI' || s.category === 'PRV' || s.category === 'Private' :
                         selectedCategory === 'Federal' ? s.category === 'FED' || s.category === 'Federal' : false);
 
-            return matchesSearch && matchesAccreditation && matchesProof && matchesCategory;
+            const schoolYear = (s as any).accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
+            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
+
+            return matchesSearch && matchesAccreditation && matchesProof && matchesCategory && matchesYear;
         });
 
 
@@ -249,7 +354,7 @@ export default function StateApplications() {
             paginatedSchools: paginated,
             schools: currentSchools
         };
-    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, selectedCategory, schoolType]);
+    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, selectedCategory, schoolType, headerYearFilter]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {
@@ -400,6 +505,17 @@ export default function StateApplications() {
                             <span>New Application</span>
                         </button>
 
+                        {selectedSchools.size > 0 && (
+                            <button
+                                onClick={handleBulkDelete}
+                                disabled={isDeleting}
+                                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all text-sm font-bold shadow-lg active:scale-95"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span>Delete ({selectedSchools.size})</span>
+                            </button>
+                        )}
+
 
                         <div className="relative group">
                             <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shadow-sm font-bold text-sm text-slate-700 dark:text-slate-300">
@@ -503,6 +619,14 @@ export default function StateApplications() {
                                     <thead>
                                         <tr className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 font-medium">
                                             <th className="px-4 py-4 w-10"></th>
+                                            <th className="px-4 py-4 w-10">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={paginatedSchools.length > 0 && paginatedSchools.every(s => selectedSchools.has(String(s.code)))}
+                                                    onChange={() => toggleSelectAll(paginatedSchools)}
+                                                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                                />
+                                            </th>
                                             <th className="px-6 py-4">ID Code</th>
                                             <th className="px-6 py-4">School</th>
                                             <th className="px-6 py-4">Category</th>
@@ -531,6 +655,14 @@ export default function StateApplications() {
                                                             >
                                                                 {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                                             </button>
+                                                        </td>
+                                                        <td className="px-4 py-4 text-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSchools.has(String(school.code))}
+                                                                onChange={() => toggleSelectSchool(school.code)}
+                                                                className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                                            />
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <span className="text-xs font-mono font-black text-slate-900 dark:text-emerald-400 bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">{school.code}</span>
@@ -600,7 +732,7 @@ export default function StateApplications() {
                                                     </tr>
                                                     {isExpanded && (
                                                         <tr className="bg-slate-50 dark:bg-slate-800/20 border-l-4 border-emerald-500 animate-in slide-in-from-top-1">
-                                                            <td colSpan={5} className="px-6 py-4">
+                                                            <td colSpan={7} className="px-6 py-4">
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                     <div>
                                                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Administrative Details</p>
@@ -939,6 +1071,17 @@ export default function StateApplications() {
                     <div>Total: {filteredSchools.length} schools</div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={confirmDialog.isOpen}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                confirmLabel={confirmDialog.confirmLabel}
+                variant={confirmDialog.variant}
+                isLoading={isDeleting}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+            />
         </>
     );
 }

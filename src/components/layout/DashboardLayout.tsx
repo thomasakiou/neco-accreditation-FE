@@ -23,11 +23,14 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Upload
+  Upload,
+  Filter,
+  ChevronDown
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useTheme } from '../../context/ThemeContext';
+import { useFilterContext } from '../../context/FilterContext';
 import AuthService from '../../api/services/auth.service';
 import DataService, { State } from '../../api/services/data.service';
 
@@ -164,6 +167,16 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
+  const { headerYearFilter, setHeaderYearFilter, headerAvailableYears } = useFilterContext();
+
+  const showYearFilter = [
+    '/head-office/review-proofs',
+    '/head-office/approvals',
+    '/head-office/schools',
+    '/state/schools',
+    '/state/schools-due',
+    '/state/applications'
+  ].includes(location.pathname);
 
   React.useEffect(() => {
     const fetchUserData = async () => {
@@ -334,13 +347,31 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                   )}
                 </NavLink>
               )}
-              <button
-                title={isDesktopCollapsed ? 'Settings' : undefined}
-                className={cn("w-full flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200 transition-colors group overflow-hidden whitespace-nowrap", isDesktopCollapsed ? "px-3 justify-center" : "px-3")}
-              >
-                <Settings className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300" />
-                <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>Settings</span>
-              </button>
+              {role === 'head-office' ? (
+                <NavLink
+                  to="/head-office/settings"
+                  onClick={() => setIsSidebarOpen(false)}
+                  title={isDesktopCollapsed ? 'Settings' : undefined}
+                  className={({ isActive }) => cn(
+                    "flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative group whitespace-nowrap overflow-hidden",
+                    isDesktopCollapsed ? "px-3 justify-center" : "px-3",
+                    isActive
+                      ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                      : "text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200"
+                  )}
+                >
+                  <Settings className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300" />
+                  <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>Settings</span>
+                </NavLink>
+              ) : (
+                <button
+                  title={isDesktopCollapsed ? 'Settings' : undefined}
+                  className={cn("w-full flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200 transition-colors group overflow-hidden whitespace-nowrap", isDesktopCollapsed ? "px-3 justify-center" : "px-3")}
+                >
+                  <Settings className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300" />
+                  <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>Settings</span>
+                </button>
+              )}
               <button
                 title={isDesktopCollapsed ? 'Notifications' : undefined}
                 className={cn("w-full flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200 transition-colors group overflow-hidden whitespace-nowrap relative", isDesktopCollapsed ? "px-3 justify-center" : "px-3")}
@@ -419,14 +450,31 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="relative hidden sm:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="pl-9 pr-4 py-2 w-64 bg-slate-200 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 text-slate-950 dark:text-slate-100 placeholder:text-slate-700 dark:placeholder:text-slate-400"
-              />
-            </div>
+            {showYearFilter ? (
+              <div className="relative hidden sm:block">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                <select
+                  value={headerYearFilter}
+                  onChange={(e) => setHeaderYearFilter(e.target.value)}
+                  className="pl-9 pr-8 py-2 w-48 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm font-bold text-emerald-800 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer [&>option]:bg-white [&>option]:text-emerald-800 [&>option]:dark:bg-slate-900 [&>option]:dark:text-emerald-400"
+                >
+                  <option value="">Filter by Accrd. Year</option>
+                  {headerAvailableYears.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 pointer-events-none" />
+              </div>
+            ) : (
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="pl-9 pr-4 py-2 w-64 bg-slate-200 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 text-slate-950 dark:text-slate-100 placeholder:text-slate-700 dark:placeholder:text-slate-400"
+                />
+              </div>
+            )}
             <button className="relative p-2 text-slate-700 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors">
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>

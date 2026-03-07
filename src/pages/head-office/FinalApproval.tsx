@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     CheckCircle,
     XCircle,
@@ -26,6 +26,7 @@ import { clearStaticCache } from '../../api/services/data.service';
 import { baseURL } from '../../api/client';
 import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
+import { useFilterContext } from '../../context/FilterContext';
 
 type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
 type State = components['schemas']['State'];
@@ -41,8 +42,9 @@ export default function HeadOfficeFinalApproval() {
     const [selectedAccrFilter, setSelectedAccrFilter] = useState('');
     const [selectedProofFilter, setSelectedProofFilter] = useState('');
     const [selectedDueFilter, setSelectedDueFilter] = useState('');
-    const [selectedYearFilter, setSelectedYearFilter] = useState('');
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
+
+    const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
 
     // Review modal
     const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -54,8 +56,17 @@ export default function HeadOfficeFinalApproval() {
     const [showVerifyModal, setShowVerifyModal] = useState(false);
     const [verifyingSchool, setVerifyingSchool] = useState<School | null>(null);
 
+    // Track if we've initialized the default year
+    const hasInitializedYear = useRef(false);
+
     useEffect(() => {
         fetchData();
+        return () => {
+            // Reset header filter on unmount
+            setHeaderAvailableYears([]);
+            setHeaderYearFilter('');
+            hasInitializedYear.current = false;
+        };
     }, []);
 
     const fetchData = async () => {
@@ -87,18 +98,38 @@ export default function HeadOfficeFinalApproval() {
         return states.find(s => s.code === code)?.name || code;
     };
 
-    const availableYears = useMemo(() => {
-        const years = new Set<string>();
-        schools.forEach(school => {
-            if (school.accredited_date) {
-                const date = new Date(school.accredited_date);
-                if (!isNaN(date.getFullYear())) {
-                    years.add(date.getFullYear().toString());
+    useEffect(() => {
+        if (schools.length > 0) {
+            const years = new Set<string>();
+            schools.forEach(school => {
+                if (school.accrd_year) {
+                    years.add(school.accrd_year.toString());
+                } else if (school.accredited_date) {
+                    const date = new Date(school.accredited_date);
+                    if (!isNaN(date.getFullYear())) {
+                        years.add(date.getFullYear().toString());
+                    }
                 }
+            });
+            const sortedYears = Array.from(years).sort((a, b) => b.localeCompare(a));
+            setHeaderAvailableYears(sortedYears);
+
+            // Default to current year or previous year on initial load
+            if (!hasInitializedYear.current && sortedYears.length > 0) {
+                const currentYear = new Date().getFullYear().toString();
+                const prevYear = (new Date().getFullYear() - 1).toString();
+
+                if (sortedYears.includes(currentYear)) {
+                    setHeaderYearFilter(currentYear);
+                } else if (sortedYears.includes(prevYear)) {
+                    setHeaderYearFilter(prevYear);
+                } else {
+                    setHeaderYearFilter(sortedYears[0]);
+                }
+                hasInitializedYear.current = true;
             }
-        });
-        return Array.from(years).sort((a, b) => b.localeCompare(a));
-    }, [schools]);
+        }
+    }, [schools, setHeaderAvailableYears, setHeaderYearFilter]);
 
     const filteredSchools = useMemo(() => {
         return schools.filter(school => {
@@ -149,12 +180,17 @@ export default function HeadOfficeFinalApproval() {
                 (selectedDueFilter === 'Due' && isDue()) ||
                 (selectedDueFilter === 'Not Due' && !isDue());
 
-            const schoolYear = school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '';
-            const matchesYear = !selectedYearFilter || schoolYear === selectedYearFilter;
+            const schoolYear = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
+            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
+
+            // Debug log to trace what year string is being checked
+            if (schoolYear && headerYearFilter) {
+                // console.log(`Comparing school year ${schoolYear} with header filter ${headerYearFilter}`);
+            }
 
             return matchesSearch && matchesState && matchesAccr && matchesProof && matchesDue && matchesYear;
         });
-    }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter, selectedDueFilter, selectedYearFilter, selectedSchoolType]);
+    }, [schools, searchTerm, selectedStateFilter, selectedAccrFilter, selectedProofFilter, selectedDueFilter, headerYearFilter, selectedSchoolType]);
 
     // Group filtered schools by state
     const schoolsByState = useMemo(() => {
@@ -218,12 +254,12 @@ export default function HeadOfficeFinalApproval() {
                 await DataService.updateBeceSchool(selectedSchool.code, {
                     accreditation_status: accrType,
                     accredited_date: accrDate
-                });
+                }, selectedSchool.accrd_year);
             } else {
                 await DataService.updateSchool(selectedSchool.code, {
                     accreditation_status: accrType,
                     accredited_date: accrDate
-                });
+                }, selectedSchool.accrd_year);
             }
             // Clear schools cache to force fresh fetch after update
             clearStaticCache();
@@ -245,42 +281,61 @@ export default function HeadOfficeFinalApproval() {
         setShowReviewModal(true);
     };
 
-    // Stats - Scoped to selected school type
-    const typedSchools = schools.filter(s => s.school_type === selectedSchoolType);
-    const totalSchools = typedSchools.length;
-    const accreditedCount = typedSchools.filter(s => s.accreditation_status === 'Full' || s.accreditation_status === 'Partial').length;
-    const pendingCount = typedSchools.filter(s => !s.accreditation_status || s.accreditation_status === 'Pending').length;
-    const proofCount = typedSchools.filter(s => !!s.payment_url).length;
-    const approvedPayments = typedSchools.filter(s => s.approval_status === 'Approved').length;
-    const unapprovedPayments = typedSchools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
-    const unapprovedPaymentsTotal = schools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
+    // Stats - Scoped to selected school type AND year filter
+    const stats = useMemo(() => {
+        const yearFilteredSchools = schools.filter(s => {
+            const matchesType = s.school_type === selectedSchoolType;
+            const schoolYear = s.accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
+            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
+            return matchesType && matchesYear;
+        });
 
-    const dueCount = typedSchools.filter(s => {
-        if (s.accreditation_status === 'Failed') return true;
-        if (!s.accredited_date || !['Full', 'Partial'].includes(s.accreditation_status || '')) return false;
-        const accreditedDate = new Date(s.accredited_date);
-        let yearsToAdd = 5; // Default for Full
+        const totalSchools = yearFilteredSchools.length;
+        const accreditedCount = yearFilteredSchools.filter(s => s.accreditation_status === 'Full' || s.accreditation_status === 'Partial').length;
+        const pendingCount = yearFilteredSchools.filter(s => !s.accreditation_status || s.accreditation_status === 'Pending').length;
+        const proofCount = yearFilteredSchools.filter(s => !!s.payment_url).length;
+        const approvedPayments = yearFilteredSchools.filter(s => s.approval_status === 'Approved').length;
+        const unapprovedPayments = yearFilteredSchools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
 
-        // Check if school is in a foreign zone
-        const schoolState = states.find(st => st.code === s.state_code);
-        const zone = zones.find(z => z.code === schoolState?.zone_code);
-        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+        const dueCount = yearFilteredSchools.filter(s => {
+            if (s.accreditation_status === 'Failed') return true;
+            if (!s.accredited_date || !['Full', 'Partial'].includes(s.accreditation_status || '')) return false;
+            const accreditedDate = new Date(s.accredited_date);
+            let yearsToAdd = 5; // Default for Full
 
-        if (isForeign) {
-            yearsToAdd = 10;
-        } else if (s.accreditation_status === 'Partial') {
-            yearsToAdd = 1;
-        }
+            // Check if school is in a foreign zone
+            const schoolState = states.find(st => st.code === s.state_code);
+            const zone = zones.find(z => z.code === schoolState?.zone_code);
+            const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
 
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+            if (isForeign) {
+                yearsToAdd = 10;
+            } else if (s.accreditation_status === 'Partial') {
+                yearsToAdd = 1;
+            }
 
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
+            const expiryDate = new Date(accreditedDate);
+            expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
 
-        return expiryDate <= sixMonthsFromNow;
-    }).length;
+            const today = new Date();
+            const sixMonthsFromNow = new Date();
+            sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+            return expiryDate <= sixMonthsFromNow;
+        }).length;
+
+        return {
+            totalSchools,
+            accreditedCount,
+            pendingCount,
+            proofCount,
+            approvedPayments,
+            unapprovedPayments,
+            dueCount
+        };
+    }, [schools, selectedSchoolType, headerYearFilter, states, zones]);
+
+    const { totalSchools, accreditedCount, proofCount, approvedPayments, unapprovedPayments, dueCount } = stats;
 
     return (
         <div className="space-y-6">
@@ -400,15 +455,6 @@ export default function HeadOfficeFinalApproval() {
                             <option value="Not Due">Not Due</option>
                         </select>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl">
-                        <Calendar className="w-4 h-4 text-slate-500" />
-                        <select value={selectedYearFilter} onChange={(e) => setSelectedYearFilter(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200">
-                            <option value="">Accre. Year</option>
-                            {availableYears.map(year => (
-                                <option key={year} value={year}>{year}</option>
-                            ))}
-                        </select>
-                    </div>
                 </div>
             </div>
 
@@ -496,7 +542,7 @@ export default function HeadOfficeFinalApproval() {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                             {stateSchools.map((school, idx) => (
-                                                <tr key={school.code} className="group hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                                <tr key={school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code} className="group hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                                                     <td className="px-6 py-3 text-xs font-bold text-slate-400">{idx + 1}</td>
                                                     <td className="px-6 py-3 text-xs font-mono font-black text-slate-700 dark:text-slate-300">{school.code}</td>
                                                     <td className="px-6 py-3">
@@ -762,9 +808,9 @@ export default function HeadOfficeFinalApproval() {
                                             try {
                                                 setIsSubmitting(true);
                                                 if (verifyingSchool.school_type === 'BECE') {
-                                                    await DataService.approveBeceSchool(verifyingSchool.code);
+                                                    await DataService.approveBeceSchool(verifyingSchool.code, verifyingSchool.accrd_year);
                                                 } else {
-                                                    await DataService.approveSchool(verifyingSchool.code);
+                                                    await DataService.approveSchool(verifyingSchool.code, verifyingSchool.accrd_year);
                                                 }
                                                 // Clear cache and refetch
                                                 clearStaticCache();

@@ -28,6 +28,8 @@ import {
 import { cn } from '../../components/layout/DashboardLayout';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
+import { useFilterContext } from '../../context/FilterContext';
+import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import { baseURL } from '../../api/client';
@@ -48,6 +50,17 @@ export default function StateSchools() {
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = useState<string>('');
     const [selectedProofStatus, setSelectedProofStatus] = useState<string>('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
+    const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        confirmLabel: 'Confirm',
+        variant: 'primary' as 'primary' | 'danger',
+        onConfirm: () => { },
+    });
 
 
     // Pagination
@@ -60,10 +73,11 @@ export default function StateSchools() {
 
     const [allLgas, setAllLgas] = useState<LGA[]>([]);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-    const toggleRow = (code: string) => {
+    const toggleRow = (code: string, accrd_year?: string | number) => {
+        const rowId = accrd_year ? `${code}-${accrd_year}` : code;
         const next = new Set(expandedRows);
-        if (next.has(code)) next.delete(code);
-        else next.add(code);
+        if (next.has(rowId)) next.delete(rowId);
+        else next.add(rowId);
         setExpandedRows(next);
     };
 
@@ -74,6 +88,32 @@ export default function StateSchools() {
     const [isLoadingCustodians, setIsLoadingCustodians] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+
+    const toggleSelectSchool = (schoolCode: string, accrdYear?: string | number) => {
+        const rowId = accrdYear ? `${schoolCode}-${accrdYear}` : String(schoolCode);
+        const newSelected = new Set(selectedSchools);
+        if (newSelected.has(rowId)) {
+            newSelected.delete(rowId);
+        } else {
+            newSelected.add(rowId);
+        }
+        setSelectedSchools(newSelected);
+    };
+
+    const toggleSelectAll = (filteredSchools: School[]) => {
+        const allFilteredIds = filteredSchools.map(s => s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code));
+        const allSelected = allFilteredIds.every(id => selectedSchools.has(id));
+
+        if (allSelected && allFilteredIds.length > 0) {
+            const newSelected = new Set(selectedSchools);
+            allFilteredIds.forEach(id => newSelected.delete(id));
+            setSelectedSchools(newSelected);
+        } else {
+            const newSelected = new Set(selectedSchools);
+            allFilteredIds.forEach(id => newSelected.add(id));
+            setSelectedSchools(newSelected);
+        }
+    };
 
     const [newSchool, setNewSchool] = useState({
         name: '',
@@ -98,7 +138,35 @@ export default function StateSchools() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, activeTab]);
+    }, [searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, activeTab, headerYearFilter]);
+
+    useEffect(() => {
+        if (allSchools.length > 0) {
+            const years = Array.from(new Set(allSchools
+                .filter(s => (s as any).school_type === activeTab)
+                .map(s => (s as any).accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : ''))
+                .filter(Boolean)
+            )).sort((a, b) => (b as string).localeCompare(a as string));
+
+            setHeaderAvailableYears(years);
+
+            // Default to current year if not set
+            if (!headerYearFilter && years.length > 0) {
+                const currentYear = new Date().getFullYear().toString();
+                const prevYear = (new Date().getFullYear() - 1).toString();
+                if (years.includes(currentYear)) setHeaderYearFilter(currentYear);
+                else if (years.includes(prevYear)) setHeaderYearFilter(prevYear);
+                else setHeaderYearFilter(years[0]);
+            }
+        }
+    }, [allSchools, activeTab]);
+
+    useEffect(() => {
+        return () => {
+            setHeaderAvailableYears([]);
+            setHeaderYearFilter('');
+        };
+    }, []);
 
     const fetchInitialData = async () => {
         try {
@@ -280,9 +348,9 @@ export default function StateSchools() {
             };
 
             if (activeTab === 'SSCE') {
-                await DataService.updateSchool(editingSchool.code, payload);
+                await DataService.updateSchool(editingSchool.code, payload, editingSchool.accrd_year);
             } else {
-                await DataService.updateBeceSchool(editingSchool.code, payload);
+                await DataService.updateBeceSchool(editingSchool.code, payload, editingSchool.accrd_year);
             }
             setShowEditModal(false);
             setEditingSchool(null);
@@ -292,6 +360,44 @@ export default function StateSchools() {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedSchools.size === 0) return;
+
+        setConfirmDialog({
+            isOpen: true,
+            title: `Delete Selected ${activeTab} Schools`,
+            message: `Are you sure you want to delete the ${selectedSchools.size} selected schools? This action cannot be undone.`,
+            confirmLabel: 'Delete Selected',
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    setIsDeleting(true);
+                    setError(null);
+                    const idsToDelete: string[] = Array.from(selectedSchools);
+
+                    // Delete schools one by one as there is no bulk endpoint
+                    for (const id of idsToDelete) {
+                        const [code, accrd_year] = id.includes('-') ? id.split('-') : [id, undefined];
+                        if (activeTab === 'SSCE') {
+                            await DataService.deleteSchool(code, accrd_year);
+                        } else {
+                            await DataService.deleteBeceSchool(code, accrd_year);
+                        }
+                    }
+
+                    // Refresh data
+                    await fetchSchools();
+                    setSelectedSchools(new Set());
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                } catch (err: any) {
+                    setError(`Failed to delete some selected schools. Please refresh and try again.`);
+                } finally {
+                    setIsDeleting(false);
+                }
+            },
+        });
     };
 
     const { filteredSchools, totalPages, startIndex, paginatedSchools, schools, custodians } = React.useMemo(() => {
@@ -318,7 +424,10 @@ export default function StateSchools() {
                     selectedCategory === 'Private' ? (school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private') :
                         selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
 
-            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory;
+            const schoolYear = (school as any).accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
+            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
+
+            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesYear;
         });
 
 
@@ -334,7 +443,7 @@ export default function StateSchools() {
             schools,
             custodians
         };
-    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, currentPage, rowsPerPage, activeTab]);
+    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, currentPage, rowsPerPage, activeTab, headerYearFilter]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {
@@ -909,8 +1018,18 @@ export default function StateSchools() {
                                         </button>
                                     </div>
                                 </div>
-
                             </div>
+
+                            {selectedSchools.size > 0 && !isPortalLocked && (
+                                <button
+                                    onClick={handleBulkDelete}
+                                    disabled={isDeleting}
+                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    DELETE ({selectedSchools.size})
+                                </button>
+                            )}
 
 
                             <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm focus-within:ring-2 ring-emerald-500/20">
@@ -932,6 +1051,14 @@ export default function StateSchools() {
                         <table className="w-full text-left">
                             <thead className="bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-300 dark:border-slate-700">
                                 <tr>
+                                    <th className="px-4 py-4 w-10">
+                                        <input
+                                            type="checkbox"
+                                            checked={filteredSchools.length > 0 && filteredSchools.every(s => selectedSchools.has(s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code)))}
+                                            onChange={() => toggleSelectAll(filteredSchools)}
+                                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                        />
+                                    </th>
                                     <th className="px-4 py-4 w-10"></th>
                                     <th className="px-6 py-4 text-center">ID Code</th>
                                     <th className="px-6 py-4">Educational Institution</th>
@@ -943,18 +1070,27 @@ export default function StateSchools() {
                             </thead>
                             <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
                                 {isLoading ? (
-                                    <tr><td colSpan={7} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></td></tr>
+                                    <tr><td colSpan={isPortalLocked ? 7 : 8} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></td></tr>
                                 ) : filteredSchools.length === 0 ? (
-                                    <tr><td colSpan={7} className="py-20 text-center text-slate-500">No schools found for this selection.</td></tr>
+                                    <tr><td colSpan={isPortalLocked ? 7 : 8} className="py-20 text-center text-slate-500">No schools found for this selection.</td></tr>
                                 ) : (
                                     paginatedSchools.map(school => {
-                                        const isExpanded = expandedRows.has(school.code);
+                                        const rowId = school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code;
+                                        const isExpanded = expandedRows.has(rowId);
                                         return (
-                                            <React.Fragment key={school.code}>
+                                            <React.Fragment key={rowId}>
                                                 <tr className="hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors group">
                                                     <td className="px-4 py-4 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedSchools.has(rowId)}
+                                                            onChange={() => toggleSelectSchool(school.code, school.accrd_year)}
+                                                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-4 text-center">
                                                         <button
-                                                            onClick={() => toggleRow(school.code)}
+                                                            onClick={() => toggleRow(school.code, school.accrd_year)}
                                                             className="p-1 hover:bg-slate-300 dark:hover:bg-slate-700 rounded transition-colors text-slate-500"
                                                         >
                                                             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -995,7 +1131,7 @@ export default function StateSchools() {
                                                 </tr>
                                                 {isExpanded && (
                                                     <tr className="bg-slate-50 dark:bg-slate-800/20 border-l-4 border-emerald-500 animate-in slide-in-from-top-1">
-                                                        <td colSpan={isPortalLocked ? 6 : 7} className="px-6 py-4">
+                                                        <td colSpan={isPortalLocked ? 7 : 8} className="px-6 py-4">
                                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                                 <div>
                                                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Custodian</p>
@@ -1170,7 +1306,7 @@ export default function StateSchools() {
                     </thead>
                     <tbody>
                         {filteredSchools.map(school => (
-                            <tr key={school.code}>
+                            <tr key={school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code}>
                                 <td className="font-mono font-bold">{school.code}</td>
                                 <td className="font-semibold">{school.name}</td>
                                 <td>{allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
@@ -1193,8 +1329,18 @@ export default function StateSchools() {
                     <div>Page 1 of 1</div>
                 </div>
             </div>
-        </>
 
+            <ConfirmDialog
+                isOpen={confirmDialog.isOpen}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                confirmLabel={confirmDialog.confirmLabel}
+                variant={confirmDialog.variant}
+                isLoading={isDeleting}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+            />
+        </>
     );
 }
 

@@ -13,6 +13,9 @@ import {
 import { cn } from '../../components/layout/DashboardLayout';
 import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
+import { useFilterContext } from '../../context/FilterContext';
+import ConfirmDialog from '../../components/modals/ConfirmDialog';
+import { Trash2 } from 'lucide-react';
 import { components } from '../../api/types';
 
 type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
@@ -28,9 +31,48 @@ export default function StateSchoolsDue() {
     const [selectedPaymentFilter, setSelectedPaymentFilter] = React.useState<string>('');
     const [selectedAccrFilter, setSelectedAccrFilter] = React.useState<string>('');
     const [activeTab, setActiveTab] = React.useState<'SSCE' | 'BECE'>('SSCE');
+    const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
+    const [selectedSchools, setSelectedSchools] = React.useState<Set<string>>(new Set());
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [confirmDialog, setConfirmDialog] = React.useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        confirmLabel: 'Confirm',
+        variant: 'primary' as 'primary' | 'danger',
+        onConfirm: () => { },
+    });
 
     React.useEffect(() => {
         fetchData();
+    }, []);
+
+    React.useEffect(() => {
+        if (schools.length > 0) {
+            const years = Array.from(new Set(schools
+                .filter(s => (s as any).school_type === activeTab)
+                .map(s => (s as any).accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : ''))
+                .filter(Boolean)
+            )).sort((a, b) => (b as string).localeCompare(a as string));
+
+            setHeaderAvailableYears(years);
+
+            if (!headerYearFilter && years.length > 0) {
+                const currentYear = new Date().getFullYear().toString();
+                const prevYear = (new Date().getFullYear() - 1).toString();
+                if (years.includes(currentYear)) setHeaderYearFilter(currentYear);
+                else if (years.includes(prevYear)) setHeaderYearFilter(prevYear);
+                else setHeaderYearFilter(years[0]);
+            }
+        }
+    }, [schools, activeTab]);
+
+    React.useEffect(() => {
+        return () => {
+            setHeaderAvailableYears([]);
+            setHeaderYearFilter('');
+        };
     }, []);
 
     const fetchData = async () => {
@@ -64,7 +106,70 @@ export default function StateSchoolsDue() {
             console.error('Failed to fetch data:', err);
         } finally {
             setLoading(false);
+            setSelectedSchools(new Set());
         }
+    };
+
+    const toggleSelectSchool = (schoolCode: string, accrdYear?: string | number) => {
+        const rowId = accrdYear ? `${schoolCode}-${accrdYear}` : String(schoolCode);
+        const newSelected = new Set(selectedSchools);
+        if (newSelected.has(rowId)) {
+            newSelected.delete(rowId);
+        } else {
+            newSelected.add(rowId);
+        }
+        setSelectedSchools(newSelected);
+    };
+
+    const toggleSelectAll = (filteredSchools: School[]) => {
+        const allFilteredIds = filteredSchools.map(s => s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code));
+        const allSelected = allFilteredIds.every(id => selectedSchools.has(id));
+
+        if (allSelected && allFilteredIds.length > 0) {
+            const newSelected = new Set(selectedSchools);
+            allFilteredIds.forEach(id => newSelected.delete(id));
+            setSelectedSchools(newSelected);
+        } else {
+            const newSelected = new Set(selectedSchools);
+            allFilteredIds.forEach(id => newSelected.add(id));
+            setSelectedSchools(newSelected);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedSchools.size === 0) return;
+
+        setConfirmDialog({
+            isOpen: true,
+            title: `Delete Selected ${activeTab} Schools`,
+            message: `Are you sure you want to delete the ${selectedSchools.size} selected schools? This action cannot be undone.`,
+            confirmLabel: 'Delete Selected',
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    setIsDeleting(true);
+                    setError(null);
+                    const idsToDelete: string[] = Array.from(selectedSchools);
+
+                    for (const id of idsToDelete) {
+                        const [code, accrd_year] = id.includes('-') ? id.split('-') : [id, undefined];
+                        if (activeTab === 'SSCE') {
+                            await DataService.deleteSchool(code, accrd_year);
+                        } else {
+                            await DataService.deleteBeceSchool(code, accrd_year);
+                        }
+                    }
+
+                    await fetchData();
+                    setSelectedSchools(new Set());
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                } catch (err: any) {
+                    setError(`Failed to delete some selected schools. Please refresh and try again.`);
+                } finally {
+                    setIsDeleting(false);
+                }
+            },
+        });
     };
 
     // Determine if a school is due for accreditation
@@ -111,9 +216,12 @@ export default function StateSchoolsDue() {
                 (selectedPaymentFilter === 'Unpaid' && !school.payment_url);
             const matchesAccr = !selectedAccrFilter || school.accreditation_status === selectedAccrFilter;
 
-            return isDue && matchesSearch && matchesPayment && matchesAccr;
+            const schoolYear = (school as any).accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
+            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
+
+            return isDue && matchesSearch && matchesPayment && matchesAccr && matchesYear;
         });
-    }, [schools, searchQuery, selectedPaymentFilter, selectedAccrFilter, activeTab]);
+    }, [schools, searchQuery, selectedPaymentFilter, selectedAccrFilter, activeTab, headerYearFilter]);
 
     // Get statistics
     const getStats = (schoolsList: School[]) => {
@@ -318,66 +426,107 @@ export default function StateSchoolsDue() {
                 <div className="space-y-4">
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm overflow-hidden">
                         {/* Action Bar */}
-                        <button
-                            onClick={toggleAllStates}
-                            className="w-full px-6 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-200 dark:border-slate-800"
-                        >
-                            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-                                {Object.keys(expandedStates).length === 0 ? 'Expand All' : 'Collapse All'}
-                            </span>
-                        </button>
+                        <div className="px-6 py-3 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    checked={dueSchools.length > 0 && dueSchools.every(s => selectedSchools.has(s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code)))}
+                                    onChange={() => toggleSelectAll(dueSchools)}
+                                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                />
+                                <button
+                                    onClick={toggleAllStates}
+                                    className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                                >
+                                    {Object.keys(expandedStates).length === 0 ? 'Expand All' : 'Collapse All'}
+                                </button>
+                            </div>
+
+                            {selectedSchools.size > 0 && (
+                                <button
+                                    onClick={handleBulkDelete}
+                                    disabled={isDeleting}
+                                    className="flex items-center gap-2 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    DELETE ({selectedSchools.size})
+                                </button>
+                            )}
+                        </div>
 
                         {/* Schools List */}
                         <div className="divide-y divide-slate-200 dark:divide-slate-800">
                             {dueSchools.length === 0 ? (
                                 <div className="px-6 py-8 text-center text-slate-500">No schools match your filters</div>
                             ) : (
-                                dueSchools.map((school) => (
-                                    <div key={school.code} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <div className="px-6 py-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                                                <div>
-                                                    <p className="font-semibold text-slate-900 dark:text-white">{school.name}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">{school.code}</p>
-                                                </div>
-                                                <div>
-                                                    {getStatusBadge(school.accreditation_status)}
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Accredited Date</p>
-                                                    <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                                        {school.accredited_date
-                                                            ? new Date(school.accredited_date).toLocaleDateString()
-                                                            : '-'}
-                                                    </p>
-                                                </div>
-                                                <div className="text-right">
-                                                    {school.approval_status === 'Approved' ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                                                            <CheckCircle2 className="w-3 h-3" />
-                                                            Verified
-                                                        </span>
-                                                    ) : school.payment_url ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                                                            <Clock className="w-3 h-3" />
-                                                            Pending
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
-                                                            <AlertCircle className="w-3 h-3" />
-                                                            Unpaid
-                                                        </span>
-                                                    )}
+                                dueSchools.map((school) => {
+                                    const rowId = school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code;
+                                    return (
+                                        <div key={rowId} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center">
+                                            <div className="pl-6">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedSchools.has(rowId)}
+                                                    onChange={() => toggleSelectSchool(school.code, school.accrd_year)}
+                                                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                                />
+                                            </div>
+                                            <div className="flex-1 px-6 py-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                                                    <div>
+                                                        <p className="font-semibold text-slate-900 dark:text-white">{school.name}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">{school.code}</p>
+                                                    </div>
+                                                    <div>
+                                                        {getStatusBadge(school.accreditation_status)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">Accredited Date</p>
+                                                        <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                                            {school.accredited_date
+                                                                ? new Date(school.accredited_date).toLocaleDateString()
+                                                                : '-'}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        {school.approval_status === 'Approved' ? (
+                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                                                <CheckCircle2 className="w-3 h-3" />
+                                                                Verified
+                                                            </span>
+                                                        ) : school.payment_url ? (
+                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                                                <Clock className="w-3 h-3" />
+                                                                Pending
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
+                                                                <AlertCircle className="w-3 h-3" />
+                                                                Unpaid
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={confirmDialog.isOpen}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                confirmLabel={confirmDialog.confirmLabel}
+                variant={confirmDialog.variant}
+                isLoading={isDeleting}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 }

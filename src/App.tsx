@@ -20,6 +20,7 @@ import HeadOfficeFinalApproval from './pages/head-office/FinalApproval';
 import HeadOfficeReports from './pages/head-office/Reports';
 import HeadOfficeUsers from './pages/head-office/Users';
 import HeadOfficeAuditLogs from './pages/head-office/AuditLogs';
+import HeadOfficeSettings from './pages/head-office/Settings';
 import StateApplications from './pages/state/Applications';
 import StateCustodians from './pages/state/Custodians';
 import StateReports from './pages/state/Reports';
@@ -34,84 +35,88 @@ import ViewerReports from './pages/viewer/Reports';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import { ThemeProvider } from './context/ThemeContext';
+import { FilterProvider } from './context/FilterContext';
 
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
+      <FilterProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Login />} />
 
-          {/* School Routes */}
-          <Route path="/school/*" element={
-            <ProtectedRoute allowedRoles={['school']}>
-              <DashboardLayout role="school">
-                <Routes>
-                  <Route path="dashboard" element={<SchoolDashboard />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
-                </Routes>
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
+            {/* School Routes */}
+            <Route path="/school/*" element={
+              <ProtectedRoute allowedRoles={['school']}>
+                <DashboardLayout role="school">
+                  <Routes>
+                    <Route path="dashboard" element={<SchoolDashboard />} />
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
 
-          {/* State Routes */}
-          <Route path="/state/*" element={
-            <ProtectedRoute allowedRoles={['state']}>
-              <DashboardLayout role="state">
-                <Routes>
-                  <Route path="dashboard" element={<StateDashboard />} />
-                  <Route path="schools" element={<StateSchools />} />
-                  <Route path="schools-due" element={<StateSchoolsDue />} />
-                  <Route path="custodians" element={<StateCustodians />} />
-                  <Route path="applications" element={<StateApplications />} />
-                  <Route path="reports" element={<StateReports />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
-                </Routes>
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
+            {/* State Routes */}
+            <Route path="/state/*" element={
+              <ProtectedRoute allowedRoles={['state']}>
+                <DashboardLayout role="state">
+                  <Routes>
+                    <Route path="dashboard" element={<StateDashboard />} />
+                    <Route path="schools" element={<StateSchools />} />
+                    <Route path="schools-due" element={<StateSchoolsDue />} />
+                    <Route path="custodians" element={<StateCustodians />} />
+                    <Route path="applications" element={<StateApplications />} />
+                    <Route path="reports" element={<StateReports />} />
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
 
-          {/* Head Office Routes */}
-          <Route path="/head-office/*" element={
-            <ProtectedRoute allowedRoles={['hq', 'admin']}>
-              <DashboardLayout role="head-office">
-                <Routes>
-                  <Route path="dashboard" element={<HeadOfficeDashboard />} />
-                  <Route path="zones" element={<HeadOfficeZones />} />
-                  <Route path="states" element={<HeadOfficeStates />} />
-                  <Route path="lgas" element={<HeadOfficeLGAs />} />
-                  <Route path="schools" element={<HeadOfficeSchools />} />
-                  <Route path="custodians" element={<HeadOfficeCustodians />} />
-                  <Route path="review-proofs" element={<ReviewApplications />} />
-                  <Route path="approvals" element={<HeadOfficeFinalApproval />} />
-                  <Route path="reports" element={<HeadOfficeReports />} />
-                  <Route path="users" element={<HeadOfficeUsers />} />
-                  <Route path="audit-logs" element={<HeadOfficeAuditLogs />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
-                </Routes>
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
+            {/* Head Office Routes */}
+            <Route path="/head-office/*" element={
+              <ProtectedRoute allowedRoles={['hq', 'admin']}>
+                <DashboardLayout role="head-office">
+                  <Routes>
+                    <Route path="dashboard" element={<HeadOfficeDashboard />} />
+                    <Route path="zones" element={<HeadOfficeZones />} />
+                    <Route path="states" element={<HeadOfficeStates />} />
+                    <Route path="lgas" element={<HeadOfficeLGAs />} />
+                    <Route path="schools" element={<HeadOfficeSchools />} />
+                    <Route path="custodians" element={<HeadOfficeCustodians />} />
+                    <Route path="review-proofs" element={<ReviewApplications />} />
+                    <Route path="approvals" element={<HeadOfficeFinalApproval />} />
+                    <Route path="reports" element={<HeadOfficeReports />} />
+                    <Route path="users" element={<HeadOfficeUsers />} />
+                    <Route path="audit-logs" element={<HeadOfficeAuditLogs />} />
+                    <Route path="settings" element={<HeadOfficeSettings />} />
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
 
-          {/* Viewer Routes */}
-          <Route path="/viewer/*" element={
-            <ProtectedRoute allowedRoles={['viewer']}>
-              <DashboardLayout role="viewer">
-                <Routes>
-                  <Route path="dashboard" element={<ViewerDashboard />} />
-                  <Route path="zones" element={<ViewerZones />} />
-                  <Route path="states" element={<ViewerStates />} />
-                  <Route path="lgas" element={<ViewerLGAs />} />
-                  <Route path="schools" element={<ViewerSchools />} />
-                  <Route path="custodians" element={<ViewerCustodians />} />
-                  <Route path="reports" element={<ViewerReports />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
-                </Routes>
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </BrowserRouter>
+            {/* Viewer Routes */}
+            <Route path="/viewer/*" element={
+              <ProtectedRoute allowedRoles={['viewer']}>
+                <DashboardLayout role="viewer">
+                  <Routes>
+                    <Route path="dashboard" element={<ViewerDashboard />} />
+                    <Route path="zones" element={<ViewerZones />} />
+                    <Route path="states" element={<ViewerStates />} />
+                    <Route path="lgas" element={<ViewerLGAs />} />
+                    <Route path="schools" element={<ViewerSchools />} />
+                    <Route path="custodians" element={<ViewerCustodians />} />
+                    <Route path="reports" element={<ViewerReports />} />
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </BrowserRouter>
+      </FilterProvider>
     </ThemeProvider>
   );
 }
