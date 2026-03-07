@@ -17,6 +17,8 @@ import DataService from '../../api/services/data.service';
 import { components } from '../../api/types';
 import TemplateDownloadModal from '../../components/modals/TemplateDownloadModal';
 
+import { useFilterContext } from '../../context/FilterContext';
+
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];
 
@@ -28,6 +30,9 @@ export default function HeadOfficeDashboard() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = React.useState(false);
+
+  const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
+  const hasInitializedYear = React.useRef(false);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -50,11 +55,57 @@ export default function HeadOfficeDashboard() {
       }
     };
     fetchData();
+
+    return () => {
+      setHeaderAvailableYears([]);
+      setHeaderYearFilter('');
+    };
   }, []);
 
+  React.useEffect(() => {
+    if (ssceSchools.length > 0 || beceSchools.length > 0) {
+      const allSchools = [...ssceSchools, ...beceSchools];
+      const years = new Set<string>();
+      allSchools.forEach(school => {
+        const year = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
+        if (year) years.add(year.toString());
+      });
+
+      const sortedYears = Array.from(years).sort((a, b) => b.localeCompare(a));
+      setHeaderAvailableYears(sortedYears);
+
+      if (!hasInitializedYear.current && sortedYears.length > 0) {
+        const currentYear = new Date().getFullYear().toString();
+        const prevYear = (new Date().getFullYear() - 1).toString();
+
+        if (sortedYears.includes(currentYear)) setHeaderYearFilter(currentYear);
+        else if (sortedYears.includes(prevYear)) setHeaderYearFilter(prevYear);
+        else setHeaderYearFilter(sortedYears[0]);
+
+        hasInitializedYear.current = true;
+      }
+    }
+  }, [ssceSchools, beceSchools]);
+
   const totalStates = states.length;
-  const totalSsceSchools = ssceSchools.length;
-  const totalBeceSchools = beceSchools.length;
+
+  // Filter schools by year
+  const yearFilteredSsce = React.useMemo(() => {
+    return ssceSchools.filter(s => {
+      const year = s.accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
+      return !headerYearFilter || year === headerYearFilter;
+    });
+  }, [ssceSchools, headerYearFilter]);
+
+  const yearFilteredBece = React.useMemo(() => {
+    return beceSchools.filter(s => {
+      const year = s.accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
+      return !headerYearFilter || year === headerYearFilter;
+    });
+  }, [beceSchools, headerYearFilter]);
+
+  const totalSsceSchools = yearFilteredSsce.length;
+  const totalBeceSchools = yearFilteredBece.length;
 
   // Calculate schools due for accreditation
   const isDueForAccreditation = (school: School): boolean => {
@@ -85,18 +136,16 @@ export default function HeadOfficeDashboard() {
   };
 
   // SSCE calculations
-  const accreditedSsceNotDue = ssceSchools.filter(s =>
+  const accreditedSsceNotDue = yearFilteredSsce.filter(s =>
     (s.accreditation_status === 'Full' || s.accreditation_status === 'Partial') && !isDueForAccreditation(s)
   ).length;
-  const dueSsce = ssceSchools.filter(isDueForAccreditation).length;
+  const dueSsce = yearFilteredSsce.filter(isDueForAccreditation).length;
 
   // BECE calculations
-  const accreditedBeceNotDue = beceSchools.filter(s =>
+  const accreditedBeceNotDue = yearFilteredBece.filter(s =>
     (s.accreditation_status === 'Full' || s.accreditation_status === 'Partial') && !isDueForAccreditation(s)
   ).length;
-  const beceDue = beceSchools.filter(isDueForAccreditation).length;
-
-  const pendingSsce = ssceSchools.filter(s => s.status === 'pending').length;
+  const beceDue = yearFilteredBece.filter(isDueForAccreditation).length;
 
   const stats = [
     { icon: Users, label: 'SSCE Schools', value: totalSsceSchools.toLocaleString(), change: 'Total', up: true, iconBg: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400' },
@@ -115,7 +164,7 @@ export default function HeadOfficeDashboard() {
   ];
 
   const statePerformance = states.map(state => {
-    const stateSchools = ssceSchools.filter(s => s.state_code === state.code);
+    const stateSchools = yearFilteredSsce.filter(s => s.state_code === state.code);
     const total = stateSchools.length;
     const accredited = stateSchools.filter(s => s.accreditation_status === 'Full').length;
     const rate = total > 0 ? Math.round((accredited / total) * 100) : 0;

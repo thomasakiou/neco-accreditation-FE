@@ -16,6 +16,8 @@ import AuthService from '../../api/services/auth.service';
 import DataService from '../../api/services/data.service';
 import { components } from '../../api/types';
 
+import { useFilterContext } from '../../context/FilterContext';
+
 type School = components['schemas']['School'];
 
 export default function StateDashboard() {
@@ -27,6 +29,9 @@ export default function StateDashboard() {
   const [error, setError] = React.useState<string | null>(null);
   const [stateName, setStateName] = React.useState<string>('State Office');
   const [isLocked, setIsLocked] = React.useState(false);
+
+  const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
+  const hasInitializedYear = React.useRef(false);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -63,7 +68,37 @@ export default function StateDashboard() {
       }
     };
     fetchData();
+
+    return () => {
+      setHeaderAvailableYears([]);
+      setHeaderYearFilter('');
+    };
   }, []);
+
+  React.useEffect(() => {
+    if (ssceSchools.length > 0 || beceSchools.length > 0) {
+      const allSchools = [...ssceSchools, ...beceSchools];
+      const years = new Set<string>();
+      allSchools.forEach(school => {
+        const year = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
+        if (year) years.add(year.toString());
+      });
+
+      const sortedYears = Array.from(years).sort((a, b) => b.localeCompare(a));
+      setHeaderAvailableYears(sortedYears);
+
+      if (!hasInitializedYear.current && sortedYears.length > 0) {
+        const currentYear = new Date().getFullYear().toString();
+        const prevYear = (new Date().getFullYear() - 1).toString();
+
+        if (sortedYears.includes(currentYear)) setHeaderYearFilter(currentYear);
+        else if (sortedYears.includes(prevYear)) setHeaderYearFilter(prevYear);
+        else setHeaderYearFilter(sortedYears[0]);
+
+        hasInitializedYear.current = true;
+      }
+    }
+  }, [ssceSchools, beceSchools]);
 
   const {
     activeSsce,
@@ -82,22 +117,33 @@ export default function StateDashboard() {
     totalSsce,
     totalBece
   } = React.useMemo(() => {
-    const totalSsce = ssceSchools.length;
-    const totalBece = beceSchools.length;
+    // Filter schools by year first
+    const filteredSsce = ssceSchools.filter(s => {
+      const year = s.accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
+      return !headerYearFilter || year === headerYearFilter;
+    });
+
+    const filteredBece = beceSchools.filter(s => {
+      const year = s.accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
+      return !headerYearFilter || year === headerYearFilter;
+    });
+
+    const totalSsce = filteredSsce.length;
+    const totalBece = filteredBece.length;
 
     // SSCE Stats logic
-    const fullSsce = ssceSchools.filter(s => s.accreditation_status === 'Full').length;
-    const partialSsce = ssceSchools.filter(s => s.accreditation_status === 'Partial').length;
-    const failedSsce = ssceSchools.filter(s => s.accreditation_status === 'Failed').length;
+    const fullSsce = filteredSsce.filter(s => s.accreditation_status === 'Full').length;
+    const partialSsce = filteredSsce.filter(s => s.accreditation_status === 'Partial').length;
+    const failedSsce = filteredSsce.filter(s => s.accreditation_status === 'Failed').length;
     const activeSsce = fullSsce + partialSsce;
-    const pendingSsce = ssceSchools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
+    const pendingSsce = filteredSsce.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
 
     // BECE Stats logic
-    const fullBece = beceSchools.filter(s => s.accreditation_status === 'Full').length;
-    const partialBece = beceSchools.filter(s => s.accreditation_status === 'Partial').length;
-    const failedBece = beceSchools.filter(s => s.accreditation_status === 'Failed').length;
+    const fullBece = filteredBece.filter(s => s.accreditation_status === 'Full').length;
+    const partialBece = filteredBece.filter(s => s.accreditation_status === 'Partial').length;
+    const failedBece = filteredBece.filter(s => s.accreditation_status === 'Failed').length;
     const activeBece = fullBece + partialBece;
-    const pendingBece = beceSchools.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
+    const pendingBece = filteredBece.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
 
     const statsCards = [
       // SSCE Group
@@ -116,7 +162,7 @@ export default function StateDashboard() {
     ];
 
     // Group schools by LGA (using SSCE for distribution overview)
-    const lgaGrouping = ssceSchools.reduce((acc: Record<string, number>, school) => {
+    const lgaGrouping = filteredSsce.reduce((acc: Record<string, number>, school) => {
       const lgaName = lgas.find(l => l.code === school.lga_code)?.name || school.lga_code;
       acc[lgaName] = (acc[lgaName] || 0) + 1;
       return acc;
@@ -131,8 +177,8 @@ export default function StateDashboard() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    const recentApplications = ssceSchools
-      .filter(s => s.status === 'pending' || s.accreditation_status === 'Accredited')
+    const recentApplications = filteredSsce
+      .filter(s => s.status === 'pending' || s.accreditation_status === 'Accredited' || s.accreditation_status === 'Full' || s.accreditation_status === 'Partial')
       .sort((a, b) => {
         const dateA = a.accredited_date ? new Date(a.accredited_date).getTime() : 0;
         const dateB = b.accredited_date ? new Date(b.accredited_date).getTime() : 0;
@@ -165,7 +211,7 @@ export default function StateDashboard() {
       totalSsce,
       totalBece
     };
-  }, [ssceSchools, beceSchools, lgas]);
+  }, [ssceSchools, beceSchools, lgas, headerYearFilter]);
 
   if (isLoading) {
     return (
@@ -326,7 +372,7 @@ export default function StateDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-8">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-8">
         <div className="bg-emerald-100 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-800 p-6 rounded-2xl flex items-center gap-6 shadow-sm">
           <div className="w-16 h-16 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-lg border-2 border-emerald-500">
             <Megaphone className="w-8 h-8" />
@@ -347,7 +393,7 @@ export default function StateDashboard() {
             <button className="mt-3 text-sm font-black text-slate-800 dark:text-slate-300 hover:underline hover:scale-105 transition-transform">Contact Support</button>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -170,9 +170,11 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   const { headerYearFilter, setHeaderYearFilter, headerAvailableYears } = useFilterContext();
 
   const showYearFilter = [
+    '/head-office/dashboard',
     '/head-office/review-proofs',
     '/head-office/approvals',
     '/head-office/schools',
+    '/state/dashboard',
     '/state/schools',
     '/state/schools-due',
     '/state/applications'
