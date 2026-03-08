@@ -1,3 +1,36 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@layer utilities {
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #10b981;
+        /* emerald-500 */
+        border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #059669;
+        /* emerald-600 */
+    }
+
+    /* Firefox */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #10b981 transparent;
+    }
+
+    /* Dark mode specific thumb color if needed, though emerald works well in both */
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #10b981;
+        opacity: 0.8;
+    }
+}
