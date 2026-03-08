@@ -6,7 +6,8 @@ import {
     ShieldAlert,
     Mail,
     Building2,
-    Map
+    Map,
+    RefreshCw
 } from 'lucide-react';
 import DataService, { School, State } from '../../api/services/data.service';
 
@@ -87,6 +88,15 @@ export default function HeadOfficeUsers() {
                     </h1>
                     <p className="text-slate-700 dark:text-slate-400 font-medium mt-1">Overview of all active state and school user accounts in the system.</p>
                 </div>
+                <button
+                    onClick={() => fetchUsers()}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                    title="Refresh Data"
+                >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                </button>
             </div>
 
             {error && (

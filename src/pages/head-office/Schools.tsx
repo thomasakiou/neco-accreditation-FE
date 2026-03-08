@@ -21,7 +21,8 @@ import {
     Users as UsersIcon,
     ChevronRight,
     ChevronDown,
-    FileText
+    FileText,
+    RefreshCw
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
@@ -1213,6 +1214,15 @@ export default function HeadOfficeSchools() {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-4 ml-auto">
+                                <button
+                                    onClick={() => fetchInitialData()}
+                                    disabled={isLoading}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                                    title="Refresh Data"
+                                >
+                                    <RefreshCw className={`w-4 h-4 text-emerald-600 ${isLoading ? 'animate-spin' : ''}`} />
+                                    REFRESH
+                                </button>
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => handleExport('excel')}

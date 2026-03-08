@@ -12,7 +12,8 @@ import {
     CheckCircle2,
     Layers,
     X,
-    Edit2
+    Edit2,
+    RefreshCw
 } from 'lucide-react';
 import DataService, { Zone } from '../../api/services/data.service';
 
@@ -116,6 +117,16 @@ export default function Zones() {
                     </h1>
                     <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Manage National Geopolitical Zones and their regions.</p>
                 </div>
+
+                <button
+                    onClick={() => fetchZones()}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                    title="Refresh Data"
+                >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                </button>
 
                 <div className="flex items-center gap-3">
                     <button

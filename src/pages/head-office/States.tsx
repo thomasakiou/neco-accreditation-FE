@@ -14,7 +14,8 @@ import {
     X,
     Edit2,
     Lock,
-    Unlock
+    Unlock,
+    RefreshCw
 } from 'lucide-react';
 import DataService, { Zone } from '../../api/services/data.service';
 import { components } from '../../api/types';
@@ -286,6 +287,15 @@ export default function HeadOfficeStates() {
                         <h1 className="text-2xl font-bold text-slate-950 dark:text-white">States Management</h1>
                         <p className="text-slate-700 dark:text-slate-400 font-medium">View and manage all registered states in the federation.</p>
                     </div>
+                    <button
+                        onClick={() => fetchAllData()}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                        title="Refresh Data"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
 
                     <div className="flex items-center gap-3">
                         <label className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-slate-900 dark:text-slate-200 text-sm font-bold shadow-sm">

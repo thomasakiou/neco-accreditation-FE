@@ -12,7 +12,8 @@ import {
     ChevronRight,
     Users,
     ShieldCheck,
-    Printer
+    Printer,
+    RefreshCw
 } from 'lucide-react';
 import DataService, { School, BECESchool, State } from '../../api/services/data.service';
 import { components } from '../../api/types';
@@ -43,27 +44,29 @@ export default function HeadOfficeReports() {
     const [isPrintingSummary, setIsPrintingSummary] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            const [ssceData, beceData, stData, zData] = await Promise.all([
+                DataService.getSchools(),
+                DataService.getBeceSchools(),
+                DataService.getStates(),
+                DataService.getZones()
+            ]);
+            setSsceSchools(ssceData);
+            setBeceSchools(beceData);
+            setStates(stData);
+            setZones(zData);
+            setError(null);
+        } catch (err) {
+            console.error("Failed to load report data:", err);
+            setError("Failed to load report data. Please check your connection.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setIsLoading(true);
-                const [ssceData, beceData, stData, zData] = await Promise.all([
-                    DataService.getSchools(),
-                    DataService.getBeceSchools(),
-                    DataService.getStates(),
-                    DataService.getZones()
-                ]);
-                setSsceSchools(ssceData);
-                setBeceSchools(beceData);
-                setStates(stData);
-                setZones(zData);
-            } catch (err) {
-                console.error("Failed to load report data:", err);
-                setError("Failed to load report data. Please check your connection.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchData();
     }, []);
 
@@ -360,9 +363,21 @@ export default function HeadOfficeReports() {
                     <p className="text-slate-500 dark:text-slate-400">Export system data and generate detailed performance insights.</p>
                 </div>
 
-                <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-semibold text-slate-600 dark:text-slate-300">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span>Real-time Data</span>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => fetchData()}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50"
+                        title="Refresh Data"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
+
+                    <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-semibold text-slate-600 dark:text-slate-300">
+                        <Calendar className="w-4 h-4 text-slate-400" />
+                        <span>Real-time Data</span>
+                    </div>
                 </div>
             </div>
 

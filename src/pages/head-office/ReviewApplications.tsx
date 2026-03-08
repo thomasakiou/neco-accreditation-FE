@@ -11,7 +11,8 @@ import {
     Clock,
     MapPin,
     Download,
-    FileText
+    FileText,
+    RefreshCw
 } from 'lucide-react';
 import { cn } from '../../components/layout/DashboardLayout';
 import DataService from '../../api/services/data.service';
@@ -276,6 +277,15 @@ export default function ReviewApplications() {
                     <p className="text-slate-500 dark:text-slate-400">Schools organized by state with payment statistics</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => fetchData()}
+                        disabled={loading}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-medium text-slate-700 dark:text-slate-300 transition-colors shadow-sm active:scale-95 disabled:opacity-50"
+                        title="Refresh Data"
+                    >
+                        <RefreshCw className={`w-4 h-4 text-emerald-600 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
                     <button
                         onClick={() => handleExportExcel()}
                         disabled={isExporting !== null}

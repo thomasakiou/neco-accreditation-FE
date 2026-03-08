@@ -11,7 +11,8 @@ import {
   ArrowDownRight,
   Loader2,
   AlertCircle,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
 import { components } from '../../api/types';
@@ -34,26 +35,27 @@ export default function HeadOfficeDashboard() {
   const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
   const hasInitializedYear = React.useRef(false);
 
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [statesData, zonesData, ssceSchoolsData, beceSchoolsData] = await Promise.all([
+        DataService.getStates(),
+        DataService.getZones(),
+        DataService.getSchools(),
+        DataService.getBeceSchools()
+      ]);
+      setStates(statesData);
+      setZones(zonesData);
+      setSsceSchools(ssceSchoolsData);
+      setBeceSchools(beceSchoolsData);
+    } catch (err: any) {
+      setError('Failed to load dashboard data.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [statesData, zonesData, ssceSchoolsData, beceSchoolsData] = await Promise.all([
-          DataService.getStates(),
-          DataService.getZones(),
-          DataService.getSchools(),
-          DataService.getBeceSchools()
-        ]);
-        setStates(statesData);
-        setZones(zonesData);
-        setSsceSchools(ssceSchoolsData);
-        setBeceSchools(beceSchoolsData);
-      } catch (err: any) {
-        setError('Failed to load dashboard data.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchData();
 
     return () => {
@@ -273,6 +275,15 @@ export default function HeadOfficeDashboard() {
         <div className="p-6 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between">
           <h3 className="font-black text-lg text-slate-950 dark:text-white">State Performance Metrics</h3>
           <div className="flex gap-2">
+            <button
+              onClick={() => fetchData()}
+              disabled={isLoading}
+              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+              title="Refresh Data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
             <button
               onClick={() => setIsTemplateModalOpen(true)}
               className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-all active:scale-95"

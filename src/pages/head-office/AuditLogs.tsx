@@ -11,6 +11,7 @@ import {
     ChevronDown,
     ChevronLeft,
     ChevronRight,
+    RefreshCw,
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
@@ -228,6 +229,17 @@ export default function AuditLogs() {
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Audit Logs</h1>
                     <p className="text-slate-500 dark:text-slate-400">System activity and user actions</p>
                 </div>
+
+                <button
+                    onClick={() => fetchLogs()}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                    title="Refresh Data"
+                >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh
+                </button>
+
                 {isAdmin && (
                     <div className="flex gap-2">
                         {selectedLogs.size > 0 && (

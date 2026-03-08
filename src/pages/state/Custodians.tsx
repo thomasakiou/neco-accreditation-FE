@@ -12,7 +12,8 @@ import {
     Download,
     Trash2,
     Filter,
-    GraduationCap
+    GraduationCap,
+    RefreshCw
 } from 'lucide-react';
 import DataService, { Custodian, State, LGA } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
@@ -203,6 +204,16 @@ export default function StateCustodians() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => fetchInitialData()}
+                            disabled={isLoading}
+                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                            title="Refresh Data"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </button>
+
                         <button
                             onClick={() => setShowAddModal(true)}
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"

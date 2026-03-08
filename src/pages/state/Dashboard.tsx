@@ -10,7 +10,8 @@ import {
   HelpCircle,
   GraduationCap,
   Loader2,
-  Lock
+  Lock,
+  RefreshCw
 } from 'lucide-react';
 import AuthService from '../../api/services/auth.service';
 import DataService from '../../api/services/data.service';
@@ -33,40 +34,42 @@ export default function StateDashboard() {
   const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
   const hasInitializedYear = React.useRef(false);
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const user = await AuthService.getCurrentUser();
-        if (user?.state_code) {
-          const statesData = await DataService.getStates();
-          const currentState = statesData.find(s => s.code === user.state_code);
-          setStateName(currentState?.name || user.state_name || user.state_code);
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const user = await AuthService.getCurrentUser();
+      if (user?.state_code) {
+        const statesData = await DataService.getStates();
+        const currentState = statesData.find(s => s.code === user.state_code);
+        setStateName(currentState?.name || user.state_name || user.state_code);
 
-          const [ssceData, beceData, lgaData, custodianData] = await Promise.all([
-            DataService.getSchools({ state_code: user.state_code }),
-            DataService.getBeceSchools({ state_code: user.state_code }),
-            DataService.getLGAs({ state_code: user.state_code }),
-            DataService.getCustodians({ state_code: user.state_code })
-          ]);
+        const [ssceData, beceData, lgaData, custodianData] = await Promise.all([
+          DataService.getSchools({ state_code: user.state_code }),
+          DataService.getBeceSchools({ state_code: user.state_code }),
+          DataService.getLGAs({ state_code: user.state_code }),
+          DataService.getCustodians({ state_code: user.state_code })
+        ]);
 
-          setSsceSchools(ssceData);
-          setBeceSchools(beceData);
-          setLgas(lgaData);
-          setCustodians(custodianData);
+        setSsceSchools(ssceData);
+        setBeceSchools(beceData);
+        setLgas(lgaData);
+        setCustodians(custodianData);
+        setError(null);
 
-          if (currentState) {
-            setIsLocked(!!currentState.is_locked);
-          }
-        } else {
-          setError('No state association found for your account.');
+        if (currentState) {
+          setIsLocked(!!currentState.is_locked);
         }
-      } catch (err: any) {
-        setError('Failed to load dashboard data.');
-      } finally {
-        setIsLoading(false);
+      } else {
+        setError('No state association found for your account.');
       }
-    };
+    } catch (err: any) {
+      setError('Failed to load dashboard data.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
     fetchData();
 
     return () => {
@@ -223,7 +226,27 @@ export default function StateDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Header section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-950 dark:text-white flex items-center gap-2 uppercase tracking-tight">
+            {stateName} Overview
+          </h1>
+          <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Summary of state accreditation performance</p>
+        </div>
+
+        <button
+          onClick={() => fetchData()}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+          title="Refresh Data"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
       {isLocked && (
         <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-800 rounded-xl flex items-center gap-4 text-amber-900 dark:text-amber-400 animate-in slide-in-from-top-4 mb-8 shadow-sm">
           <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-900/50">

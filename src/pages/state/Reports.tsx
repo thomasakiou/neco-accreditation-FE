@@ -10,7 +10,8 @@ import {
     AlertCircle,
     ChevronRight,
     PieChart,
-    Printer
+    Printer,
+    RefreshCw
 } from 'lucide-react';
 import DataService, { LGA } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
@@ -29,38 +30,39 @@ export default function StateReports() {
     const [error, setError] = useState<string | null>(null);
     const [stateName, setStateName] = useState('State Office');
 
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                setIsLoading(true);
-                const user = await AuthService.getCurrentUser();
-                if (!user?.state_code) {
-                    setError('No state association found for your account.');
-                    setIsLoading(false);
-                    return;
-                }
-
-                const statesData = await DataService.getStates();
-                const currentState = statesData.find(s => s.code === user.state_code);
-                setStateName(currentState?.name || user.state_name || user.state_code);
-
-                const ssceData = await DataService.getSchools({ state_code: user.state_code });
-                const beceData = await DataService.getBeceSchools({ state_code: user.state_code });
-                const lgasData = await DataService.getLGAs({ state_code: user.state_code });
-                const zonesData = await DataService.getZones();
-
-                setSsceSchools(ssceData);
-                setBeceSchools(beceData);
-                setLgas(lgasData);
-                setZones(zonesData);
-
-            } catch (err: any) {
-                setError('Failed to load report data.');
-            } finally {
+    const fetchInitialData = async () => {
+        try {
+            setIsLoading(true);
+            const user = await AuthService.getCurrentUser();
+            if (!user?.state_code) {
+                setError('No state association found for your account.');
                 setIsLoading(false);
+                return;
             }
-        };
 
+            const statesData = await DataService.getStates();
+            const currentState = statesData.find(s => s.code === user.state_code);
+            setStateName(currentState?.name || user.state_name || user.state_code);
+
+            const ssceData = await DataService.getSchools({ state_code: user.state_code });
+            const beceData = await DataService.getBeceSchools({ state_code: user.state_code });
+            const lgasData = await DataService.getLGAs({ state_code: user.state_code });
+            const zonesData = await DataService.getZones();
+
+            setSsceSchools(ssceData);
+            setBeceSchools(beceData);
+            setLgas(lgasData);
+            setZones(zonesData);
+            setError(null);
+
+        } catch (err: any) {
+            setError('Failed to load report data.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchInitialData();
     }, []);
 
@@ -189,6 +191,16 @@ export default function StateReports() {
                 </div>
 
                 <div className="flex items-center gap-3 print:hidden">
+                    <button
+                        onClick={() => fetchInitialData()}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                        title="Refresh Data"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
+
                     <button
                         onClick={handlePrintSummary}
                         className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
