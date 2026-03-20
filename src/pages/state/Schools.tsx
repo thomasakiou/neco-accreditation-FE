@@ -50,6 +50,7 @@ export default function StateSchools() {
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = useState<string>('');
     const [selectedProofStatus, setSelectedProofStatus] = useState<string>('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [selectedAccreditationType, setSelectedAccreditationType] = useState<string>('');
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
     const [isDeleting, setIsDeleting] = useState(false);
@@ -123,6 +124,7 @@ export default function StateSchools() {
         custodian_code: '',
         email: '',
         accreditation_status: 'Unaccredited',
+        accreditation_type: 'Fresh Accreditation',
         accredited_date: '',
         category: 'PUB',
         accrd_year: '',
@@ -138,7 +140,7 @@ export default function StateSchools() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, activeTab, headerYearFilter]);
+    }, [searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, selectedAccreditationType, activeTab, headerYearFilter]);
 
     useEffect(() => {
         if (allSchools.length > 0) {
@@ -292,6 +294,7 @@ export default function StateSchools() {
             setError(null);
             const payload = {
                 ...newSchool,
+                accreditation_type: newSchool.accreditation_type || 'Fresh Accreditation',
                 state_code: userStateCode
             };
             if (activeTab === 'SSCE') {
@@ -308,6 +311,7 @@ export default function StateSchools() {
                 custodian_code: '',
                 email: '',
                 accreditation_status: 'Unaccredited',
+                accreditation_type: 'Fresh Accreditation',
                 accredited_date: '',
                 category: 'PUB',
                 accrd_year: '',
@@ -343,6 +347,7 @@ export default function StateSchools() {
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
                 category: editingSchool.category || 'PUB',
+                accreditation_type: editingSchool.accreditation_type || 'Fresh Accreditation',
                 accrd_year: editingSchool.accrd_year || null,
                 status: editingSchool.status
             };
@@ -427,7 +432,9 @@ export default function StateSchools() {
             const schoolYear = (school as any).accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
             const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
 
-            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesYear;
+            const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
+
+            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesAccreditationType && matchesYear;
         });
 
 
@@ -800,6 +807,19 @@ export default function StateSchools() {
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         />
                                     </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Type</label>
+                                        <select
+                                            required
+                                            value={newSchool.accreditation_type || 'Fresh Accreditation'}
+                                            onChange={e => setNewSchool({ ...newSchool, accreditation_type: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        >
+                                            <option value="Fresh Accreditation">Fresh Accreditation</option>
+                                            <option value="Re-Accreditation">Re-Accreditation</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
@@ -932,6 +952,19 @@ export default function StateSchools() {
                                             className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                         />
                                     </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Type</label>
+                                        <select
+                                            required
+                                            value={editingSchool.accreditation_type || 'Fresh Accreditation'}
+                                            onChange={e => setEditingSchool({ ...editingSchool, accreditation_type: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        >
+                                            <option value="Fresh Accreditation">Fresh Accreditation</option>
+                                            <option value="Re-Accreditation">Re-Accreditation</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
@@ -1010,6 +1043,15 @@ export default function StateSchools() {
                                     <option value="Public" className="dark:bg-slate-800">Public</option>
                                     <option value="Private" className="dark:bg-slate-800">Private</option>
                                     <option value="Federal" className="dark:bg-slate-800">Federal</option>
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
+                                <CheckCircle2 className="w-4 h-4 text-slate-600" />
+                                <select value={selectedAccreditationType} onChange={(e) => { setSelectedAccreditationType(e.target.value); setCurrentPage(1); }} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
+                                    <option value="" className="dark:bg-slate-800">Accreditation Type (All)</option>
+                                    <option value="Fresh Accreditation" className="dark:bg-slate-800">Fresh Accreditation</option>
+                                    <option value="Re-Accreditation" className="dark:bg-slate-800">Re-Accreditation</option>
                                 </select>
                             </div>
 
@@ -1127,14 +1169,21 @@ export default function StateSchools() {
                                                         {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
-                                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                            : school.accreditation_status === 'Failed'
-                                                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                                            }`}>
-                                                            {(school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' ? 'Full' : 'Partial'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}
-                                                        </span>
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
+                                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                                : school.accreditation_status === 'Failed'
+                                                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                                }`}>
+                                                                {(school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' ? 'Full' : 'Partial'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}
+                                                            </span>
+                                                            {school.accreditation_type && (
+                                                                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter block mt-0.5">
+                                                                    Type: {school.accreditation_type}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     {!isPortalLocked && (
                                                         <td className="px-6 py-4 text-right">

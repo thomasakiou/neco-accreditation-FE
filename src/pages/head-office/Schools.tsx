@@ -49,6 +49,7 @@ export default function HeadOfficeSchools() {
     const [selectedCustodian, setSelectedCustodian] = useState<string>('');
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = useState<string>('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [selectedAccreditationType, setSelectedAccreditationType] = useState<string>('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingSchool, setEditingSchool] = useState<School | null>(null);
@@ -77,6 +78,7 @@ export default function HeadOfficeSchools() {
         custodian_code: '',
         email: '',
         accreditation_status: 'Unaccredited',
+        accreditation_type: 'Fresh Accreditation',
         accredited_date: '',
         category: 'PUB',
         accrd_year: '',
@@ -223,7 +225,8 @@ export default function HeadOfficeSchools() {
                 state_code: selectedState || undefined,
                 zone_code: selectedZone || undefined,
                 category: selectedCategory || undefined,
-                accreditation_status: selectedAccreditationStatus || undefined
+                accreditation_status: selectedAccreditationStatus || undefined,
+                accreditation_type: selectedAccreditationType || undefined
             };
 
             if (activeTab === 'SSCE') {
@@ -273,6 +276,7 @@ export default function HeadOfficeSchools() {
         setSelectedCustodian('');
         setSelectedAccreditationStatus('');
         setSelectedCategory('');
+        setSelectedAccreditationType('');
         setSearchTerm('');
         setCurrentPage(1);
         fetchSchools();
@@ -414,6 +418,7 @@ export default function HeadOfficeSchools() {
                 custodian_code: '',
                 email: '',
                 accreditation_status: 'Unaccredited',
+                accreditation_type: 'Fresh',
                 accredited_date: '',
                 category: 'PUB',
                 accrd_year: '',
@@ -449,6 +454,7 @@ export default function HeadOfficeSchools() {
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
                 category: editingSchool.category || 'PUB',
+                accreditation_type: editingSchool.accreditation_type || 'Fresh',
                 accrd_year: editingSchool.accrd_year || null,
                 status: editingSchool.status
             };
@@ -571,13 +577,15 @@ export default function HeadOfficeSchools() {
                         school.accreditation_status === selectedAccreditationStatus);
             const matchesCategory = selectedCategory === '' ||
                 (selectedCategory === 'Public' ? school.category === 'PUB' || school.category === 'Public' :
-                    selectedCategory === 'Private' ? school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' :
+                    selectedCategory === 'Private' ? (school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private') :
                         selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
+
+            const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
 
             const schoolYear = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
             const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
 
-            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesYear;
+            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesAccreditationType && matchesYear;
         });
 
         const totalPages = Math.ceil(filtered.length / rowsPerPage);
@@ -590,7 +598,11 @@ export default function HeadOfficeSchools() {
             startIndex,
             paginatedSchools: paginated
         };
-    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, states, currentPage, rowsPerPage, headerYearFilter]);
+    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedAccreditationType, states, currentPage, rowsPerPage, headerYearFilter]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedAccreditationType]);
 
     const handleExportReport = () => {
         const rows = filteredSchools.map((school, idx) => `
@@ -925,6 +937,19 @@ export default function HeadOfficeSchools() {
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         />
                                     </div>
+
+                                    <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Type</label>
+                                        <select
+                                            required
+                                            value={newSchool.accreditation_type || 'Fresh Accreditation'}
+                                            onChange={e => setNewSchool({ ...newSchool, accreditation_type: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        >
+                                            <option value="Fresh Accreditation">Fresh Accreditation</option>
+                                            <option value="Re-Accreditation">Re-Accreditation</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
@@ -1095,6 +1120,19 @@ export default function HeadOfficeSchools() {
                                         />
                                     </div>
 
+                                    <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Type</label>
+                                        <select
+                                            required
+                                            value={editingSchool.accreditation_type || 'Fresh Accreditation'}
+                                            onChange={e => setEditingSchool({ ...editingSchool, accreditation_type: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        >
+                                            <option value="Fresh Accreditation">Fresh Accreditation</option>
+                                            <option value="Re-Accreditation">Re-Accreditation</option>
+                                        </select>
+                                    </div>
+
                                     <div className="space-y-1.5 col-span-2">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">System Status</label>
                                         <select
@@ -1243,6 +1281,21 @@ export default function HeadOfficeSchools() {
                                     <option value="Public" className="dark:bg-slate-800">Public</option>
                                     <option value="Private" className="dark:bg-slate-800">Private</option>
                                     <option value="Federal" className="dark:bg-slate-800">Federal</option>
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[150px] xl:flex-none">
+                                <CheckCircle2 className="w-4 h-4 text-slate-600" />
+                                <select
+                                    value={selectedAccreditationType}
+                                    onChange={(e) => { setSelectedAccreditationType(e.target.value); setCurrentPage(1); }}
+                                    className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
+                                >
+                                    <option value="" className="dark:bg-slate-800">
+                                        All Types
+                                    </option>
+                                    <option value="Fresh Accreditation" className="dark:bg-slate-800">Fresh Accreditation</option>
+                                    <option value="Re-Accreditation" className="dark:bg-slate-800">Re-Accreditation</option>
                                 </select>
                             </div>
 
@@ -1433,6 +1486,11 @@ export default function HeadOfficeSchools() {
                                                                 {(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
                                                                 {(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}
                                                             </span>
+                                                            {school.accreditation_type && (
+                                                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
+                                                                    Type: {school.accreditation_type}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">

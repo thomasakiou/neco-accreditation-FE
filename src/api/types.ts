@@ -994,6 +994,8 @@ export interface components {
              * @default Unaccredited
              */
             accreditation_status: string;
+            /** Accreditation Type */
+            accreditation_type?: string | null;
             /** Accredited Date */
             accredited_date?: string | null;
             /**
@@ -1032,6 +1034,8 @@ export interface components {
              * @default Unaccredited
              */
             accreditation_status: string;
+            /** Accreditation Type */
+            accreditation_type?: string | null;
             /** Accredited Date */
             accredited_date?: string | null;
             /**
@@ -1065,6 +1069,8 @@ export interface components {
             email?: string | null;
             /** Accreditation Status */
             accreditation_status?: string | null;
+            /** Accreditation Type */
+            accreditation_type?: string | null;
             /** Accredited Date */
             accredited_date?: string | null;
             /** Category */
@@ -1280,6 +1286,8 @@ export interface components {
              * @default Unaccredited
              */
             accreditation_status: string;
+            /** Accreditation Type */
+            accreditation_type?: string | null;
             /** Accredited Date */
             accredited_date?: string | null;
             /**
@@ -1318,6 +1326,8 @@ export interface components {
              * @default Unaccredited
              */
             accreditation_status: string;
+            /** Accreditation Type */
+            accreditation_type?: string | null;
             /** Accredited Date */
             accredited_date?: string | null;
             /**
@@ -1351,6 +1361,8 @@ export interface components {
             email?: string | null;
             /** Accreditation Status */
             accreditation_status?: string | null;
+            /** Accreditation Type */
+            accreditation_type?: string | null;
             /** Accredited Date */
             accredited_date?: string | null;
             /** Category */
