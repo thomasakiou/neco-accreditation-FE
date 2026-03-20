@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Copy, AlertTriangle, CheckCircle2, Loader2, Settings } from 'lucide-react';
+import { Copy, AlertTriangle, CheckCircle2, Loader2, Settings, AlertCircle, ShieldAlert } from 'lucide-react';
+import AuthService from '../../api/services/auth.service';
 import DataService from '../../api/services/data.service';
 import { cn } from '../../components/layout/DashboardLayout';
 
@@ -8,6 +9,22 @@ export default function HeadOfficeSettings() {
     const [toYear, setToYear] = useState('');
     const [isDuplicating, setIsDuplicating] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+    React.useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const user = await AuthService.getCurrentUser();
+                setCurrentUser(user);
+            } finally {
+                setIsLoadingUser(false);
+            }
+        };
+        fetchUser();
+    }, []);
+
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     const handleDuplicate = async () => {
         if (!fromYear || !toYear) {
@@ -44,6 +61,37 @@ export default function HeadOfficeSettings() {
             setIsDuplicating(false);
         }
     };
+
+    if (isLoadingUser) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+            </div>
+        );
+    }
+
+    if (!isSuperAdmin) {
+        return (
+            <div className="max-w-4xl mx-auto mt-20 p-12 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-6">
+                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShieldAlert className="w-10 h-10 text-red-600 dark:text-red-400" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Access Restricted</h2>
+                <p className="text-slate-600 dark:text-slate-400 font-bold max-w-md mx-auto">
+                    You do not have sufficient permissions to access the System Settings. 
+                    Only <strong>admin@neco.gov.ng</strong> can manage global parameters.
+                </p>
+                <div className="pt-4">
+                    <button 
+                        onClick={() => window.history.back()}
+                        className="px-8 py-3 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl font-black uppercase tracking-widest transition-all"
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">

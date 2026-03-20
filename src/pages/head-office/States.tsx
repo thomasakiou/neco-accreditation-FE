@@ -18,8 +18,10 @@ import {
     RefreshCw
 } from 'lucide-react';
 import DataService, { Zone } from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
+import AlertModal from '../../components/modals/AlertModal';
 
 type State = components['schemas']['State'];
 
@@ -60,6 +62,16 @@ export default function HeadOfficeStates() {
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     const [isDeleting, setIsDeleting] = useState(false);
     const [isExporting, setIsExporting] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+
+    // Alert modal state
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+    }>({ isOpen: false, title: '', message: '' });
+
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
 
     useEffect(() => {
@@ -69,12 +81,14 @@ export default function HeadOfficeStates() {
     const fetchAllData = async () => {
         try {
             setIsLoading(true);
-            const [statesData, zonesData] = await Promise.all([
+            const [statesData, zonesData, userData] = await Promise.all([
                 DataService.getStates(),
-                DataService.getZones()
+                DataService.getZones(),
+                AuthService.getCurrentUser()
             ]);
             setStates(statesData);
             setZones(zonesData);
+            setCurrentUser(userData);
         } catch (err: any) {
             setError('Failed to load data. Please try again later.');
         } finally {
@@ -218,6 +232,14 @@ export default function HeadOfficeStates() {
     };
 
     const handleToggleLock = async (stateCode: string, currentLocked: boolean) => {
+        if (!isSuperAdmin) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Access Restricted',
+                message: 'You do not have permission to lock or unlock states. Only the system administrator can perform this action.'
+            });
+            return;
+        }
         try {
             setIsSubmitting(true);
             if (currentLocked) {
@@ -234,6 +256,14 @@ export default function HeadOfficeStates() {
     };
 
     const handleLockAll = async (lock: boolean) => {
+        if (!isSuperAdmin) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Access Restricted',
+                message: `You do not have permission to ${lock ? 'lock' : 'unlock'} all states. Only the system administrator can perform this action.`
+            });
+            return;
+        }
         setConfirmDialog({
             isOpen: true,
             title: lock ? 'Lock All States' : 'Unlock All States',
@@ -310,16 +340,18 @@ export default function HeadOfficeStates() {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => handleLockAll(true)}
-                                className="flex items-center gap-2 px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-xs font-bold border border-slate-300 dark:border-slate-700"
-                                title="Lock All States"
+                                disabled={!isSuperAdmin}
+                                className="flex items-center gap-2 px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-xs font-bold border border-slate-300 dark:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={isSuperAdmin ? "Lock All States" : "Admin Only"}
                             >
                                 <Lock className="w-3.5 h-3.5" />
                                 <span>Lock All</span>
                             </button>
                             <button
                                 onClick={() => handleLockAll(false)}
-                                className="flex items-center gap-2 px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-xs font-bold border border-slate-300 dark:border-slate-700"
-                                title="Unlock All States"
+                                disabled={!isSuperAdmin}
+                                className="flex items-center gap-2 px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-xs font-bold border border-slate-300 dark:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={isSuperAdmin ? "Unlock All States" : "Admin Only"}
                             >
                                 <Unlock className="w-3.5 h-3.5" />
                                 <span>Unlock All</span>
@@ -398,10 +430,11 @@ export default function HeadOfficeStates() {
                                         type="email"
                                         placeholder="e.g. lagos@neco.gov.ng"
                                         value={newState.email}
+                                        disabled={!isSuperAdmin}
                                         onChange={e => setNewState({ ...newState, email: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
-                                    <p className="text-[10px] text-slate-500 font-medium">State account credentials will be sent here.</p>
+                                    <p className="text-[10px] text-slate-500 font-medium">{isSuperAdmin ? 'State account credentials will be sent here.' : 'Updating the official email is restricted to administrators.'}</p>
                                 </div>
 
                                 <div className="space-y-1.5">
@@ -493,9 +526,11 @@ export default function HeadOfficeStates() {
                                         type="email"
                                         placeholder="e.g. lagos@neco.gov.ng"
                                         value={editingState.email || ''}
+                                        disabled={!isSuperAdmin}
                                         onChange={e => setEditingState({ ...editingState, email: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
+                                    <p className="text-[10px] text-slate-500 font-medium px-1 mt-1">{isSuperAdmin ? 'Changing this email will send new login credentials to the state.' : 'Restricted: Password reset via email update is admin-only.'}</p>
                                 </div>
 
                                 <div className="space-y-1.5">
@@ -711,8 +746,9 @@ export default function HeadOfficeStates() {
                                                 <div className="flex items-center justify-end gap-2">
                                                     <button
                                                         onClick={() => handleToggleLock(state.code, !!state.is_locked)}
-                                                        className={`p-1.5 rounded-lg transition-all ${state.is_locked ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10'}`}
-                                                        title={state.is_locked ? "Unlock State" : "Lock State"}
+                                                        className={`p-1.5 rounded-lg transition-all ${!isSuperAdmin ? 'opacity-30 cursor-not-allowed' : state.is_locked ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10'}`}
+                                                        disabled={!isSuperAdmin}
+                                                        title={!isSuperAdmin ? "Admin only" : state.is_locked ? "Unlock State" : "Lock State"}
                                                     >
                                                         {state.is_locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                                                     </button>
@@ -804,6 +840,12 @@ export default function HeadOfficeStates() {
                     )}
                 </div>
             </div>
+            <AlertModal 
+                isOpen={alertConfig.isOpen}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+            />
             <ConfirmDialog
                 isOpen={confirmDialog.isOpen}
                 title={confirmDialog.title}

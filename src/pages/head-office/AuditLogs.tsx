@@ -12,6 +12,7 @@ import {
     ChevronLeft,
     ChevronRight,
     RefreshCw,
+    ShieldAlert
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
@@ -57,8 +58,8 @@ export default function AuditLogs() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    const isAdmin = user?.role === 'admin';
-    const canView = isAdmin || user?.role === 'hq';
+    const isSuperAdmin = user?.email === 'admin@neco.gov.ng';
+    const canView = isSuperAdmin;
 
     // Fetch user and logs on mount
     useEffect(() => {
@@ -212,11 +213,23 @@ export default function AuditLogs() {
 
     if (!canView) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800">
-                <AlertCircle className="w-10 h-10 text-red-500" />
-                <p className="text-slate-600 dark:text-slate-400 text-center">
-                    You do not have permission to view audit logs. Only Admin and HQ users can access this page.
+            <div className="max-w-4xl mx-auto mt-20 p-12 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-6">
+                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShieldAlert className="w-10 h-10 text-red-600 dark:text-red-400" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Access Restricted</h2>
+                <p className="text-slate-600 dark:text-slate-400 font-bold max-w-md mx-auto">
+                    You do not have sufficient permissions to view the Audit Logs. 
+                    Only <strong>admin@neco.gov.ng</strong> can access this resource.
                 </p>
+                <div className="pt-4">
+                    <button 
+                        onClick={() => window.history.back()}
+                        className="px-8 py-3 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl font-black uppercase tracking-widest transition-all"
+                    >
+                        Go Back
+                    </button>
+                </div>
             </div>
         );
     }
@@ -240,7 +253,7 @@ export default function AuditLogs() {
                     Refresh
                 </button>
 
-                {isAdmin && (
+                {isSuperAdmin && (
                     <div className="flex gap-2">
                         {selectedLogs.size > 0 && (
                             <button
@@ -372,7 +385,7 @@ export default function AuditLogs() {
                         <table className="w-full text-left text-sm">
                             <thead>
                                 <tr className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
-                                    {isAdmin && (
+                                    {isSuperAdmin && (
                                         <th className="px-6 py-4 w-12">
                                             <input
                                                 type="checkbox"
@@ -390,13 +403,13 @@ export default function AuditLogs() {
                                     <th className="px-6 py-4">Resource ID</th>
                                     <th className="px-6 py-4">Details</th>
                                     <th className="px-6 py-4">IP Address</th>
-                                    {isAdmin && <th className="px-6 py-4 text-right">Action</th>}
+                                    <th className="px-6 py-4 text-right">{isSuperAdmin && 'Action'}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                                 {paginatedLogs.map(log => (
                                     <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        {isAdmin && (
+                                        {isSuperAdmin && (
                                             <td className="px-6 py-4">
                                                 <input
                                                     type="checkbox"
@@ -440,7 +453,7 @@ export default function AuditLogs() {
                                         <td className="px-6 py-4">
                                             <span className="font-mono text-xs text-slate-600 dark:text-slate-400">{log.ip_address || '-'}</span>
                                         </td>
-                                        {isAdmin && (
+                                        {isSuperAdmin && (
                                             <td className="px-6 py-4 text-right">
                                                 <button
                                                     onClick={() => handleDeleteLog(log.id)}

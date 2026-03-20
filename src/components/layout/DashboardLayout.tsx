@@ -27,6 +27,7 @@ import {
   Filter,
   ChevronDown
 } from 'lucide-react';
+import AlertModal from '../modals/AlertModal';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useTheme } from '../../context/ThemeContext';
@@ -166,8 +167,15 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   const [pendingApprovalsCount, setPendingApprovalsCount] = React.useState<number>(0);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isDark, toggleTheme } = useTheme();
-  const { headerYearFilter, setHeaderYearFilter, headerAvailableYears } = useFilterContext();
+    const { isDark, toggleTheme } = useTheme();
+    const { headerYearFilter, setHeaderYearFilter, headerAvailableYears } = useFilterContext();
+    
+    // Alert modal state
+    const [alertConfig, setAlertConfig] = React.useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+    }>({ isOpen: false, title: '', message: '' });
 
   const showYearFilter = [
     '/head-office/dashboard',
@@ -230,8 +238,21 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     })
   }));
 
-  const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : role === 'viewer' ? 'Viewer' : 'National Admin');
-  const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : role === 'viewer' ? 'Accreditation Viewer' : 'Head Office Portal');
+    const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : role === 'viewer' ? 'Viewer' : 'National Admin');
+    const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : role === 'viewer' ? 'Accreditation Viewer' : 'Head Office Portal');
+
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
+
+    const handleRestrictedClick = (e: React.MouseEvent, label: string) => {
+        if (role === 'head-office' && !isSuperAdmin) {
+            e.preventDefault();
+            setAlertConfig({
+                isOpen: true,
+                title: 'Access Restricted',
+                message: `You do not have permission to access ${label}. Only the system administrator can perform this action.`
+            });
+        }
+    };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -331,7 +352,10 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
               {role === 'head-office' && (
                 <NavLink
                   to="/head-office/audit-logs"
-                  onClick={() => setIsSidebarOpen(false)}
+                  onClick={(e) => {
+                    setIsSidebarOpen(false);
+                    handleRestrictedClick(e, 'Audit Logs');
+                  }}
                   title={isDesktopCollapsed ? 'Audit Logs' : undefined}
                   className={({ isActive }) => cn(
                     "flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative group whitespace-nowrap overflow-hidden",
@@ -352,7 +376,10 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
               {['head-office', 'state'].includes(role) ? (
                 <NavLink
                   to={`/${role}/settings`}
-                  onClick={() => setIsSidebarOpen(false)}
+                  onClick={(e) => {
+                    setIsSidebarOpen(false);
+                    if (role === 'head-office') handleRestrictedClick(e, 'Settings');
+                  }}
                   title={isDesktopCollapsed ? 'Settings' : undefined}
                   className={({ isActive }) => cn(
                     "flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative group whitespace-nowrap overflow-hidden",
@@ -490,6 +517,12 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           </div>
         </main>
       </div>
-    </div>
-  );
+            <AlertModal 
+                isOpen={alertConfig.isOpen}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+            />
+        </div>
+    );
 }
