@@ -51,6 +51,10 @@ export default function StateSettings() {
         fetchData();
     }, []);
 
+    const isValidEmail = (email: string) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
+
     const handleSave = async () => {
         if (!stateData) return;
 
@@ -59,13 +63,7 @@ export default function StateSettings() {
             setMessage(null);
             
             await DataService.updateState(stateData.code, {
-                name: stateData.name,
-                capital: stateData.capital,
-                zone_code: stateData.zone_code,
-                email: stateData.email,
                 ministry_email: ministryEmail || null,
-                status: stateData.status,
-                is_locked: stateData.is_locked
             });
 
             setMessage({
@@ -212,9 +210,9 @@ export default function StateSettings() {
                         <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
                             <button
                                 onClick={handleSave}
-                                disabled={isSaving}
+                                disabled={isSaving || !isValidEmail(ministryEmail)}
                                 className={cn(
-                                    "px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+                                    "px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-800"
                                 )}
                             >
                                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
