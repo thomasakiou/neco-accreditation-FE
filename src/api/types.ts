@@ -1450,6 +1450,13 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** UserChangePassword */
+        UserChangePassword: {
+            /** Old Password */
+            old_password: string;
+            /** New Password */
+            new_password: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */

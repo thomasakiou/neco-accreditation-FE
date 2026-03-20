@@ -43,6 +43,10 @@ const AuthService = {
 
     getUserRole: () => {
         return localStorage.getItem('user_role');
+    },
+
+    changePassword: async (passwordData: components['schemas']['UserChangePassword']): Promise<void> => {
+        await client.post('/api/v1/auth/change-password', passwordData);
     }
 };
 

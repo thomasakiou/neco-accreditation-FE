@@ -349,9 +349,9 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                   )}
                 </NavLink>
               )}
-              {role === 'head-office' ? (
+              {['head-office', 'state'].includes(role) ? (
                 <NavLink
-                  to="/head-office/settings"
+                  to={`/${role}/settings`}
                   onClick={() => setIsSidebarOpen(false)}
                   title={isDesktopCollapsed ? 'Settings' : undefined}
                   className={({ isActive }) => cn(

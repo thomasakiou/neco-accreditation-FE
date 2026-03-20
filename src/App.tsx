@@ -24,6 +24,7 @@ import HeadOfficeSettings from './pages/head-office/Settings';
 import StateApplications from './pages/state/Applications';
 import StateCustodians from './pages/state/Custodians';
 import StateReports from './pages/state/Reports';
+import StateSettings from './pages/state/Settings';
 import ReviewApplications from './pages/head-office/ReviewApplications';
 import ViewerDashboard from './pages/viewer/Dashboard';
 import ViewerZones from './pages/viewer/Zones';
@@ -68,6 +69,7 @@ export default function App() {
                     <Route path="custodians" element={<StateCustodians />} />
                     <Route path="applications" element={<StateApplications />} />
                     <Route path="reports" element={<StateReports />} />
+                    <Route path="settings" element={<StateSettings />} />
                     <Route path="*" element={<Navigate to="dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
