@@ -583,19 +583,20 @@ export default function StateSchools() {
 
                         {!isPortalLocked && (
                             <>
-                                <label className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-900 dark:text-slate-200 text-sm font-black shadow-sm group">
+                                {/* <label className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-900 dark:text-slate-200 text-sm font-black shadow-sm group">
                                     <Upload className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
                                     <span>Bulk Upload {activeTab}</span>
                                     <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
                                 </label>
 
                                 <button
+                                    disabled={true}
                                     onClick={() => setShowAddModal(true)}
                                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all text-sm font-black shadow-lg hover:shadow-emerald-500/20 active:scale-95 group"
                                 >
                                     <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
                                     <span>Register {activeTab} School</span>
-                                </button>
+                                </button> */}
                             </>
                         )}
                     </div>

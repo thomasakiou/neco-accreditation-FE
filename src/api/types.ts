@@ -1374,6 +1374,8 @@ export interface components {
             capital?: string | null;
             /** Email */
             email?: string | null;
+            /** Ministry Email */
+            ministry_email?: string | null;
             /** Zone Code */
             zone_code: string;
             /**
@@ -1397,6 +1399,8 @@ export interface components {
             capital?: string | null;
             /** Email */
             email?: string | null;
+            /** Ministry Email */
+            ministry_email?: string | null;
             /** Zone Code */
             zone_code: string;
             /**
@@ -1418,6 +1422,8 @@ export interface components {
             capital?: string | null;
             /** Email */
             email?: string | null;
+            /** Ministry Email */
+            ministry_email?: string | null;
             /** Zone Code */
             zone_code?: string | null;
             /** Status */

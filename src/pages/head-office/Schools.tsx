@@ -361,6 +361,35 @@ export default function HeadOfficeSchools() {
         }
     };
 
+    const generateNextSchoolCode = (stateCode: string) => {
+        if (!stateCode) return '';
+        
+        // Filter schools for the selected state
+        const stateSchools = schools.filter(s => s.state_code === stateCode);
+        
+        if (stateSchools.length === 0) {
+            // Default starting code for a new state
+            return `${stateCode}001`;
+        }
+
+        // Find the maximum numeric code
+        const codes = stateSchools
+            .map(s => parseInt(s.code, 10))
+            .filter(code => !isNaN(code));
+
+        if (codes.length === 0) {
+            return `${stateCode}001`;
+        }
+
+        const maxCode = Math.max(...codes);
+        const nextCode = (maxCode + 1).toString();
+        
+        // Pad with leading zeros if necessary to maintain consistent length
+        // Most codes seem to be at least 5-6 digits
+        const sampleCode = stateSchools[0].code;
+        return nextCode.padStart(sampleCode.length, '0');
+    };
+
     const handleAddSchool = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newSchool.name || !newSchool.code || !newSchool.state_code) {
@@ -790,10 +819,10 @@ export default function HeadOfficeSchools() {
                                         <input
                                             type="text"
                                             required
-                                            placeholder="e.g. 012345"
+                                            readOnly
+                                            placeholder="Auto-generated"
                                             value={newSchool.code}
-                                            onChange={e => setNewSchool({ ...newSchool, code: e.target.value.toUpperCase() })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all uppercase"
+                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 outline-none cursor-not-allowed uppercase font-mono"
                                         />
                                     </div>
 
@@ -802,7 +831,11 @@ export default function HeadOfficeSchools() {
                                         <select
                                             required
                                             value={newSchool.state_code}
-                                            onChange={e => setNewSchool({ ...newSchool, state_code: e.target.value })}
+                                            onChange={e => {
+                                                const stateCode = e.target.value;
+                                                const nextCode = generateNextSchoolCode(stateCode);
+                                                setNewSchool({ ...newSchool, state_code: stateCode, code: nextCode });
+                                            }}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
                                             <option value="">Select State</option>

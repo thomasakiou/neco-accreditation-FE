@@ -41,6 +41,7 @@ export default function HeadOfficeStates() {
         capital: '',
         zone_code: '',
         email: '',
+        ministry_email: '',
         status: 'active'
     });
 
@@ -112,10 +113,11 @@ export default function HeadOfficeStates() {
             setError(null);
             await DataService.createState({
                 ...newState,
-                email: newState.email || null
+                email: newState.email || null,
+                ministry_email: newState.ministry_email || null
             });
             setShowAddModal(false);
-            setNewState({ name: '', code: '', capital: '', zone_code: '', email: '', status: 'active' });
+            setNewState({ name: '', code: '', capital: '', zone_code: '', email: '', ministry_email: '', status: 'active' });
             fetchAllData();
         } catch (err: any) {
             setError(err.response?.data?.detail?.[0]?.msg || 'Failed to create state. The code might already exist.');
@@ -141,6 +143,7 @@ export default function HeadOfficeStates() {
                 capital: editingState.capital,
                 zone_code: editingState.zone_code,
                 email: editingState.email || null,
+                ministry_email: editingState.ministry_email || null,
                 status: editingState.status,
                 is_locked: editingState.is_locked
             });
@@ -402,6 +405,17 @@ export default function HeadOfficeStates() {
                                 </div>
 
                                 <div className="space-y-1.5">
+                                    <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Ministry Email</label>
+                                    <input
+                                        type="email"
+                                        placeholder="e.g. ministry@lagos.gov.ng"
+                                        value={newState.ministry_email}
+                                        onChange={e => setNewState({ ...newState, ministry_email: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Zone</label>
                                     <select
                                         required
@@ -480,6 +494,17 @@ export default function HeadOfficeStates() {
                                         placeholder="e.g. lagos@neco.gov.ng"
                                         value={editingState.email || ''}
                                         onChange={e => setEditingState({ ...editingState, email: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Ministry Email</label>
+                                    <input
+                                        type="email"
+                                        placeholder="e.g. ministry@lagos.gov.ng"
+                                        value={editingState.ministry_email || ''}
+                                        onChange={e => setEditingState({ ...editingState, ministry_email: e.target.value })}
                                         className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                     />
                                 </div>
@@ -626,6 +651,7 @@ export default function HeadOfficeStates() {
                                     <th className="px-6 py-4">State</th>
                                     <th className="px-6 py-4">Capital</th>
                                     <th className="px-6 py-4">Zone</th>
+                                    <th className="px-6 py-4">Ministry Email</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
@@ -633,14 +659,14 @@ export default function HeadOfficeStates() {
                             <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center">
+                                        <td colSpan={7} className="px-6 py-12 text-center">
                                             <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600 mb-2" />
                                             <p className="text-slate-400 text-sm">Retrieving states data...</p>
                                         </td>
                                     </tr>
                                 ) : filteredStates.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center">
+                                        <td colSpan={7} className="px-6 py-12 text-center">
                                             <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                                                 <Map className="w-6 h-6 text-slate-300" />
                                             </div>
@@ -664,6 +690,9 @@ export default function HeadOfficeStates() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="text-sm text-slate-900 dark:text-slate-400 font-medium">{getZoneName(state.zone_code)}</span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-sm text-slate-900 dark:text-slate-400 font-medium">{state.ministry_email || '-'}</span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 {state.is_locked ? (
