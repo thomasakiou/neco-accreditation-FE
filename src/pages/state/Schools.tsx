@@ -42,6 +42,7 @@ export default function StateSchools() {
     const [isPortalLocked, setIsPortalLocked] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [userEmail, setUserEmail] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<'SSCE' | 'BECE'>('SSCE');
 
@@ -182,6 +183,7 @@ export default function StateSchools() {
             }
 
             setUserStateCode(user.state_code);
+            setUserEmail(user.email || '');
 
             // Check if state is locked and get name
             const statesData = await DataService.getStates();
@@ -859,9 +861,15 @@ export default function StateSchools() {
 
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Center Code</label>
-                                        <div className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 font-mono">
-                                            {editingSchool.code}
-                                        </div>
+                                        <input
+                                            type="text"
+                                            required
+                                            disabled={userEmail !== 'admin@neco.gov.ng'}
+                                            placeholder="e.g. 012345"
+                                            value={editingSchool.code}
+                                            onChange={e => setEditingSchool({ ...editingSchool, code: e.target.value.toUpperCase() })}
+                                            className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-800/50 text-slate-500 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800'} border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all uppercase`}
+                                        />
                                     </div>
 
                                     <div className="space-y-1.5 col-span-2">
@@ -891,7 +899,7 @@ export default function StateSchools() {
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian</label>
                                         <select
-                                            disabled={!editingSchool.lga_code || isLoadingCustodians}
+                                            disabled={userEmail !== 'admin@neco.gov.ng' && (!editingSchool.lga_code || isLoadingCustodians)}
                                             value={editingSchool.custodian_code}
                                             onChange={e => setEditingSchool({ ...editingSchool, custodian_code: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
@@ -920,36 +928,53 @@ export default function StateSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Year</label>
                                         <input
                                             type="text"
-                                            disabled
+                                            disabled={userEmail !== 'admin@neco.gov.ng'}
                                             placeholder="e.g. 2024"
                                             value={editingSchool.accrd_year || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, accrd_year: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                                            className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-800/50 opacity-60 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800'} border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all`}
                                         />
                                     </div>
 
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation</label>
                                         <select
-                                            disabled
+                                            disabled={userEmail !== 'admin@neco.gov.ng'}
                                             required
-                                            value={editingSchool.accreditation_status}
+                                            value={['Full', 'Partial', 'Failed'].includes(editingSchool.accreditation_status) ? 'Accredited' : editingSchool.accreditation_status}
                                             onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                                            className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-800/50 opacity-60 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800'} border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all`}
                                         >
                                             <option value="Unaccredited">Unaccredited</option>
                                             <option value="Accredited">Accredited</option>
                                         </select>
                                     </div>
 
+                                    {userEmail === 'admin@neco.gov.ng' && ['Accredited', 'Full', 'Partial', 'Failed'].includes(editingSchool.accreditation_status) && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Result</label>
+                                            <select
+                                                required
+                                                value={editingSchool.accreditation_status === 'Accredited' ? '' : editingSchool.accreditation_status}
+                                                onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            >
+                                                <option value="" disabled>Select Result...</option>
+                                                <option value="Full">Full</option>
+                                                <option value="Partial">Partial</option>
+                                                <option value="Failed">Fail</option>
+                                            </select>
+                                        </div>
+                                    )}
+
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Date</label>
                                         <input
                                             type="date"
-                                            disabled
+                                            disabled={userEmail !== 'admin@neco.gov.ng'}
                                             value={editingSchool.accredited_date || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, accredited_date: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                                            className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-800/50 opacity-60 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800'} border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all`}
                                         />
                                     </div>
 

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
+import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
@@ -41,6 +42,7 @@ export default function HeadOfficeSchools() {
     const [states, setStates] = useState<State[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [userEmail, setUserEmail] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState('');
     const [zones, setZones] = useState<components['schemas']['Zone'][]>([]);
     const [selectedZone, setSelectedZone] = useState<string>('');
@@ -179,6 +181,12 @@ export default function HeadOfficeSchools() {
         try {
             setIsLoading(true);
             setError(null);
+
+            const user = await AuthService.getCurrentUser();
+            if (user?.email) {
+                setUserEmail(user.email);
+            }
+
             const [schoolsData, beceSchoolsData, statesData, custodiansData, lgasData, zonesData] = await Promise.all([
                 DataService.getSchools(),
                 DataService.getBeceSchools(),
@@ -367,10 +375,10 @@ export default function HeadOfficeSchools() {
 
     const generateNextSchoolCode = (stateCode: string) => {
         if (!stateCode) return '';
-        
+
         // Filter schools for the selected state
         const stateSchools = schools.filter(s => s.state_code === stateCode);
-        
+
         if (stateSchools.length === 0) {
             // Default starting code for a new state
             return `${stateCode}001`;
@@ -387,7 +395,7 @@ export default function HeadOfficeSchools() {
 
         const maxCode = Math.max(...codes);
         const nextCode = (maxCode + 1).toString();
-        
+
         // Pad with leading zeros if necessary to maintain consistent length
         // Most codes seem to be at least 5-6 digits
         const sampleCode = stateSchools[0].code;
@@ -918,7 +926,7 @@ export default function HeadOfficeSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Status</label>
                                         <select
                                             required
-                                            value={newSchool.accreditation_status}
+                                            value={['Full', 'Partial', 'Failed'].includes(newSchool.accreditation_status) ? 'Accredited' : newSchool.accreditation_status}
                                             onChange={e => setNewSchool({ ...newSchool, accreditation_status: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
@@ -926,6 +934,23 @@ export default function HeadOfficeSchools() {
                                             <option value="Accredited">Accredited</option>
                                         </select>
                                     </div>
+
+                                    {userEmail === 'admin@neco.gov.ng' && ['Accredited', 'Full', 'Partial', 'Failed'].includes(newSchool.accreditation_status) && (
+                                        <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                            <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Result</label>
+                                            <select
+                                                required
+                                                value={newSchool.accreditation_status === 'Accredited' ? '' : newSchool.accreditation_status}
+                                                onChange={e => setNewSchool({ ...newSchool, accreditation_status: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            >
+                                                <option value="" disabled>Select Result...</option>
+                                                <option value="Full">Full</option>
+                                                <option value="Partial">Partial</option>
+                                                <option value="Failed">Fail</option>
+                                            </select>
+                                        </div>
+                                    )}
 
                                     <div className="space-y-1.5 col-span-2 sm:col-span-1">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Date</label>
@@ -1002,8 +1027,8 @@ export default function HeadOfficeSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Center Code</label>
                                         <input
                                             type="text"
-                                            required
-                                            disabled
+                                            // required
+                                            disabled={userEmail !== 'admin@neco.gov.ng'}
                                             placeholder="e.g. 012345"
                                             value={editingSchool.code}
                                             className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 outline-none cursor-not-allowed uppercase"
@@ -1039,8 +1064,8 @@ export default function HeadOfficeSchools() {
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
                                         <select
-                                            required
-                                            disabled={!editingSchool.state_code || isLoadingLgas}
+                                            // required
+                                            disabled={userEmail !== 'admin@neco.gov.ng' && (!editingSchool.state_code || isLoadingLgas)}
                                             value={editingSchool.lga_code}
                                             onChange={e => setEditingSchool({ ...editingSchool, lga_code: e.target.value, custodian_code: '' })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
@@ -1055,8 +1080,8 @@ export default function HeadOfficeSchools() {
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian</label>
                                         <select
-                                            required
-                                            disabled={!editingSchool.lga_code || isLoadingCustodians}
+                                            // required
+                                            disabled={userEmail !== 'admin@neco.gov.ng' && (!editingSchool.lga_code || isLoadingCustodians)}
                                             value={editingSchool.custodian_code}
                                             onChange={e => setEditingSchool({ ...editingSchool, custodian_code: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
@@ -1071,7 +1096,7 @@ export default function HeadOfficeSchools() {
                                     <div className="space-y-1.5 col-span-2 sm:col-span-1">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Category</label>
                                         <select
-                                            required
+                                            // required
                                             value={editingSchool.category || 'PUB'}
                                             onChange={e => setEditingSchool({ ...editingSchool, category: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
@@ -1086,37 +1111,54 @@ export default function HeadOfficeSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Year</label>
                                         <input
                                             type="text"
-                                            placeholder="e.g. 2024"
-                                            disabled
+                                            placeholder="e.g. 2026"
+                                            disabled={userEmail !== 'admin@neco.gov.ng'}
                                             value={editingSchool.accrd_year || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, accrd_year: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all opacity-60 cursor-not-allowed"
+                                            className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 opacity-60 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'} border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all`}
                                         />
                                     </div>
 
                                     <div className="space-y-1.5 col-span-2 sm:col-span-1">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Status</label>
                                         <select
-                                            required
-                                            disabled
-                                            value={editingSchool.accreditation_status}
+                                            // required
+                                            disabled={userEmail !== 'admin@neco.gov.ng'}
+                                            value={['Full', 'Partial', 'Failed'].includes(editingSchool.accreditation_status) ? 'Accredited' : editingSchool.accreditation_status}
                                             onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all opacity-60 cursor-not-allowed"
+                                            className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 opacity-60 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'} border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all`}
                                         >
                                             <option value="Unaccredited">Unaccredited</option>
                                             <option value="Accredited">Accredited</option>
                                         </select>
                                     </div>
 
+                                    {userEmail === 'admin@neco.gov.ng' && ['Accredited', 'Full', 'Partial', 'Failed'].includes(editingSchool.accreditation_status) && (
+                                        <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                            <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Result</label>
+                                            <select
+                                                required
+                                                value={editingSchool.accreditation_status === 'Accredited' ? '' : editingSchool.accreditation_status}
+                                                onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            >
+                                                <option value="" disabled>Select Result...</option>
+                                                <option value="Full">Full</option>
+                                                <option value="Partial">Partial</option>
+                                                <option value="Failed">Fail</option>
+                                            </select>
+                                        </div>
+                                    )}
+
                                     <div className="space-y-1.5 col-span-2 sm:col-span-1">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Date</label>
                                         <input
                                             type="date"
-                                            disabled
+                                            disabled={userEmail !== 'admin@neco.gov.ng'}
                                             required={editingSchool.accreditation_status === 'Accredited'}
                                             value={editingSchool.accredited_date || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, accredited_date: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all opacity-60 cursor-not-allowed"
+                                            className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 opacity-60 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'} border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all`}
                                         />
                                     </div>
 
