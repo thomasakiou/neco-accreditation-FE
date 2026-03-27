@@ -17,6 +17,7 @@ import {
 import { cn } from '../../components/layout/DashboardLayout';
 import DataService from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
+import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
 import { useFilterContext } from '../../context/FilterContext';
 
@@ -40,6 +41,8 @@ export default function ReviewApplications() {
     const [selectedAccrFilter, setSelectedAccrFilter] = React.useState<string>('');
     const [activeTab, setActiveTab] = React.useState<'SSCE' | 'BECE'>('SSCE');
     const [isExporting, setIsExporting] = React.useState<string | null>(null);
+    const [currentUser, setCurrentUser] = React.useState<any>(null);
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
 
@@ -72,13 +75,14 @@ export default function ReviewApplications() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [schoolsData, beceSchoolsData, statesData, zonesData, lgas, custodians] = await Promise.all([
+            const [schoolsData, beceSchoolsData, statesData, zonesData, lgas, custodians, userData] = await Promise.all([
                 DataService.getSchools(),
                 DataService.getBeceSchools(),
                 DataService.getStates(),
                 DataService.getZones(),
                 DataService.getLGAs(),
-                DataService.getCustodians()
+                DataService.getCustodians(),
+                AuthService.getCurrentUser()
             ]);
             // Merge SSCE and BECE schools and add type for identification
             setSchools([
@@ -286,32 +290,36 @@ export default function ReviewApplications() {
                         <RefreshCw className={`w-4 h-4 text-emerald-600 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
                     </button>
-                    <button
-                        onClick={() => handleExportExcel()}
-                        disabled={isExporting !== null}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
-                        title="Download as Excel"
-                    >
-                        {isExporting === 'xlsx' ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <Download className="w-4 h-4" />
-                        )}
-                        Excel
-                    </button>
-                    <button
-                        onClick={() => handleExportCSV()}
-                        disabled={isExporting !== null}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
-                        title="Download as CSV"
-                    >
-                        {isExporting === 'csv' ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <Download className="w-4 h-4" />
-                        )}
-                        CSV
-                    </button>
+                    {isSuperAdmin && (
+                        <>
+                            <button
+                                onClick={() => handleExportExcel()}
+                                disabled={isExporting !== null}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
+                                title="Download as Excel"
+                            >
+                                {isExporting === 'xlsx' ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Download className="w-4 h-4" />
+                                )}
+                                Excel
+                            </button>
+                            <button
+                                onClick={() => handleExportCSV()}
+                                disabled={isExporting !== null}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
+                                title="Download as CSV"
+                            >
+                                {isExporting === 'csv' ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Download className="w-4 h-4" />
+                                )}
+                                CSV
+                            </button>
+                        </>
+                    )}
                     <button
                         onClick={() => handleExportPDF()}
                         disabled={isExporting !== null}

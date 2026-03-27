@@ -331,11 +331,13 @@ export default function HeadOfficeStates() {
                     </button>
 
                     <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-slate-900 dark:text-slate-200 text-sm font-bold shadow-sm">
-                            <Upload className="w-4 h-4" />
-                            <span>Upload States</span>
-                            <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
-                        </label>
+                        {isSuperAdmin && (
+                            <label className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-slate-900 dark:text-slate-200 text-sm font-bold shadow-sm">
+                                <Upload className="w-4 h-4" />
+                                <span>Upload States</span>
+                                <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
+                            </label>
+                        )}
 
                         <div className="flex items-center gap-2">
                             <button

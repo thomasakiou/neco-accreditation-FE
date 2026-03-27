@@ -16,6 +16,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import DataService, { LGA, State } from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import SearchableSelect from '../../components/common/SearchableSelect';
 
@@ -49,6 +50,8 @@ export default function LGAs() {
         state_code: '',
         status: 'active'
     });
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     useEffect(() => {
         fetchInitialData();
@@ -57,12 +60,14 @@ export default function LGAs() {
     const fetchInitialData = async () => {
         try {
             setIsLoading(true);
-            const [lgaData, stateData] = await Promise.all([
+            const [lgaData, stateData, userData] = await Promise.all([
                 DataService.getLGAs(),
-                DataService.getStates()
+                DataService.getStates(),
+                AuthService.getCurrentUser()
             ]);
             setLgas(lgaData);
             setStates(stateData);
+            setCurrentUser(userData);
         } catch (err: any) {
             setError('Failed to fetch data. Please try again later.');
         } finally {
@@ -202,21 +207,25 @@ export default function LGAs() {
                     </button>
 
                     <div className="flex items-center gap-3">
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileUpload}
-                            accept=".csv"
-                            className="hidden"
-                        />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading}
-                            className="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm font-bold shadow-sm disabled:opacity-50"
-                        >
-                            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                            <span>{isUploading ? 'Uploading...' : 'Upload CSV'}</span>
-                        </button>
+                        {isSuperAdmin && (
+                            <>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileUpload}
+                                    accept=".csv"
+                                    className="hidden"
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploading}
+                                    className="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm font-bold shadow-sm disabled:opacity-50"
+                                >
+                                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                    <span>{isUploading ? 'Uploading...' : 'Upload CSV'}</span>
+                                </button>
+                            </>
+                        )}
                         <button
                             onClick={() => setShowAddModal(true)}
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"

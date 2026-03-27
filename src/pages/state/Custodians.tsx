@@ -51,11 +51,14 @@ export default function StateCustodians() {
         variant?: 'danger' | 'warning'; onConfirm: () => void;
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     const [isDeleting, setIsDeleting] = useState(false);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     const fetchInitialData = async () => {
         try {
             setIsLoading(true);
             const user = await AuthService.getCurrentUser();
+            setCurrentUser(user);
             const stateCode = user?.state_code;
 
             if (!stateCode) {
@@ -477,18 +480,20 @@ export default function StateCustodians() {
                                     ))}
                                 </select>
                             </div>
-                            <div className="flex items-center gap-2 md:flex-none">
-                                <button
-                                    onClick={() => activeTab === 'SSCE'
-                                        ? DataService.exportCustodians('excel', { state_code: userState?.code })
-                                        : DataService.exportBeceCustodians('excel', { state_code: userState?.code })}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-                                    title="Export Excel"
-                                >
-                                    <Download className="w-4 h-4 text-emerald-600" />
-                                    EXCEL
-                                </button>
-                            </div>
+                            {isSuperAdmin && (
+                                <div className="flex items-center gap-2 md:flex-none">
+                                    <button
+                                        onClick={() => activeTab === 'SSCE'
+                                            ? DataService.exportCustodians('excel', { state_code: userState?.code })
+                                            : DataService.exportBeceCustodians('excel', { state_code: userState?.code })}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                                        title="Export Excel"
+                                    >
+                                        <Download className="w-4 h-4 text-emerald-600" />
+                                        EXCEL
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
