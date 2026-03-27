@@ -15,6 +15,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
 import TemplateDownloadModal from '../../components/modals/TemplateDownloadModal';
 
@@ -31,6 +32,8 @@ export default function HeadOfficeDashboard() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = React.useState(false);
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
+  const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
   const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
   const hasInitializedYear = React.useRef(false);
@@ -38,16 +41,18 @@ export default function HeadOfficeDashboard() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [statesData, zonesData, ssceSchoolsData, beceSchoolsData] = await Promise.all([
+      const [statesData, zonesData, ssceSchoolsData, beceSchoolsData, userData] = await Promise.all([
         DataService.getStates(),
         DataService.getZones(),
         DataService.getSchools(),
-        DataService.getBeceSchools()
+        DataService.getBeceSchools(),
+        AuthService.getCurrentUser()
       ]);
       setStates(statesData);
       setZones(zonesData);
       setSsceSchools(ssceSchoolsData);
       setBeceSchools(beceSchoolsData);
+      setCurrentUser(userData);
     } catch (err: any) {
       setError('Failed to load dashboard data.');
     } finally {
@@ -284,15 +289,19 @@ export default function HeadOfficeDashboard() {
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            <button
-              onClick={() => setIsTemplateModalOpen(true)}
-              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download Templates
-            </button>
-            <button className="px-3 py-1.5 text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700">Export CSV</button>
-            <button className="px-3 py-1.5 text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 border border-emerald-200">Print Report</button>
+            {isSuperAdmin && (
+              <>
+                <button
+                  onClick={() => setIsTemplateModalOpen(true)}
+                  className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Download Templates
+                </button>
+                <button className="px-3 py-1.5 text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700">Export CSV</button>
+                <button className="px-3 py-1.5 text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 border border-emerald-200">Print Report</button>
+              </>
+            )}
           </div>
         </div>
 

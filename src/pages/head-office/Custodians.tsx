@@ -244,13 +244,15 @@ export default function Custodians() {
                             Refresh
                         </button>
 
-                        <button
-                            onClick={() => setShowAddModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
-                        >
-                            <Plus className="w-4 h-4" />
-                            <span>Add {activeTab} Custodian</span>
-                        </button>
+                        {isSuperAdmin && (
+                            <button
+                                onClick={() => setShowAddModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Add {activeTab} Custodian</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -640,25 +642,31 @@ export default function Custodians() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleEditClick(custodian)}
-                                                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
-                                                        title="Edit Custodian"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteCustodian(custodian.code, custodian.name)}
-                                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
-                                                        title="Delete Custodian"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1.5">
-                                                        <MoreVertical className="w-4 h-4" />
-                                                    </button>
-                                                </div>
+                                                {isSuperAdmin ? (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleEditClick(custodian)}
+                                                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
+                                                            title="Edit Custodian"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteCustodian(custodian.code, custodian.name)}
+                                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
+                                                            title="Delete Custodian"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1.5">
+                                                            <MoreVertical className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 py-1 rounded bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+                                                        Admin Only
+                                                    </span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))

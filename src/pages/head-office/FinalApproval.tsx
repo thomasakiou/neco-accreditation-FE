@@ -23,6 +23,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 import { clearStaticCache } from '../../api/services/data.service';
 import { baseURL } from '../../api/client';
 import { components } from '../../api/types';
@@ -44,6 +45,8 @@ export default function HeadOfficeFinalApproval() {
     const [selectedProofFilter, setSelectedProofFilter] = useState('');
     const [selectedDueFilter, setSelectedDueFilter] = useState('');
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
 
@@ -73,12 +76,14 @@ export default function HeadOfficeFinalApproval() {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [schoolsData, beceSchoolsData, statesData, zonesData] = await Promise.all([
+            const [schoolsData, beceSchoolsData, statesData, zonesData, userData] = await Promise.all([
                 DataService.getSchools(),
                 DataService.getBeceSchools(),
                 DataService.getStates(),
-                DataService.getZones()
+                DataService.getZones(),
+                AuthService.getCurrentUser()
             ]);
+            setCurrentUser(userData);
             // Merge SSCE and BECE schools and add type for identification
             setSchools([
                 ...schoolsData.map(s => ({ ...s, school_type: 'SSCE' as const })),
@@ -589,28 +594,34 @@ export default function HeadOfficeFinalApproval() {
                                                         {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString() : '—'}
                                                     </td>
                                                     <td className="px-6 py-3">
-                                                        <div className="flex items-center gap-2">
-                                                            {school.approval_status !== 'Approved' && school.payment_url && (
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setVerifyingSchool(school);
-                                                                        setShowVerifyModal(true);
-                                                                    }}
-                                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2"
-                                                                >
-                                                                    <ShieldCheck className="w-3.5 h-3.5" />
-                                                                    Verify
-                                                                </button>
+                                                            {isSuperAdmin ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    {school.approval_status !== 'Approved' && school.payment_url && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setVerifyingSchool(school);
+                                                                                setShowVerifyModal(true);
+                                                                            }}
+                                                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2"
+                                                                        >
+                                                                            <ShieldCheck className="w-3.5 h-3.5" />
+                                                                            Verify
+                                                                        </button>
+                                                                    )}
+                                                                    <button
+                                                                        onClick={() => openReviewModal(school)}
+                                                                        disabled={school.approval_status !== 'Approved'}
+                                                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                                                    >
+                                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                        Accredit
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800">
+                                                                    Admin Only
+                                                                </span>
                                                             )}
-                                                            <button
-                                                                onClick={() => openReviewModal(school)}
-                                                                disabled={school.approval_status !== 'Approved'}
-                                                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
-                                                            >
-                                                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                                                Accredit
-                                                            </button>
-                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}

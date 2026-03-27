@@ -16,6 +16,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import DataService, { School, BECESchool, State } from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
 import {
     BarChart,
@@ -43,20 +44,24 @@ export default function HeadOfficeReports() {
     const [isExporting, setIsExporting] = useState<string | null>(null);
     const [isPrintingSummary, setIsPrintingSummary] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            const [ssceData, beceData, stData, zData] = await Promise.all([
+            const [ssceData, beceData, stData, zData, userData] = await Promise.all([
                 DataService.getSchools(),
                 DataService.getBeceSchools(),
                 DataService.getStates(),
-                DataService.getZones()
+                DataService.getZones(),
+                AuthService.getCurrentUser()
             ]);
             setSsceSchools(ssceData);
             setBeceSchools(beceData);
             setStates(stData);
             setZones(zData);
+            setCurrentUser(userData);
             setError(null);
         } catch (err) {
             console.error("Failed to load report data:", err);
@@ -622,6 +627,7 @@ export default function HeadOfficeReports() {
                     <div className="mt-8">
                         <div className="flex items-center justify-between px-2 mb-4">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Export Reports</h2>
+                        {isSuperAdmin && (
                             <button
                                 onClick={handlePrintSummary}
                                 className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
@@ -629,6 +635,7 @@ export default function HeadOfficeReports() {
                                 <Printer className="w-4 h-4" />
                                 <span>Generate Summary Report</span>
                             </button>
+                        )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {reportCards.map((report) => (
@@ -649,7 +656,7 @@ export default function HeadOfficeReports() {
 
                                         <button
                                             onClick={() => handleExport(report.id as any)}
-                                            disabled={isExporting !== null}
+                                            disabled={!isSuperAdmin || isExporting !== null}
                                             className="mt-6 w-full flex items-center justify-center gap-2 py-3 bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-200 rounded-2xl text-sm font-bold hover:bg-emerald-600 dark:hover:bg-emerald-700 transition-all disabled:opacity-50"
                                         >
                                             {isExporting === report.id ? (

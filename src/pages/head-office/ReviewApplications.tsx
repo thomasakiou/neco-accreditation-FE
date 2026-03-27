@@ -318,21 +318,21 @@ export default function ReviewApplications() {
                                 )}
                                 CSV
                             </button>
+                            <button
+                                onClick={() => handleExportPDF()}
+                                disabled={isExporting !== null}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
+                                title="Download as PDF"
+                            >
+                                {isExporting === 'pdf' ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <FileText className="w-4 h-4" />
+                                )}
+                                PDF
+                            </button>
                         </>
                     )}
-                    <button
-                        onClick={() => handleExportPDF()}
-                        disabled={isExporting !== null}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white rounded-lg font-medium transition-colors"
-                        title="Download as PDF"
-                    >
-                        {isExporting === 'pdf' ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <FileText className="w-4 h-4" />
-                        )}
-                        PDF
-                    </button>
                 </div>
             </div>
 

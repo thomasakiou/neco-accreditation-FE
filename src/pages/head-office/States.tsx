@@ -360,21 +360,25 @@ export default function HeadOfficeStates() {
                             </button>
                         </div>
 
-                        <button
-                            onClick={() => setShowAddModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium shadow-sm"
-                        >
-                            <Plus className="w-4 h-4" />
-                            <span>Add State</span>
-                        </button>
+                        {isSuperAdmin && (
+                            <>
+                                <button
+                                    onClick={() => setShowAddModal(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium shadow-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span>Add State</span>
+                                </button>
 
-                        <button
-                            onClick={handleDeleteAll}
-                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                            title="Delete All States"
-                        >
-                            <Trash2 className="w-5 h-5" />
-                        </button>
+                                <button
+                                    onClick={handleDeleteAll}
+                                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    title="Delete All States"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -648,35 +652,37 @@ export default function HeadOfficeStates() {
                                 </select>
                             </div>
 
-                            <div className="flex items-center gap-2 ml-auto">
-                                <button
-                                    onClick={() => handleExport('excel')}
-                                    disabled={isExporting !== null}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
-                                    title="Export Excel"
-                                >
-                                    {isExporting === 'excel' ? <Loader2 className="w-4 h-4 animate-spin text-emerald-600" /> : <Download className="w-4 h-4 text-emerald-600" />}
-                                    EXCEL
-                                </button>
-                                <button
-                                    onClick={() => handleExport('csv')}
-                                    disabled={isExporting !== null}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
-                                    title="Export CSV"
-                                >
-                                    {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <Download className="w-4 h-4 text-blue-600" />}
-                                    CSV
-                                </button>
-                                <button
-                                    onClick={() => handleExport('dbf')}
-                                    disabled={isExporting !== null}
-                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
-                                    title="Export DBF (FoxPro)"
-                                >
-                                    {isExporting === 'dbf' ? <Loader2 className="w-4 h-4 animate-spin text-orange-600" /> : <Download className="w-4 h-4 text-orange-600" />}
-                                    DBF
-                                </button>
-                            </div>
+                            {isSuperAdmin && (
+                                <div className="flex items-center gap-2 ml-auto">
+                                    <button
+                                        onClick={() => handleExport('excel')}
+                                        disabled={isExporting !== null}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
+                                        title="Export Excel"
+                                    >
+                                        {isExporting === 'excel' ? <Loader2 className="w-4 h-4 animate-spin text-emerald-600" /> : <Download className="w-4 h-4 text-emerald-600" />}
+                                        EXCEL
+                                    </button>
+                                    <button
+                                        onClick={() => handleExport('csv')}
+                                        disabled={isExporting !== null}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
+                                        title="Export CSV"
+                                    >
+                                        {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <Download className="w-4 h-4 text-blue-600" />}
+                                        CSV
+                                    </button>
+                                    <button
+                                        onClick={() => handleExport('dbf')}
+                                        disabled={isExporting !== null}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-50"
+                                        title="Export DBF (FoxPro)"
+                                    >
+                                        {isExporting === 'dbf' ? <Loader2 className="w-4 h-4 animate-spin text-orange-600" /> : <Download className="w-4 h-4 text-orange-600" />}
+                                        DBF
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

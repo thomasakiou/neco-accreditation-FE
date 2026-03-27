@@ -698,11 +698,13 @@ export default function HeadOfficeSchools() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <label className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-all text-slate-900 dark:text-slate-200 text-sm font-bold shadow-sm">
-                            <Upload className="w-4 h-4" />
-                            <span>Bulk Upload</span>
-                            <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
-                        </label>
+                        {isSuperAdmin && (
+                            <label className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-all text-slate-900 dark:text-slate-200 text-sm font-bold shadow-sm">
+                                <Upload className="w-4 h-4" />
+                                <span>Bulk Upload</span>
+                                <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
+                            </label>
+                        )}
 
                         <button
                             onClick={() => setShowAddModal(true)}
@@ -712,21 +714,25 @@ export default function HeadOfficeSchools() {
                             <span>Register School</span>
                         </button>
 
-                        <button
-                            onClick={() => setShowExportModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
-                        >
-                            <Download className="w-4 h-4" />
-                            <span>Export</span>
-                        </button>
+                        {isSuperAdmin && (
+                            <button
+                                onClick={() => setShowExportModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
+                            >
+                                <Download className="w-4 h-4" />
+                                <span>Export</span>
+                            </button>
+                        )}
 
-                        <button
-                            onClick={handleDeleteAll}
-                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-900/30"
-                            title="Delete All Schools"
-                        >
-                            <Trash2 className="w-5 h-5" />
-                        </button>
+                        {isSuperAdmin && (
+                            <button
+                                onClick={handleDeleteAll}
+                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-900/30"
+                                title="Delete All Schools"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -1385,6 +1391,8 @@ export default function HeadOfficeSchools() {
                                             </button>
                                         </>
                                     )}
+                                    {/* {isSuperAdmin && (
+                                        <> */}
                                     <button
                                         onClick={handleExportReport}
                                         className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
@@ -1403,6 +1411,8 @@ export default function HeadOfficeSchools() {
                                             <Trash2 className="w-4 h-4" />
                                             DELETE SELECTED ({selectedSchools.size})
                                         </button>
+                                        //     )}
+                                        // </>
                                     )}
                                 </div>
 

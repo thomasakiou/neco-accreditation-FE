@@ -16,6 +16,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import DataService, { Zone } from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 
 export default function Zones() {
     const [zones, setZones] = useState<Zone[]>([]);
@@ -26,6 +27,8 @@ export default function Zones() {
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingZone, setEditingZone] = useState<Zone | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
@@ -45,8 +48,12 @@ export default function Zones() {
     const fetchZones = async () => {
         try {
             setIsLoading(true);
-            const data = await DataService.getZones();
+            const [data, userData] = await Promise.all([
+                DataService.getZones(),
+                AuthService.getCurrentUser()
+            ]);
             setZones(data);
+            setCurrentUser(userData);
         } catch (err: any) {
             setError('Failed to fetch zones. Please try again later.');
         } finally {
@@ -128,15 +135,17 @@ export default function Zones() {
                     Refresh
                 </button>
 
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span>Add Zone</span>
-                    </button>
-                </div>
+                {isSuperAdmin && (
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Add Zone</span>
+                        </button>
+                    </div>
+                )}
             </div>
 
             {error && (
@@ -367,18 +376,24 @@ export default function Zones() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleEditClick(zone)}
-                                                    className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
-                                                    title="Edit Zone"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
-                                                    <MoreVertical className="w-4 h-4" />
-                                                </button>
-                                            </div>
+                                            {isSuperAdmin ? (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleEditClick(zone)}
+                                                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
+                                                        title="Edit Zone"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
+                                                        <MoreVertical className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 py-1 rounded bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+                                                    Admin Only
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
