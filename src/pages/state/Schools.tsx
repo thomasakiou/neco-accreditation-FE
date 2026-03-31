@@ -737,7 +737,7 @@ export default function StateSchools() {
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
                                         <select
-                                            value={newSchool.lga_code}
+                                            value={newSchool.lga_code || ''}
                                             onChange={e => setNewSchool({ ...newSchool, lga_code: e.target.value, custodian_code: '' })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
@@ -752,7 +752,7 @@ export default function StateSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian</label>
                                         <select
                                             disabled={!newSchool.lga_code || isLoadingCustodians}
-                                            value={newSchool.custodian_code}
+                                            value={newSchool.custodian_code || ''}
                                             onChange={e => setNewSchool({ ...newSchool, custodian_code: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
                                         >
@@ -766,7 +766,7 @@ export default function StateSchools() {
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Category</label>
                                         <select
-                                            value={newSchool.category}
+                                            value={newSchool.category || 'PUB'}
                                             onChange={e => setNewSchool({ ...newSchool, category: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
@@ -791,7 +791,7 @@ export default function StateSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation</label>
                                         <select
                                             required
-                                            value={newSchool.accreditation_status}
+                                            value={newSchool.accreditation_status || 'Unaccredited'}
                                             onChange={e => setNewSchool({ ...newSchool, accreditation_status: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
@@ -804,7 +804,7 @@ export default function StateSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Date</label>
                                         <input
                                             type="date"
-                                            value={newSchool.accredited_date}
+                                            value={newSchool.accredited_date || ''}
                                             onChange={e => setNewSchool({ ...newSchool, accredited_date: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         />
@@ -885,7 +885,7 @@ export default function StateSchools() {
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
                                         <select
-                                            value={editingSchool.lga_code}
+                                            value={editingSchool.lga_code || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, lga_code: e.target.value, custodian_code: '' })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
@@ -900,7 +900,7 @@ export default function StateSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian</label>
                                         <select
                                             disabled={userEmail !== 'admin@neco.gov.ng' && (!editingSchool.lga_code || isLoadingCustodians)}
-                                            value={editingSchool.custodian_code}
+                                            value={editingSchool.custodian_code || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, custodian_code: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
                                         >
@@ -941,7 +941,7 @@ export default function StateSchools() {
                                         <select
                                             disabled={userEmail !== 'admin@neco.gov.ng'}
                                             required
-                                            value={['Full', 'Partial', 'Failed'].includes(editingSchool.accreditation_status) ? 'Accredited' : editingSchool.accreditation_status}
+                                            value={['Full', 'Partial', 'Failed'].includes(editingSchool.accreditation_status || '') ? 'Accredited' : (editingSchool.accreditation_status || 'Unaccredited')}
                                             onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
                                             className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-800/50 opacity-60 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800'} border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all`}
                                         >
@@ -955,7 +955,7 @@ export default function StateSchools() {
                                             <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Result</label>
                                             <select
                                                 required
-                                                value={editingSchool.accreditation_status === 'Accredited' ? '' : editingSchool.accreditation_status}
+                                                value={(editingSchool.accreditation_status === 'Accredited' ? '' : editingSchool.accreditation_status) || ''}
                                                 onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
                                                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             >

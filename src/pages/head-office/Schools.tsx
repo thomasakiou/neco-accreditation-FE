@@ -22,7 +22,8 @@ import {
     ChevronRight,
     ChevronDown,
     FileText,
-    RefreshCw
+    RefreshCw,
+    Mail
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
@@ -71,6 +72,11 @@ export default function HeadOfficeSchools() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isExporting, setIsExporting] = useState<string | null>(null);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailInterval, setEmailInterval] = useState('12 Months');
+    const [isSendingEmails, setIsSendingEmails] = useState(false);
+    const [emailResults, setEmailResults] = useState<{ success: boolean; message: string; results?: any[] } | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
 
     const [newSchool, setNewSchool] = useState({
         name: '',
@@ -93,6 +99,7 @@ export default function HeadOfficeSchools() {
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
 
     const isSuperAdmin = userEmail === 'admin@neco.gov.ng';
+    const canSendEmails = isSuperAdmin || userRole === 'HQ' || userRole === 'Admin';
 
     const toggleRow = (schoolCode: string, accrdYear?: string | number) => {
         const rowId = accrdYear ? `${schoolCode}-${accrdYear}` : schoolCode;
@@ -188,6 +195,8 @@ export default function HeadOfficeSchools() {
             if (user?.email) {
                 setUserEmail(user.email);
             }
+            const role = AuthService.getUserRole();
+            setUserRole(role);
 
             const [schoolsData, beceSchoolsData, statesData, custodiansData, lgasData, zonesData] = await Promise.all([
                 DataService.getSchools(),
@@ -714,6 +723,20 @@ export default function HeadOfficeSchools() {
                             <span>Register School</span>
                         </button>
 
+                        {canSendEmails && (
+                            <button
+                                onClick={() => {
+                                    setEmailResults(null);
+                                    setShowEmailModal(true);
+                                }}
+                                disabled={selectedSchools.size === 0}
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Mail className="w-4 h-4" />
+                                <span>Send Emails to School</span>
+                            </button>
+                        )}
+
                         {isSuperAdmin && (
                             <button
                                 onClick={() => setShowExportModal(true)}
@@ -805,6 +828,8 @@ export default function HeadOfficeSchools() {
                     </div>
                 )}
 
+                {/* Feedback is now handled by the fixed bottom-right notification banner */}
+
                 {/* Modals */}
                 {showAddModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
@@ -858,7 +883,7 @@ export default function HeadOfficeSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">State</label>
                                         <select
                                             required
-                                            value={newSchool.state_code}
+                                            value={newSchool.state_code || ''}
                                             onChange={e => {
                                                 const stateCode = e.target.value;
                                                 const nextCode = generateNextSchoolCode(stateCode);
@@ -878,7 +903,7 @@ export default function HeadOfficeSchools() {
                                         <select
                                             required
                                             disabled={!newSchool.state_code || isLoadingLgas}
-                                            value={newSchool.lga_code}
+                                            value={newSchool.lga_code || ''}
                                             onChange={e => setNewSchool({ ...newSchool, lga_code: e.target.value, custodian_code: '' })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
                                         >
@@ -894,7 +919,7 @@ export default function HeadOfficeSchools() {
                                         <select
                                             required
                                             disabled={!newSchool.lga_code || isLoadingCustodians}
-                                            value={newSchool.custodian_code}
+                                            value={newSchool.custodian_code || ''}
                                             onChange={e => setNewSchool({ ...newSchool, custodian_code: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
                                         >
@@ -965,7 +990,7 @@ export default function HeadOfficeSchools() {
                                         <input
                                             type="date"
                                             required={newSchool.accreditation_status === 'Accredited'}
-                                            value={newSchool.accredited_date}
+                                            value={newSchool.accredited_date || ''}
                                             onChange={e => setNewSchool({ ...newSchool, accredited_date: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         />
@@ -1058,7 +1083,7 @@ export default function HeadOfficeSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">State</label>
                                         <select
                                             required
-                                            value={editingSchool.state_code}
+                                            value={editingSchool.state_code || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, state_code: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
@@ -1074,7 +1099,7 @@ export default function HeadOfficeSchools() {
                                         <select
                                             // required
                                             disabled={userEmail !== 'admin@neco.gov.ng' && (!editingSchool.state_code || isLoadingLgas)}
-                                            value={editingSchool.lga_code}
+                                            value={editingSchool.lga_code || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, lga_code: e.target.value, custodian_code: '' })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
                                         >
@@ -1090,7 +1115,7 @@ export default function HeadOfficeSchools() {
                                         <select
                                             // required
                                             disabled={userEmail !== 'admin@neco.gov.ng' && (!editingSchool.lga_code || isLoadingCustodians)}
-                                            value={editingSchool.custodian_code}
+                                            value={editingSchool.custodian_code || ''}
                                             onChange={e => setEditingSchool({ ...editingSchool, custodian_code: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all disabled:opacity-50"
                                         >
@@ -1132,7 +1157,7 @@ export default function HeadOfficeSchools() {
                                         <select
                                             // required
                                             disabled={userEmail !== 'admin@neco.gov.ng'}
-                                            value={['Full', 'Partial', 'Failed'].includes(editingSchool.accreditation_status) ? 'Accredited' : editingSchool.accreditation_status}
+                                            value={['Full', 'Partial', 'Failed'].includes(editingSchool.accreditation_status || '') ? 'Accredited' : (editingSchool.accreditation_status || 'Unaccredited')}
                                             onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
                                             className={`w-full px-4 py-2.5 ${userEmail !== 'admin@neco.gov.ng' ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 opacity-60 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'} border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all`}
                                         >
@@ -1146,7 +1171,7 @@ export default function HeadOfficeSchools() {
                                             <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accreditation Result</label>
                                             <select
                                                 required
-                                                value={editingSchool.accreditation_status === 'Accredited' ? '' : editingSchool.accreditation_status}
+                                                value={(editingSchool.accreditation_status === 'Accredited' ? '' : editingSchool.accreditation_status) || ''}
                                                 onChange={e => setEditingSchool({ ...editingSchool, accreditation_status: e.target.value })}
                                                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             >
@@ -1187,7 +1212,7 @@ export default function HeadOfficeSchools() {
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">System Status</label>
                                         <select
                                             required
-                                            value={editingSchool.status}
+                                            value={editingSchool.status || 'active'}
                                             onChange={e => setEditingSchool({ ...editingSchool, status: e.target.value })}
                                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         >
@@ -1728,6 +1753,157 @@ export default function HeadOfficeSchools() {
                 onExport={handleExportSchools}
                 isExporting={false}
             />
+
+            {showEmailModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-300 dark:border-slate-800 w-full max-w-md overflow-hidden animate-in zoom-in-95">
+                        <div className="p-6 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between bg-purple-50 dark:bg-purple-900/10">
+                            <div className="flex items-center gap-3 text-purple-700 dark:text-purple-400">
+                                <Mail className="w-6 h-6" />
+                                <h2 className="text-xl font-bold">Send Notifications</h2>
+                            </div>
+                            <button onClick={() => setShowEmailModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                                    You are about to send manual accreditation notifications to:
+                                </p>
+                                <p className="text-2xl font-black text-slate-950 dark:text-white mt-1">
+                                    {selectedSchools.size} <span className="text-base font-bold text-slate-500">Selected Schools</span>
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1 italic">
+                                    Type: {activeTab === 'SSCE' ? 'SSCE' : 'BECE'}
+                                </p>
+                            </div>
+
+                            {/* <div className="space-y-3">
+                                <label className="text-sm font-black uppercase text-slate-600 dark:text-slate-400 tracking-widest">Select Interval</label>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {['12 Months', '6 Months', '3 Months'].map((interval) => (
+                                        <button
+                                            key={interval}
+                                            onClick={() => setEmailInterval(interval)}
+                                            className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${
+                                                emailInterval === interval 
+                                                ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400' 
+                                                : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                            }`}
+                                        >
+                                            <span className="font-bold">{interval}</span>
+                                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                                emailInterval === interval 
+                                                ? 'border-purple-600 bg-purple-600' 
+                                                : 'border-slate-300 dark:border-slate-600'
+                                            }`}>
+                                                {emailInterval === interval && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div> */}
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    disabled={isSendingEmails}
+                                    onClick={() => setShowEmailModal(false)}
+                                    className="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    disabled={isSendingEmails}
+                                    onClick={async () => {
+                                        try {
+                                            setIsSendingEmails(true);
+                                            const schoolsToNotify = Array.from(selectedSchools).map(id => {
+                                                const schoolId = id as string;
+                                                const code = schoolId.includes('-') ? schoolId.split('-')[0] : schoolId;
+                                                return { code, type: activeTab };
+                                            });
+
+                                            const response = await DataService.sendManualEmails({
+                                                schools: schoolsToNotify,
+                                                interval: emailInterval
+                                            });
+
+                                            setEmailResults({
+                                                success: true,
+                                                message: response.message || `Successfully shared notifications with ${selectedSchools.size} schools.`,
+                                                results: response.results || []
+                                            });
+                                            // Only close if no errors
+                                            if (!response.results?.some((r: any) => r.status === 'error')) {
+                                                setShowEmailModal(false);
+                                                setSelectedSchools(new Set());
+                                            }
+                                        } catch (err: any) {
+                                            setEmailResults({
+                                                success: false,
+                                                message: err.response?.data?.detail || 'Failed to send manual emails. Please try again later.'
+                                            });
+                                            setShowEmailModal(false);
+                                        } finally {
+                                            setIsSendingEmails(false);
+                                        }
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isSendingEmails ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Sending...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Mail className="w-5 h-5" />
+                                            <span>Send Notifications</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {emailResults && (
+                <div className="fixed bottom-6 right-6 z-[70] animate-in slide-in-from-right-10 duration-300">
+                    <div className={`p-4 rounded-2xl shadow-2xl border-2 flex items-center gap-4 max-w-md ${emailResults.success
+                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        }`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${emailResults.success ? 'bg-purple-600 text-white' : 'bg-red-600 text-white'
+                            }`}>
+                            {emailResults.success ? <Mail className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h4 className={`font-bold text-sm ${emailResults.success ? 'text-purple-950 dark:text-purple-100' : 'text-red-950 dark:text-red-100'}`}>
+                                {emailResults.success ? 'Email Campaign Triggered' : 'Action Failed'}
+                            </h4>
+                            <p className={`text-xs mt-1 ${emailResults.success ? 'text-purple-700 dark:text-purple-400' : 'text-red-700 dark:text-red-400'}`}>
+                                {emailResults.message}
+                                {emailResults.results?.some((r: any) => r.status === 'error') && (
+                                    <span className="block mt-1 font-bold text-red-600 dark:text-red-400">
+                                        Warning: {emailResults.results?.filter((r: any) => r.status === 'error').length} schools failed.
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <button
+                                onClick={() => setEmailResults(null)}
+                                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-all"
+                            >
+                                <X className="w-4 h-4 text-slate-400" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

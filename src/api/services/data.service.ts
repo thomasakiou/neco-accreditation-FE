@@ -443,6 +443,13 @@ const DataService = {
         return response.data;
     },
 
+    sendManualEmails: async (data: {
+        schools: { code: string; type: string }[];
+        interval: string;
+    }): Promise<any> => {
+        const response = await client.post('/api/v1/data/schools/send-manual-emails', data);
+        return response.data;
+    },
 };
 
 export default DataService;
