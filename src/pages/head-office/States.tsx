@@ -15,7 +15,8 @@ import {
     Edit2,
     Lock,
     Unlock,
-    RefreshCw
+    RefreshCw,
+    Mail
 } from 'lucide-react';
 import DataService, { Zone } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
@@ -62,6 +63,9 @@ export default function HeadOfficeStates() {
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     const [isDeleting, setIsDeleting] = useState(false);
     const [isExporting, setIsExporting] = useState<string | null>(null);
+    const [isSendingReport, setIsSendingReport] = useState<string | null>(null);
+    const [selectedStates, setSelectedStates] = useState<string[]>([]);
+    const [isSendingMultiple, setIsSendingMultiple] = useState(false);
     const [currentUser, setCurrentUser] = useState<any>(null);
 
     // Alert modal state
@@ -289,6 +293,96 @@ export default function HeadOfficeStates() {
         });
     };
 
+    const handleSendReport = async (state: State) => {
+        if (!state.ministry_email) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Missing Ministry Email',
+                message: `The ministry email for ${state.name} is not set. Please update the state details before sending the report.`
+            });
+            return;
+        }
+
+        setConfirmDialog({
+            isOpen: true,
+            title: 'Send State Report',
+            message: `Are you sure you want to generate and send the accreditation report to ${state.ministry_email}?`,
+            confirmLabel: 'Send Email',
+            variant: 'warning',
+            onConfirm: async () => {
+                try {
+                    setIsSendingReport(state.code);
+                    await DataService.sendStateReport(state.code);
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                    setAlertConfig({
+                        isOpen: true,
+                        title: 'Report Initiated',
+                        message: `Report generation initiated and will be sent to ${state.ministry_email}.`
+                    });
+                } catch (err: any) {
+                    setError(err.response?.data?.detail || "An error occurred while sending the report.");
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                } finally {
+                    setIsSendingReport(null);
+                }
+            }
+        });
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedStates(paginatedStates.map(s => s.code));
+        } else {
+            setSelectedStates([]);
+        }
+    };
+
+    const handleSelectState = (code: string) => {
+        setSelectedStates(prev => 
+            prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+        );
+    };
+
+    const handleSendSelectedReports = async () => {
+        if (selectedStates.length === 0) return;
+
+        const statesWithoutEmail = states.filter(s => selectedStates.includes(s.code) && !s.ministry_email);
+        if (statesWithoutEmail.length > 0) {
+            setAlertConfig({
+                isOpen: true,
+                title: 'Missing Ministry Emails',
+                message: `The following states are missing ministry emails: ${statesWithoutEmail.map(s => s.name).join(', ')}. Please update them or deselect them before sending.`
+            });
+            return;
+        }
+
+        setConfirmDialog({
+            isOpen: true,
+            title: 'Send Multiple State Reports',
+            message: `Are you sure you want to generate and send accreditation reports to the ${selectedStates.length} selected states?`,
+            confirmLabel: 'Send Emails',
+            variant: 'warning',
+            onConfirm: async () => {
+                try {
+                    setIsSendingMultiple(true);
+                    await Promise.all(selectedStates.map(code => DataService.sendStateReport(code)));
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                    setSelectedStates([]);
+                    setAlertConfig({
+                        isOpen: true,
+                        title: 'Reports Initiated',
+                        message: `Report generation initiated for ${selectedStates.length} states and will be sent shortly.`
+                    });
+                } catch (err: any) {
+                    setError("An error occurred while sending one or more reports. Please try again.");
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                } finally {
+                    setIsSendingMultiple(false);
+                }
+            }
+        });
+    };
+
     const filteredStates = states
         .filter(s => {
             const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -357,6 +451,15 @@ export default function HeadOfficeStates() {
                             >
                                 <Unlock className="w-3.5 h-3.5" />
                                 <span>Unlock All</span>
+                            </button>
+                            <button
+                                onClick={handleSendSelectedReports}
+                                disabled={selectedStates.length === 0 || isSendingMultiple}
+                                className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ml-2"
+                                title="Send Reports to Selected States"
+                            >
+                                {isSendingMultiple ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                                <span>Send ({selectedStates.length})</span>
                             </button>
                         </div>
 
@@ -690,6 +793,14 @@ export default function HeadOfficeStates() {
                         <table className="w-full text-left">
                             <thead className="bg-slate-200 dark:bg-slate-800/50 text-slate-700 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
                                 <tr>
+                                    <th className="px-6 py-4 w-12">
+                                        <input
+                                            type="checkbox"
+                                            checked={paginatedStates.length > 0 && selectedStates.length === paginatedStates.length && paginatedStates.every(s => selectedStates.includes(s.code))}
+                                            onChange={handleSelectAll}
+                                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-600 dark:bg-slate-800 cursor-pointer"
+                                        />
+                                    </th>
                                     <th className="px-6 py-4">Code</th>
                                     <th className="px-6 py-4">State</th>
                                     <th className="px-6 py-4">Capital</th>
@@ -702,14 +813,14 @@ export default function HeadOfficeStates() {
                             <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center">
+                                        <td colSpan={8} className="px-6 py-12 text-center">
                                             <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600 mb-2" />
                                             <p className="text-slate-400 text-sm">Retrieving states data...</p>
                                         </td>
                                     </tr>
                                 ) : filteredStates.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center">
+                                        <td colSpan={8} className="px-6 py-12 text-center">
                                             <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                                                 <Map className="w-6 h-6 text-slate-300" />
                                             </div>
@@ -719,7 +830,15 @@ export default function HeadOfficeStates() {
                                     </tr>
                                 ) : (
                                     paginatedStates.map((state) => (
-                                        <tr key={state.code} className="group hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <tr key={state.code} className={`group transition-colors ${selectedStates.includes(state.code) ? 'bg-emerald-50 dark:bg-emerald-900/10' : 'hover:bg-slate-200/50 dark:hover:bg-slate-800/50'}`}>
+                                            <td className="px-6 py-4">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedStates.includes(state.code)}
+                                                    onChange={() => handleSelectState(state.code)}
+                                                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-600 dark:bg-slate-800 cursor-pointer"
+                                                />
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-400 text-sm font-mono font-bold">
                                                     {state.code}
@@ -752,6 +871,14 @@ export default function HeadOfficeStates() {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleSendReport(state)}
+                                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-all disabled:opacity-50"
+                                                        title="Send Emails"
+                                                        disabled={isSendingReport === state.code}
+                                                    >
+                                                        {isSendingReport === state.code ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                                                    </button>
                                                     <button
                                                         onClick={() => handleToggleLock(state.code, !!state.is_locked)}
                                                         className={`p-1.5 rounded-lg transition-all ${!isSuperAdmin ? 'opacity-30 cursor-not-allowed' : state.is_locked ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10'}`}
@@ -860,7 +987,7 @@ export default function HeadOfficeStates() {
                 message={confirmDialog.message}
                 confirmLabel={confirmDialog.confirmLabel}
                 variant={confirmDialog.variant}
-                isLoading={isDeleting}
+                isLoading={isDeleting || isSendingReport !== null || isSendingMultiple}
                 onConfirm={confirmDialog.onConfirm}
                 onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
             />

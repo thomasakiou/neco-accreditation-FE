@@ -78,6 +78,11 @@ const DataService = {
         return response.data;
     },
 
+    sendStateReport: async (stateCode: string): Promise<any> => {
+        const response = await client.post(`/api/v1/data/states/${stateCode}/send-report`);
+        return response.data;
+    },
+
     lockStates: async (request: components['schemas']['LockRequest']) => {
         const response = await client.post('/api/v1/data/states/lock', request);
         statesCache = null;
