@@ -335,9 +335,8 @@ export default function StateCustodians() {
                             <thead>
                                 <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 border-b border-slate-200 dark:border-slate-800">
                                     <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Custodian Code</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Custodian Detail</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Custodian Name</th>
                                     <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Town</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Status</th>
                                     <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest">Actions</th>
                                 </tr>
                             </thead>
@@ -345,7 +344,7 @@ export default function StateCustodians() {
                                 {isLoading ? (
                                     Array(5).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={5} className="px-8 py-8">
+                                            <td colSpan={4} className="px-8 py-8">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl"></div>
                                                     <div className="space-y-2 flex-1">
@@ -358,7 +357,7 @@ export default function StateCustodians() {
                                     ))
                                 ) : paginatedCustodians.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-8 py-24 text-center">
+                                        <td colSpan={4} className="px-8 py-24 text-center">
                                             <div className="flex flex-col items-center gap-4 opacity-40">
                                                 <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                                     <Search className="w-10 h-10 text-slate-400" />
@@ -387,9 +386,9 @@ export default function StateCustodians() {
                                                         <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
                                                             {custodian.name}
                                                         </div>
-                                                        <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-tighter">
-                                                            ID: {custodian.code} — Registered Personnel
-                                                        </div>
+                                                        {/* <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-tighter">
+                                                            {custodian.lga}
+                                                        </div> */}
                                                     </div>
                                                 </div>
                                             </td>
@@ -403,23 +402,9 @@ export default function StateCustodians() {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-6">
-                                                <span className={cn(
-                                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm",
-                                                    custodian.status === 'active'
-                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
-                                                        : custodian.status === 'suspended'
-                                                            ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
-                                                            : "bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-                                                )}>
-                                                    <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse",
-                                                        custodian.status === 'active' ? "bg-emerald-500" : custodian.status === 'suspended' ? "bg-amber-500" : "bg-red-500"
-                                                    )} />
-                                                    {custodian.status || 'active'}
-                                                </span>
-                                            </td>
+
                                             <td className="px-8 py-6 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center justify-end gap-2 transition-opacity">
                                                     <button
                                                         onClick={() => handleEditClick(custodian)}
                                                         className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-emerald-600 rounded-xl transition-all shadow-sm active:scale-90"

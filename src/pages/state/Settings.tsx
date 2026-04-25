@@ -61,7 +61,7 @@ export default function StateSettings() {
         try {
             setIsSaving(true);
             setMessage(null);
-            
+
             await DataService.updateState(stateData.code, {
                 ministry_email: ministryEmail || null,
             });
@@ -70,7 +70,7 @@ export default function StateSettings() {
                 type: 'success',
                 text: 'Ministry email updated successfully.'
             });
-            
+
             fetchData();
         } catch (err: any) {
             console.error('Update error:', err);
@@ -143,7 +143,7 @@ export default function StateSettings() {
         <div className="space-y-12 animate-in fade-in duration-1000 relative pb-20">
             {/* Background Accents */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
-            
+
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black text-slate-950 dark:text-white flex items-center gap-4 tracking-tighter uppercase">
@@ -175,13 +175,13 @@ export default function StateSettings() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Command Designation</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">State</label>
                                     <div className="px-6 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-400 dark:text-slate-500 uppercase tracking-tight shadow-inner">
                                         {stateData?.name}
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Intelligence Code</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">State Code</label>
                                     <div className="px-6 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-400 dark:text-slate-500 uppercase tracking-tight shadow-inner">
                                         {stateData?.code}
                                     </div>
@@ -194,11 +194,11 @@ export default function StateSettings() {
                                     <div className="px-6 py-4 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-400 dark:text-slate-500 tracking-tight shadow-inner">
                                         {stateData?.email || 'OFFLINE'}
                                     </div>
-                                    <p className="text-[10px] text-slate-400 font-bold px-1 italic uppercase tracking-tighter">Read-only link managed by National Command.</p>
+                                    <p className="text-[10px] text-slate-400 font-bold px-1 italic uppercase tracking-tighter">Read-only link managed by Head Office.</p>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-widest pl-1">State Ministry Link</label>
+                                    <label className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-widest pl-1">State Ministry Email</label>
                                     <div className="relative group/input">
                                         <div className="absolute inset-0 bg-emerald-500/5 rounded-2xl blur opacity-0 group-focus-within/input:opacity-100 transition duration-500"></div>
                                         <div className="relative">
@@ -207,14 +207,14 @@ export default function StateSettings() {
                                                 type="email"
                                                 name="state_ministry_email_input"
                                                 autoComplete="off"
-                                                placeholder="e.g. ministry@state.gov.ng"
-                                                value={ministryEmail}
+                                                placeholder={stateData.ministry_email}
+                                                value={stateData.ministry_email || ministryEmail}
                                                 onChange={e => setMinistryEmail(e.target.value)}
                                                 className="w-full pl-14 pr-6 py-4 bg-white/50 dark:bg-slate-950/50 border-2 border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold text-slate-900 dark:text-white shadow-sm"
                                             />
                                         </div>
                                     </div>
-                                    <p className="text-[10px] text-slate-500 font-bold px-1 uppercase tracking-tighter">Primary digital gateway for state-level education authorities.</p>
+                                    <p className="text-[10px] text-slate-500 font-bold px-1 uppercase tracking-tighter">Email for the state ministry of education.</p>
                                 </div>
                             </div>
                         </div>
@@ -281,7 +281,7 @@ export default function StateSettings() {
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <input type="text" name="fake_username_remembered" style={{ display: 'none' }} autoComplete="username" tabIndex={-1} aria-hidden="true" />
-                                
+
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Current Secret</label>
                                     <input

@@ -245,7 +245,7 @@ export default function StateReports() {
                 {[
                     {
                         label: 'Total Registered',
-                        sub: 'INSTITUTIONS',
+                        sub: 'SCHOOLS',
                         main: totalSsce,
                         mainLabel: 'SSCE',
                         sec: totalBece,
@@ -257,7 +257,7 @@ export default function StateReports() {
                     },
                     {
                         label: 'Valid Accreditation',
-                        sub: 'OPERATIONAL',
+                        sub: 'ACCREDITED',
                         main: activeSsce,
                         mainLabel: 'SSCE',
                         sec: activeBece,

@@ -606,8 +606,8 @@ export default function StateApplications() {
                                             </div>
                                         </div>
                                     </th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Center ID</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Institution Name</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">School Code</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">School Name</th>
                                     <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center">Payment Status</th>
                                     <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-right">Actions</th>
                                 </tr>
