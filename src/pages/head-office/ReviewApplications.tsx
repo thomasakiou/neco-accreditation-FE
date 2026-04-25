@@ -410,12 +410,12 @@ export default function ReviewApplications() {
                                         <MapPin className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">States Impacted</p>
+                                        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">States Affected</p>
                                         <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mt-0.5">{schoolsByState.length}</p>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="group relative overflow-hidden bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-white/50 dark:border-slate-700/50 shadow-sm hover:shadow-lg transition-all p-5">
                                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all" />
                                 <div className="flex items-center gap-4 relative z-10">
@@ -436,7 +436,7 @@ export default function ReviewApplications() {
                                         <CheckCircle2 className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Verified Payment</p>
+                                        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Verified Payments</p>
                                         <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mt-0.5">{dueSchools.filter(s => s.approval_status === 'Approved').length}</p>
                                     </div>
                                 </div>
