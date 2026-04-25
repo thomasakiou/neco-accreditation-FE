@@ -27,7 +27,7 @@ interface EnrichedSchool {
   'Accreditation Year': string;
   'Accredited Date': string;
   'System Status': string;
-  'Payment URL': string;
+  'Payment': string;
 }
 
 type ExportFormat = 'xlsx' | 'csv' | 'pdf';
@@ -77,7 +77,7 @@ const enrichSchoolData = (
       'Accreditation Year': school.accrd_year || '',
       'Accredited Date': school.accredited_date || '',
       'System Status': school.status || '',
-      'Payment URL': school.payment_url ? 'Yes' : 'No',
+      'Payment': school.payment_url ? 'Yes' : 'No',
     };
   });
 
@@ -142,7 +142,7 @@ const exportToExcel = (enrichedSchools: EnrichedSchool[]): void => {
       'Accreditation Year',
       'Accredited Date',
       'System Status',
-      'Payment URL',
+      'Payment',
     ],
   });
 
@@ -163,7 +163,7 @@ const exportToExcel = (enrichedSchools: EnrichedSchool[]): void => {
     { wch: 16 },  // Accreditation Year
     { wch: 14 },  // Accredited Date
     { wch: 12 },  // System Status
-    { wch: 12 },  // Payment URL
+    { wch: 12 },  // Payment
   ];
   worksheet['!cols'] = columnWidths;
 
@@ -201,7 +201,7 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
     'Category',
     'Email',
     'Accreditation Status',
-    'Payment URL',
+    'Payment',
   ];
 
   const rows = enrichedSchools.map(school => [
@@ -214,7 +214,7 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
     school['Category'],
     school['Email'],
     school['Accreditation Status'],
-    school['Payment URL'],
+    school['Payment'],
   ]);
 
   // Try to add logo

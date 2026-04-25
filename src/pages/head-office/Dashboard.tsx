@@ -12,14 +12,14 @@ import {
   Loader2,
   AlertCircle,
   Download,
-  RefreshCw
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
-import { components } from '../../api/types';
 import TemplateDownloadModal from '../../components/modals/TemplateDownloadModal';
-
 import { useFilterContext } from '../../context/FilterContext';
+import { cn } from '../../components/layout/DashboardLayout';
 
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];
@@ -155,12 +155,60 @@ export default function HeadOfficeDashboard() {
   const beceDue = yearFilteredBece.filter(isDueForAccreditation).length;
 
   const stats = [
-    { icon: Users, label: 'SSCE Schools', value: totalSsceSchools.toLocaleString(), change: 'Total', up: true, iconBg: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400' },
-    { icon: FileCheck, label: 'SSCE Accredited', value: accreditedSsceNotDue.toLocaleString(), change: 'Current', up: true, iconBg: 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400' },
-    { icon: TrendingUp, label: 'SSCE Due', value: dueSsce.toLocaleString(), change: 'Next 6mo', up: false, iconBg: 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400' },
-    { icon: GraduationCap, label: 'BECE Schools', value: totalBeceSchools.toLocaleString(), change: 'Total', up: true, iconBg: 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' },
-    { icon: FileCheck, label: 'BECE Accredited', value: accreditedBeceNotDue.toLocaleString(), change: 'Current', up: true, iconBg: 'bg-cyan-100 dark:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400' },
-    { icon: TrendingUp, label: 'BECE Due', value: beceDue.toLocaleString(), change: 'Next 6mo', up: false, iconBg: 'bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400' },
+    { 
+        icon: Building2, 
+        label: 'Total Schools', 
+        value: (totalSsceSchools + totalBeceSchools).toLocaleString(), 
+        change: 'Consolidated', 
+        up: true, 
+        color: 'blue',
+        iconBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+    },
+    { 
+        icon: GraduationCap, 
+        label: 'SSCE Institutions', 
+        value: totalSsceSchools.toLocaleString(), 
+        change: 'Registered', 
+        up: true, 
+        color: 'emerald',
+        iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+    },
+    { 
+        icon: GraduationCap, 
+        label: 'BECE Institutions', 
+        value: totalBeceSchools.toLocaleString(), 
+        change: 'Registered', 
+        up: true, 
+        color: 'purple',
+        iconBg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' 
+    },
+    { 
+        icon: FileCheck, 
+        label: 'Active Accr.', 
+        value: (accreditedSsceNotDue + accreditedBeceNotDue).toLocaleString(), 
+        change: 'Verified', 
+        up: true, 
+        color: 'indigo',
+        iconBg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' 
+    },
+    { 
+        icon: TrendingUp, 
+        label: 'Due Soon', 
+        value: (dueSsce + beceDue).toLocaleString(), 
+        change: 'Action Required', 
+        up: false, 
+        color: 'amber',
+        iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 
+    },
+    { 
+        icon: MapPin, 
+        label: 'State Offices', 
+        value: totalStates.toLocaleString(), 
+        change: 'National', 
+        up: true, 
+        color: 'slate',
+        iconBg: 'bg-slate-500/10 text-slate-600 dark:text-slate-400' 
+    },
   ];
 
   const activities = [
@@ -192,165 +240,179 @@ export default function HeadOfficeDashboard() {
     };
   }).sort((a, b) => b.rate - a.rate).slice(0, 5); // Show top 5
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
-        <p className="text-slate-500 font-medium">Loading Head Office metrics...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-10 animate-in fade-in duration-700 relative">
+      {/* Background blobs for depth */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
+
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3 text-red-600 dark:text-red-400">
-          <AlertCircle className="w-5 h-5" />
-          <p className="text-sm font-medium">{error}</p>
+        <div className="p-5 bg-red-50/50 dark:bg-red-900/20 backdrop-blur-md border border-red-200 dark:border-red-800 rounded-2xl flex items-center gap-4 text-red-600 dark:text-red-400 shadow-sm animate-in slide-in-from-top-4">
+          <AlertCircle className="w-6 h-6" />
+          <p className="text-sm font-bold uppercase tracking-wider">{error}</p>
         </div>
       )}
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-300 dark:border-slate-700 shadow-md">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-10 h-10 rounded-lg ${s.iconBg} flex items-center justify-center`}>
-                <s.icon className="w-5 h-5" />
+
+      {/* Stats Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        {stats.map((s, idx) => (
+          <div 
+            key={s.label} 
+            className="group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+            style={{ animationDelay: `${idx * 100}ms` }}
+          >
+            <div className={`absolute top-0 right-0 w-24 h-24 bg-${s.color}-500/5 rounded-full -mr-8 -mt-8 blur-2xl group-hover:bg-${s.color}-500/10 transition-all duration-500`} />
+            
+            <div className="flex items-center justify-between mb-5 relative z-10">
+              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner", s.iconBg)}>
+                <s.icon className="w-6 h-6" />
               </div>
-              <span className={`text-xs font-bold ${s.up ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30' : 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30'} px-2 py-1 rounded flex items-center gap-1 border border-transparent ${s.up ? 'border-emerald-200' : 'border-red-200'}`}>
-                {s.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />} {s.change}
-              </span>
+              <div className={cn(
+                "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                s.up 
+                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                    : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+              )}>
+                {s.change}
+              </div>
             </div>
-            <p className="text-slate-700 dark:text-slate-400 text-sm font-bold">{s.label}</p>
-            <h3 className="text-2xl font-black mt-1 text-slate-950 dark:text-white">{s.value}</h3>
+            
+            <div className="relative z-10">
+                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">{s.label}</p>
+                <div className="flex items-baseline gap-2 mt-1">
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{s.value}</h3>
+                </div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Map Section */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-700 shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
+        {/* Performance Matrix Section */}
+        <div className="lg:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm overflow-hidden hover:shadow-lg transition-all duration-500">
+            <div className="p-8 border-b border-white dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div>
-              <h3 className="font-black text-lg text-slate-950 dark:text-white">National Coverage</h3>
-              <p className="text-sm text-slate-700 dark:text-slate-400 font-medium">Accreditation status across states</p>
+                <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-widest">Performance Matrix</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-bold mt-1">State office compliance and registration velocity</p>
             </div>
-            <div className="flex items-center gap-4 text-xs font-bold text-slate-900">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="dark:text-slate-300">High (&gt;80%)</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-amber-400"></div><span className="dark:text-slate-300">Medium (50-80%)</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-400"></div><span className="dark:text-slate-300">Low (&lt;50%)</span></div>
+            <div className="flex flex-wrap items-center gap-3">
+                <button
+                onClick={() => fetchData()}
+                disabled={isLoading}
+                className="px-5 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 hover:border-blue-500 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-600 dark:text-slate-400 transition-all flex items-center gap-2 shadow-sm"
+                >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                Sync Data
+                </button>
+                {isSuperAdmin && (
+                    <button
+                        onClick={() => setIsTemplateModalOpen(true)}
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-500/25 flex items-center gap-2"
+                    >
+                        <Download className="w-3.5 h-3.5" />
+                        Templates
+                    </button>
+                )}
             </div>
-          </div>
-          <div className="bg-slate-200 dark:bg-slate-800 rounded-xl h-[400px] flex items-center justify-center relative overflow-hidden border border-slate-300 dark:border-slate-700">
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:16px_16px]"></div>
-            <div className="text-center">
-              <MapPin className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-600 dark:text-slate-500 font-bold">Interactive Map Visualization</p>
-              <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 font-medium">Select a state to view detailed metrics</p>
             </div>
-            <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/30 animate-pulse"></div>
-            <div className="absolute top-1/3 right-1/3 w-6 h-6 bg-amber-400 rounded-full shadow-lg shadow-amber-400/30 opacity-80"></div>
-            <div className="absolute bottom-1/3 left-1/2 w-3 h-3 bg-red-400 rounded-full shadow-lg shadow-red-400/30"></div>
-            <div className="absolute top-1/2 right-1/4 w-5 h-5 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/30 opacity-90"></div>
-          </div>
+
+            <div className="overflow-x-auto">
+            <table className="w-full text-left">
+                <thead>
+                <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                    <th className="px-8 py-5">State Entity</th>
+                    <th className="px-8 py-5">Registered Schools</th>
+                    <th className="px-8 py-5 text-center">Accredited</th>
+                    <th className="px-8 py-5">Compliance Velocity</th>
+                    <th className="px-8 py-5">Market Status</th>
+                </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {statePerformance.map((row) => (
+                    <tr key={row.state} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group">
+                    <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-500">
+                                {row.state.substring(0, 2)}
+                            </div>
+                            <span className="font-black text-sm text-slate-900 dark:text-white tracking-tight uppercase">{row.state}</span>
+                        </div>
+                    </td>
+                    <td className="px-8 py-6 text-sm font-bold text-slate-600 dark:text-slate-300">{row.total}</td>
+                    <td className="px-8 py-6 text-sm font-bold text-slate-600 dark:text-slate-300 text-center">{row.accredited}</td>
+                    <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                        <div className="flex-1 min-w-[120px] bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
+                            <div 
+                                className={cn(
+                                    "h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px]",
+                                    row.rate >= 80 ? 'bg-emerald-500 shadow-emerald-500/40' : 
+                                    row.rate >= 50 ? 'bg-blue-500 shadow-blue-500/40' : 
+                                    'bg-amber-400 shadow-amber-400/40'
+                                )} 
+                                style={{ width: `${row.rate}%` }} 
+                            />
+                        </div>
+                        <span className="text-xs font-black text-slate-900 dark:text-slate-200 tracking-tighter">{row.rate}%</span>
+                        </div>
+                    </td>
+                    <td className="px-8 py-6">
+                        <span className={cn(
+                            "inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                            row.statusColor === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-500/20' :
+                            row.statusColor === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-500/20' :
+                            'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-500/20'
+                        )}>
+                        {row.status}
+                        </span>
+                    </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+            </div>
         </div>
 
-        {/* Recent Activities */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col">
-          <h3 className="font-bold text-lg mb-6 dark:text-white">Recent Activities</h3>
-          <div className="space-y-8 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-px before:bg-slate-100 dark:before:bg-slate-700">
+        {/* Recent Activities Section */}
+        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm p-8 flex flex-col hover:shadow-lg transition-all duration-500">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-widest">Global Activity</h3>
+            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-xl">
+                <TrendingUp className="w-5 h-5" />
+            </div>
+          </div>
+          
+          <div className="flex-1 space-y-6 relative">
+            <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800" />
             {activities.map((activity, i) => (
-              <div key={i} className="relative pl-10">
-                <div className={`absolute left-0 top-1.5 w-7 h-7 rounded-full border-4 border-white dark:border-slate-900 shadow-sm ${activity.color}`}></div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">{activity.title}</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{activity.time}</p>
+              <div key={i} className="relative pl-12 group/item">
+                <div className={cn(
+                    "absolute left-2.5 top-1.5 w-3.5 h-3.5 rounded-full border-4 border-white dark:border-slate-900 shadow-md z-10 transition-transform duration-300 group-hover/item:scale-125",
+                    activity.color
+                )} />
+                <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50 group-hover/item:bg-white dark:group-hover/item:bg-slate-800 transition-all duration-300">
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">{activity.title}</h4>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{activity.time}</p>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-          <button className="mt-auto pt-6 text-center text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700">
-            View Activity Log
+          
+          <button className="mt-8 w-full py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 transition-all">
+            Open Activity Center
           </button>
         </div>
       </div>
 
-      {/* State Performance Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-700 shadow-md overflow-hidden">
-        <div className="p-6 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between">
-          <h3 className="font-black text-lg text-slate-950 dark:text-white">State Performance Metrics</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => fetchData()}
-              disabled={isLoading}
-              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
-              title="Refresh Data"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-            {isSuperAdmin && (
-              <>
-                <button
-                  onClick={() => setIsTemplateModalOpen(true)}
-                  className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Download Templates
-                </button>
-                <button className="px-3 py-1.5 text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700">Export CSV</button>
-                <button className="px-3 py-1.5 text-xs font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 border border-emerald-200">Print Report</button>
-              </>
-            )}
-          </div>
-        </div>
 
-        <TemplateDownloadModal
-          isOpen={isTemplateModalOpen}
-          onClose={() => setIsTemplateModalOpen(false)}
-        />
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-4">State</th>
-                <th className="px-6 py-4">Total Schools</th>
-                <th className="px-6 py-4">Accredited</th>
-                <th className="px-6 py-4">Compliance Rate</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
-              {statePerformance.map((row) => (
-                <tr key={row.state} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-6 py-4 font-bold text-sm dark:text-white">{row.state}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{row.total}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{row.accredited}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 w-24 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
-                        <div className={`${row.rate >= 80 ? 'bg-emerald-500' : 'bg-amber-400'} h-1.5 rounded-full`} style={{ width: `${row.rate}%` }}></div>
-                      </div>
-                      <span className={`text-xs font-bold ${row.rate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>{row.rate}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-${row.statusColor}-100 dark:bg-${row.statusColor}-900/50 text-${row.statusColor}-800 dark:text-${row.statusColor}-400`}>
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+
+      <TemplateDownloadModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+      />
     </div>
   );
 }
