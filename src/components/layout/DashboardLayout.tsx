@@ -227,21 +227,29 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     fetchUserData();
   }, [role]);
 
+  const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
+
   const navGroupsRaw = role === 'school' ? schoolNavGroups : role === 'state' ? stateNavGroups : role === 'viewer' ? viewerNavGroups : headOfficeNavGroups;
   const navGroups = navGroupsRaw.map(group => ({
     ...group,
-    items: group.items.map(item => {
-      if (item.badge === 'dynamic_pending_approvals') {
-        return { ...item, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount.toString() : undefined };
-      }
-      return item;
-    })
-  }));
+    items: group.items
+      .filter(item => {
+        // Restricted labels for non-admins
+        if (role === 'head-office' && !isSuperAdmin) {
+          return !['Users'].includes(item.label);
+        }
+        return true;
+      })
+      .map(item => {
+        if (item.badge === 'dynamic_pending_approvals') {
+          return { ...item, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount.toString() : undefined };
+        }
+        return item;
+      })
+  })).filter(group => group.items.length > 0);
 
     const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : role === 'viewer' ? 'Viewer' : 'National Admin');
     const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : role === 'viewer' ? 'Accreditation Viewer' : 'Head Office Portal');
-
-    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     const handleRestrictedClick = (e: React.MouseEvent, label: string) => {
         if (role === 'head-office' && !isSuperAdmin) {
@@ -349,7 +357,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                 }
                 <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
               </button>
-              {role === 'head-office' && (
+              {role === 'head-office' && isSuperAdmin && (
                 <NavLink
                   to="/head-office/audit-logs"
                   onClick={(e) => {
@@ -373,7 +381,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                   )}
                 </NavLink>
               )}
-              {['head-office', 'state'].includes(role) ? (
+              {['head-office', 'state'].includes(role) && (role !== 'head-office' || isSuperAdmin) && (
                 <NavLink
                   to={`/${role}/settings`}
                   onClick={(e) => {
@@ -392,14 +400,6 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                   <Settings className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300" />
                   <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>Settings</span>
                 </NavLink>
-              ) : (
-                <button
-                  title={isDesktopCollapsed ? 'Settings' : undefined}
-                  className={cn("w-full flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-200 transition-colors group overflow-hidden whitespace-nowrap", isDesktopCollapsed ? "px-3 justify-center" : "px-3")}
-                >
-                  <Settings className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300" />
-                  <span className={cn("transition-opacity duration-300", isDesktopCollapsed ? "opacity-0 w-0" : "opacity-100")}>Settings</span>
-                </button>
               )}
               <button
                 title={isDesktopCollapsed ? 'Notifications' : undefined}

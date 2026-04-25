@@ -284,6 +284,212 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
   doc.save(generateFilename([], null, 'pdf'));
 };
 
+// Export Summary Report of Schools Due per State
+const exportSummaryDueReport = async (
+  allSchools: School[],
+  states: State[],
+  zones: Zone[]
+): Promise<void> => {
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  // 1. Prepare Data per state for both SSCE and BECE
+  const summaryData = states.map(state => {
+    // SSCE Stats
+    const ssceInState = allSchools.filter(s => s.state_code === state.code && s.school_type === 'SSCE');
+    
+    // Helper to check if a school is due (matching ReviewApplications logic)
+    const isDue = (s: School) => {
+        if (s.accreditation_status === 'Failed') return true;
+        if (!s.accredited_date || !['Full', 'Partial'].includes(s.accreditation_status || '')) return false;
+        const accreditedDate = new Date(s.accredited_date);
+        
+        let yearsToAdd = 5;
+        const schoolState = states.find(st => st.code === s.state_code);
+        const zone = zones.find(z => z.code === schoolState?.zone_code);
+        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+        if (isForeign) {
+            yearsToAdd = 10;
+        } else if (s.accreditation_status === 'Partial') {
+            yearsToAdd = 1;
+        }
+
+        const expiryDate = new Date(accreditedDate);
+        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+        const today = new Date();
+        const sixMonthsFromNow = new Date();
+        sixMonthsFromNow.setMonth(today.getMonth() + 6);
+        return expiryDate <= sixMonthsFromNow;
+    };
+
+    const ssceDue = ssceInState.filter(isDue);
+    const sscePaid = ssceDue.filter(s => s.approval_status === 'Approved').length;
+    const ssceRate = ssceDue.length > 0 ? (sscePaid / ssceDue.length) * 100 : 0;
+
+    // BECE Stats
+    const beceInState = allSchools.filter(s => s.state_code === state.code && s.school_type === 'BECE');
+    const beceDue = beceInState.filter(isDue);
+    const becePaid = beceDue.filter(s => s.approval_status === 'Approved').length;
+    const beceRate = beceDue.length > 0 ? (becePaid / beceDue.length) * 100 : 0;
+
+    return {
+      stateName: state.name.toUpperCase(),
+      ssceDue: ssceDue.length,
+      sscePaid,
+      ssceRate: ssceRate.toFixed(2) + '%',
+      beceDue: beceDue.length,
+      becePaid,
+      beceRate: beceRate.toFixed(2) + '%',
+      // Raw numbers for totals
+      rawSsceDue: ssceDue.length,
+      rawSscePaid: sscePaid,
+      rawBeceDue: beceDue.length,
+      rawBecePaid: becePaid
+    };
+  }).sort((a, b) => a.stateName.localeCompare(b.stateName));
+
+  // Totals
+  const totalSsceDue = summaryData.reduce((acc, curr) => acc + curr.rawSsceDue, 0);
+  const totalSscePaid = summaryData.reduce((acc, curr) => acc + curr.rawSscePaid, 0);
+  const totalSsceRate = totalSsceDue > 0 ? (totalSscePaid / totalSsceDue) * 100 : 0;
+
+  const totalBeceDue = summaryData.reduce((acc, curr) => acc + curr.rawBeceDue, 0);
+  const totalBecePaid = summaryData.reduce((acc, curr) => acc + curr.rawBecePaid, 0);
+  const totalBeceRate = totalBeceDue > 0 ? (totalBecePaid / totalBeceDue) * 100 : 0;
+
+  const rows = summaryData.map((s, index) => [
+    (index + 1).toString(),
+    s.stateName,
+    s.ssceDue.toString(),
+    s.sscePaid.toString(),
+    s.ssceRate,
+    s.beceDue.toString(),
+    s.becePaid.toString(),
+    s.beceRate
+  ]);
+
+  // Add Totals row
+  rows.push([
+    '',
+    'TOTAL',
+    totalSsceDue.toString(),
+    totalSscePaid.toString(),
+    totalSsceRate.toFixed(2) + '%',
+    totalBeceDue.toString(),
+    totalBecePaid.toString(),
+    totalBeceRate.toFixed(2) + '%'
+  ]);
+
+  // 2. Add Visuals (Header & Watermark)
+  const addHeaderAndWatermark = (doc: jsPDF) => {
+    const logoUrl = '/images/neco.png';
+
+    // Add watermark
+    try {
+      // @ts-ignore
+      if (typeof doc.setGState === 'function') {
+        // @ts-ignore
+        doc.setGState(new doc.GState({ opacity: 0.05 }));
+      }
+      doc.addImage(logoUrl, 'PNG', pageWidth / 2 - 50, pageHeight / 2 - 50, 100, 100);
+      // @ts-ignore
+      if (typeof doc.setGState === 'function') {
+        // @ts-ignore
+        doc.setGState(new doc.GState({ opacity: 1 }));
+      }
+    } catch (e) {
+      console.warn('Watermark failed:', e);
+    }
+
+    // Logo Header
+    try {
+      doc.addImage(logoUrl, 'PNG', 10, 8, 20, 20);
+    } catch (e) {
+      console.warn('Logo failed:', e);
+    }
+
+    // Header Text
+    doc.setTextColor(34, 139, 34); // NECO Green
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('NATIONAL EXAMINATIONS COUNCIL (NECO)', pageWidth / 2, 12, { align: 'center' });
+    
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.text('QUALITY ASSURANCE DEPARTMENT', pageWidth / 2, 17, { align: 'center' });
+    doc.text('ACCREDITATION DIVISION', pageWidth / 2, 22, { align: 'center' });
+    
+    const currentMonth = new Date().toLocaleString('default', { month: 'long' }).toUpperCase();
+    const currentYear = new Date().getFullYear();
+    doc.text(`SCHOOLS DUE FOR ${currentMonth} ${currentYear} ACCREDITATION`, pageWidth / 2, 27, { align: 'center' });
+  };
+
+  addHeaderAndWatermark(doc);
+
+  // 3. Generate Table
+  autoTable(doc, {
+    head: [
+      [
+        { content: 'S/N', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+        { content: 'STATE', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+        { content: 'SSCE', colSpan: 3, styles: { halign: 'center' } },
+        { content: 'BECE', colSpan: 3, styles: { halign: 'center' } }
+      ],
+      [
+        { content: 'SCHOOLS DUE FOR ACCREDITATION', styles: { halign: 'center', fontSize: 7 } },
+        { content: 'NO. OF SCHOOLS THAT PAID', styles: { halign: 'center', fontSize: 7 } },
+        { content: 'PERCENTAGE OF SCHOOLS THAT PAID (%)', styles: { halign: 'center', fontSize: 7 } },
+        { content: 'SCHOOLS DUE FOR ACCREDITATION', styles: { halign: 'center', fontSize: 7 } },
+        { content: 'NO. OF SCHOOLS THAT PAID', styles: { halign: 'center', fontSize: 7 } },
+        { content: 'PERCENTAGE OF SCHOOLS THAT PAID (%)', styles: { halign: 'center', fontSize: 7 } }
+      ]
+    ],
+    body: rows,
+    startY: 32,
+    theme: 'grid',
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.1,
+      textColor: [0, 0, 0]
+    },
+    headStyles: {
+      fillColor: [255, 255, 255],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+      lineWidth: 0.2
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 35 },
+      2: { halign: 'center' },
+      3: { halign: 'center' },
+      4: { halign: 'center' },
+      5: { halign: 'center' },
+      6: { halign: 'center' },
+      7: { halign: 'center' }
+    },
+    didParseCell: (data) => {
+      if (data.row.index === rows.length - 1) {
+        data.cell.styles.fontStyle = 'bold';
+      }
+    }
+  });
+
+  // Footer text
+  const finalY = (doc as any).lastAutoTable.finalY || 32;
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.text('SCHOOLS TO THE SYSTEM', 15, finalY + 10);
+  const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  doc.text(`AS AT ${formattedDate.toUpperCase()}`, 15, finalY + 15);
+
+  doc.save(`NECO_Accreditation_Summary_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+};
+
 const ExportService = {
   exportSchoolsByState: async (
     schools: School[],
@@ -325,6 +531,20 @@ const ExportService = {
     } catch (error) {
       console.error('Export error:', error);
       return { success: false, message: `Failed to export schools to ${format.toUpperCase()}` };
+    }
+  },
+
+  exportSummaryDueReport: async (
+    allSchools: School[],
+    states: State[],
+    zones: Zone[]
+  ) => {
+    try {
+      await exportSummaryDueReport(allSchools, states, zones);
+      return { success: true, message: 'Summary report generated successfully' };
+    } catch (error) {
+      console.error('Summary report error:', error);
+      return { success: false, message: 'Failed to generate summary report' };
     }
   },
 
