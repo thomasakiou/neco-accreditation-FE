@@ -16,7 +16,8 @@ import {
 import AuthService from '../../api/services/auth.service';
 import DataService from '../../api/services/data.service';
 import { useFilterContext } from '../../context/FilterContext';
-import { cn } from '../../components/layout/DashboardLayout';
+import { cn } from '../../lib/utils';
+import { components } from '../../api/types';
 
 type School = components['schemas']['School'];
 
@@ -223,207 +224,167 @@ export default function StateDashboard() {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700 relative">
-      {/* Decorative Background */}
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-[80px] -z-10 pointer-events-none" />
+    <div className="space-y-12 animate-in fade-in duration-1000 relative pb-20">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-[120px] -z-10 animate-pulse pointer-events-none" />
+      <div className="absolute bottom-[10%] left-[-5%] w-[500px] h-[500px] bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-[100px] -z-10 animate-pulse pointer-events-none" />
 
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3 tracking-tighter uppercase">
-            {stateName}
-            <span className="text-sm font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full lowercase tracking-normal">office dashboard</span>
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 font-bold max-w-xl">Comprehensive metrics and accreditation analytics for institutions within your state.</p>
+      {/* Hero Header Section */}
+      <div className="relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-[3rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8 p-8 bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
+                Accreditation Management System
+              </div>
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                {headerYearFilter || 'All Years'} Cycle
+              </div>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-black text-slate-950 dark:text-white tracking-tighter uppercase leading-none">
+              {stateName} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-600">State</span>
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 font-bold max-w-2xl text-lg leading-relaxed">
+              Real-time synchronization of school accreditation, payment verification, and compliance metrics.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => fetchData()}
+              disabled={isLoading}
+              className="group flex items-center gap-3 px-8 py-4 bg-slate-950 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-slate-900/20 active:scale-95 disabled:opacity-50"
+            >
+              <RefreshCw className={cn("w-4 h-4 transition-transform duration-1000 group-hover:rotate-180", isLoading && "animate-spin")} />
+              Sync Dashboard
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={() => fetchData()}
-          disabled={isLoading}
-          className="group flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:border-emerald-500 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-        >
-          <RefreshCw className={cn("w-4 h-4 transition-transform duration-700 group-hover:rotate-180", isLoading && "animate-spin")} />
-          Sync State Data
-        </button>
       </div>
 
       {isLocked && (
-        <div className="p-6 bg-amber-50/50 dark:bg-amber-900/20 backdrop-blur-xl border border-amber-200 dark:border-amber-800 rounded-[2rem] flex items-center gap-6 text-amber-900 dark:text-amber-400 animate-in slide-in-from-top-4 shadow-xl shadow-amber-500/5">
-          <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center shrink-0 shadow-lg border border-amber-200 dark:border-amber-800">
-            <Lock className="w-7 h-7 text-amber-500" />
+        <div className="relative overflow-hidden p-8 bg-amber-500/5 dark:bg-amber-500/10 backdrop-blur-2xl border border-amber-500/20 rounded-[2.5rem] flex items-center gap-8 text-amber-900 dark:text-amber-400 animate-in slide-in-from-top-8 duration-700 shadow-2xl shadow-amber-500/5">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Lock className="w-32 h-32 rotate-12" />
           </div>
-          <div className="flex-1">
-            <h3 className="font-black text-xl uppercase tracking-widest">Administrative Lock Active</h3>
-            <p className="text-sm font-bold opacity-80 mt-1 leading-relaxed">The National Head Office has placed this state portal in read-only mode. New school registrations and accreditation modifications are currently disabled.</p>
+          <div className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-900 flex items-center justify-center shrink-0 shadow-xl border border-amber-500/20 group hover:rotate-12 transition-transform duration-500">
+            <Lock className="w-10 h-10 text-amber-500" />
+          </div>
+          <div className="relative z-10 flex-1">
+            <h3 className="font-black text-2xl uppercase tracking-tighter">System Lockdown Initialized</h3>
+            <p className="text-base font-bold opacity-75 mt-2 max-w-3xl leading-relaxed">
+              National HQ has toggled read-only access for this state. Modification of institutional records and payment approvals are temporarily suspended.
+            </p>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="p-5 bg-red-50/50 dark:bg-red-900/20 backdrop-blur-md border border-red-200 dark:border-red-800 rounded-2xl flex items-center gap-4 text-red-600 dark:text-red-400">
+        <div className="p-6 bg-red-500/5 dark:bg-red-500/10 backdrop-blur-2xl border border-red-500/20 rounded-3xl flex items-center gap-4 text-red-600 dark:text-red-400">
           <AlertCircle className="w-6 h-6" />
           <p className="text-sm font-black uppercase tracking-widest">{error}</p>
         </div>
       )}
 
-      {/* Metrics Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* SSCE Metrics */}
-        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm p-8 hover:shadow-lg transition-all duration-500">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <SchoolIcon className="w-5 h-5 text-emerald-600" />
-              </div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">SSCE Analytics</h2>
-            </div>
-            <div className="px-3 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Annual</div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {statsCards.slice(0, 4).map((card) => (
-              <div key={card.label} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">{card.label}</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:scale-110 transition-transform origin-left">{card.value}</h3>
-                <div className={`mt-3 w-8 h-1 rounded-full bg-${card.color}-500/30 overflow-hidden`}>
-                  <div className={`h-full bg-${card.color}-500 w-2/3`} />
+      {/* Main Intelligence Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+        {/* SSCE Intelligence Section */}
+        <div className="group relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-[3rem] blur opacity-0 group-hover:opacity-100 transition duration-700"></div>
+          <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 shadow-2xl p-10 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-inner">
+                  <SchoolIcon className="w-7 h-7 text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-950 dark:text-white uppercase tracking-tighter">SSCE</h2>
+                  <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">Senior School Certificate Examination</p>
                 </div>
               </div>
-            ))}
+              <div className="flex flex-col items-end">
+                <span className="text-4xl font-black text-slate-950 dark:text-white tracking-tighter">{totalSsce}</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Centers</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 flex-1">
+              {statsCards.slice(1, 4).map((card, i) => (
+                <div key={card.label} className={cn(
+                  "relative overflow-hidden p-6 rounded-[2rem] border transition-all duration-500 hover:scale-[1.02] active:scale-95 group/card",
+                  card.color === 'emerald' ? "bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/10" :
+                    card.color === 'amber' ? "bg-amber-500/5 border-amber-500/10 hover:bg-amber-500/10" :
+                      "bg-red-500/5 border-red-500/10 hover:bg-red-500/10"
+                )}>
+                  <card.icon className={cn("w-5 h-5 mb-4",
+                    card.color === 'emerald' ? "text-emerald-500" :
+                      card.color === 'amber' ? "text-amber-500" :
+                        "text-red-500"
+                  )} />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{card.label}</p>
+                  <h3 className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">{card.value}</h3>
+                  <div className="absolute top-2 right-2 opacity-10 group-hover/card:scale-110 transition-transform duration-700">
+                    <card.icon className="w-12 h-12" />
+                  </div>
+                </div>
+              ))}
+              <div className="p-6 rounded-[2rem] bg-slate-950 dark:bg-white flex flex-col justify-center items-center text-center shadow-xl">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-1">Compliance</div>
+                <div className="text-3xl font-black text-white dark:text-slate-950 tracking-tighter">
+                  {totalSsce > 0 ? Math.round((activeSsce / totalSsce) * 100) : 0}%
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* BECE Metrics */}
-        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm p-8 hover:shadow-lg transition-all duration-500">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-blue-600" />
+        {/* BECE Intelligence Section */}
+        <div className="group relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-br from-blue-500/10 to-transparent rounded-[3rem] blur opacity-0 group-hover:opacity-100 transition duration-700"></div>
+          <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 shadow-2xl p-10 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-inner">
+                  <GraduationCap className="w-7 h-7 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-950 dark:text-white uppercase tracking-tighter">BECE</h2>
+                  <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em]">Basic Education Certificate Examination</p>
+                </div>
               </div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">BECE Analytics</h2>
+              <div className="flex flex-col items-end">
+                <span className="text-4xl font-black text-slate-950 dark:text-white tracking-tighter">{totalBece}</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Centers</span>
+              </div>
             </div>
-            <div className="px-3 py-1 bg-blue-500/10 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/20">Annual</div>
-          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {statsCards.slice(4, 8).map((card) => (
-              <div key={card.label} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">{card.label}</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:scale-110 transition-transform origin-left">{card.value}</h3>
-                <div className={`mt-3 w-8 h-1 rounded-full bg-${card.color}-500/30 overflow-hidden`}>
-                  <div className={`h-full bg-${card.color}-500 w-2/3`} />
+            <div className="grid grid-cols-2 gap-6 flex-1">
+              {statsCards.slice(5, 8).map((card, i) => (
+                <div key={card.label} className={cn(
+                  "relative overflow-hidden p-6 rounded-[2rem] border transition-all duration-500 hover:scale-[1.02] active:scale-95 group/card",
+                  card.color === 'blue' ? "bg-blue-500/5 border-blue-500/10 hover:bg-blue-500/10" :
+                    card.color === 'amber' ? "bg-amber-500/5 border-amber-500/10 hover:bg-amber-500/10" :
+                      "bg-red-500/5 border-red-500/10 hover:bg-red-500/10"
+                )}>
+                  <card.icon className={cn("w-5 h-5 mb-4",
+                    card.color === 'blue' ? "text-blue-500" :
+                      card.color === 'amber' ? "text-amber-500" :
+                        "text-red-500"
+                  )} />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{card.label}</p>
+                  <h3 className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">{card.value}</h3>
+                  <div className="absolute top-2 right-2 opacity-10 group-hover/card:scale-110 transition-transform duration-700">
+                    <card.icon className="w-12 h-12" />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Applications Table */}
-        <div className="lg:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm overflow-hidden flex flex-col hover:shadow-lg transition-all duration-500">
-          <div className="p-8 border-b border-white dark:border-slate-800 flex items-center justify-between">
-            <div>
-              <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-widest">State Registry</h3>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Live updates from localized applications</p>
-            </div>
-            <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-500 text-slate-600 dark:text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Full Registry →</button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/50">
-                  <th className="px-8 py-5">Institution</th>
-                  <th className="px-8 py-5">History</th>
-                  <th className="px-8 py-5">Status</th>
-                  <th className="px-8 py-5 text-right">Ops</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {recentApplications.map((app) => (
-                  <tr key={app.school} className="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-500">
-                          {app.school.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-tight">{app.school}</p>
-                          <p className="text-[10px] font-bold text-slate-500 tracking-wider">LGA: {app.lga}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-slate-900 dark:text-slate-300">{app.date}</span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Logged</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className={cn(
-                        "inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                        app.statusColor === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-500/20' :
-                          app.statusColor === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-500/20' :
-                            app.statusColor === 'amber' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-500/20' :
-                              'bg-slate-50 dark:bg-slate-900 text-slate-600 border-slate-700'
-                      )}>
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <button className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Distribution Card */}
-        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm p-8 flex flex-col hover:shadow-lg transition-all duration-500">
-          <div className="mb-8">
-            <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-widest">Regional Density</h3>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">LGA Distribution metrics</p>
-          </div>
-
-          <div className="flex-1 space-y-6">
-            {dashboardLgaData.map((lga) => (
-              <div key={lga.name} className="group/lga cursor-default">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest mb-2">
-                  <span className="text-slate-900 dark:text-slate-300 group-hover/lga:text-emerald-500 transition-colors">{lga.name}</span>
-                  <span className="text-slate-500">{lga.count} Institutions</span>
+              ))}
+              <div className="p-6 rounded-[2rem] bg-slate-100 dark:bg-slate-800 flex flex-col justify-center items-center text-center">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Compliance</div>
+                <div className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">
+                  {totalBece > 0 ? Math.round((activeBece / totalBece) * 100) : 0}%
                 </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-3 p-0.5 border border-slate-200 dark:border-slate-800">
-                  <div
-                    className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
-                    style={{ width: `${lga.percent}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-            {dashboardLgaData.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-center">
-                <AlertCircle className="w-8 h-8 mb-2 opacity-20" />
-                <p className="text-xs font-bold uppercase tracking-widest">No distribution data</p>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800">
-            <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Compliance Rate</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-emerald-400 tracking-tighter">
-                  {totalSsce > 0 ? ((activeSsce / totalSsce) * 100).toFixed(1) : '0.0'}%
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 flex items-center justify-center font-black text-[10px] text-emerald-600">
-                OK
               </div>
             </div>
           </div>

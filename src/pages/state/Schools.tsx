@@ -25,7 +25,7 @@ import {
     FileSpreadsheet,
     FileText
 } from 'lucide-react';
-import { cn } from '../../components/layout/DashboardLayout';
+import { cn } from '../../lib/utils';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
@@ -558,126 +558,155 @@ export default function StateSchools() {
 
     return (
         <>
-            <div className="space-y-6 print:hidden">
-
+            <div className="space-y-8 animate-in fade-in duration-700 print:hidden">
                 {isPortalLocked && (
-                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-800 rounded-xl flex items-center gap-4 text-amber-950 dark:text-amber-400 shadow-sm">
-                        <div className="bg-amber-100 dark:bg-amber-900/40 p-2 rounded-lg border border-amber-200">
-                            <Lock className="w-5 h-5 shrink-0" />
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000"></div>
+                        <div className="relative p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-4 text-amber-700 dark:text-amber-400 backdrop-blur-xl shadow-xl">
+                            <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-amber-200/50 shadow-inner">
+                                <Lock className="w-5 h-5 shrink-0" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600/80 mb-0.5">Portal Enforcement</p>
+                                <p className="text-sm font-bold">This portal is in <span className="underline decoration-amber-500 decoration-2">Read-Only</span> mode. Modifications are currently restricted.</p>
+                            </div>
                         </div>
-                        <p className="text-sm font-bold">This portal is currently in <span className="underline decoration-amber-500 decoration-2">Read-Only</span> mode. Administrative actions like adding or editing schools are temporarily disabled.</p>
                     </div>
                 )}
 
                 {/* Header Section */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-black text-slate-950 dark:text-white flex items-center gap-2 uppercase tracking-tight">
-                            <GraduationCap className="w-8 h-8 text-emerald-600" />
-                            {userStateName} Schools
-                        </h1>
-                        <p className="text-slate-700 dark:text-slate-400 font-bold mt-1">Manage and track accreditation status for all schools within your state.</p>
-                    </div>
+                <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+                    <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
+                        <div className="space-y-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <GraduationCap className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Schools Management</span>
+                            </div>
+                            <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                                {userStateName} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Schools</span>
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
+                                Track, manage and authorize accreditation for all {activeTab} schools within your state.
+                            </p>
+                        </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <button
-                            onClick={() => fetchInitialData()}
-                            disabled={isLoading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                            title="Refresh Data"
-                        >
-                            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                            Refresh
-                        </button>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <button
+                                onClick={() => fetchInitialData()}
+                                disabled={isLoading}
+                                className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+                            >
+                                <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+                                Synchronize
+                            </button>
 
-                        {!isPortalLocked && (
-                            <>
-                                {/* <label className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-900 dark:text-slate-200 text-sm font-black shadow-sm group">
-                                    <Upload className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                                    <span>Bulk Upload {activeTab}</span>
-                                    <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
-                                </label>
+                            {!isPortalLocked && (
+                                <div className="hidden">
+                                    {/* Register button hidden per original code logic but kept for consistency */}
+                                </div>
+                            )}
 
-                                <button
-                                    disabled={true}
-                                    onClick={() => setShowAddModal(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all text-sm font-black shadow-lg hover:shadow-emerald-500/20 active:scale-95 group"
-                                >
-                                    <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-                                    <span>Register {activeTab} School</span>
-                                </button> */}
-                            </>
-                        )}
+                            {/* Export Dropdown */}
+                            <div className="relative group/export">
+                                <button className="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95">
+                                    <Download className="w-4 h-4" />
+                                    Exports
+                                </button>
+                                <div className="absolute right-0 top-full pt-3 w-48 opacity-0 translate-y-2 pointer-events-none group-hover/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:pointer-events-auto transition-all z-50">
+                                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
+                                        <button
+                                            onClick={() => handleExport('excel')}
+                                            className="w-full px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800"
+                                        >
+                                            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                            CSV Spreadsheet
+                                        </button>
+                                        <button
+                                            onClick={() => handleExport('pdf')}
+                                            className="w-full px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200"
+                                        >
+                                            <FileText className="w-4 h-4 text-emerald-600" />
+                                            PDF Report
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Tab Interface */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
-                        <button
-                            onClick={() => setActiveTab('SSCE')}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all ${activeTab === 'SSCE'
-                                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
-                                }`}
-                        >
-                            <GraduationCap className={`w-4 h-4 ${activeTab === 'SSCE' ? 'text-emerald-600' : ''}`} />
-                            SSCE Schools
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('BECE')}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all ${activeTab === 'BECE'
-                                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
-                                }`}
-                        >
-                            <UsersIcon className={`w-4 h-4 ${activeTab === 'BECE' ? 'text-emerald-600' : ''}`} />
-                            BECE Schools
-                        </button>
-                    </div>
-                    <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
+                {/* Tab switcher */}
+                <div className="flex flex-wrap items-center justify-between gap-6">
+                    <div className="inline-flex p-1.5 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 rounded-2xl shadow-inner">
                         {[
-                            { id: '', label: 'All', color: 'text-emerald-700 dark:text-emerald-400' },
-                            { id: 'Full', label: 'Full', color: 'text-emerald-700 dark:text-emerald-400' },
-                            { id: 'Partial', label: 'Partial', color: 'text-amber-700 dark:text-amber-400' },
-                            { id: 'Failed', label: 'Failed', color: 'text-red-700 dark:text-red-400' }
-                        ].map(tab => (
+                            { id: 'SSCE', label: 'SSCE Schools', icon: GraduationCap },
+                            { id: 'BECE', label: 'BECE Schools', icon: UsersIcon }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as 'SSCE' | 'BECE')}
+                                className={cn(
+                                    "flex items-center gap-3 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 active:scale-95",
+                                    activeTab === tab.id
+                                        ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xl ring-1 ring-slate-200 dark:ring-slate-700"
+                                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                                )}
+                            >
+                                <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? "text-emerald-500" : "text-slate-400")} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="inline-flex p-1.5 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 rounded-2xl shadow-inner">
+                        {[
+                            { id: '', label: 'All Status' },
+                            { id: 'Full', label: 'Full', dot: 'bg-emerald-500' },
+                            { id: 'Partial', label: 'Partial', dot: 'bg-amber-500' },
+                            { id: 'Failed', label: 'Failed', dot: 'bg-red-500' }
+                        ].map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setSelectedAccreditationStatus(tab.id)}
-                                className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black transition-all ${selectedAccreditationStatus === tab.id
-                                    ? `bg-white dark:bg-slate-900 ${tab.color} shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105`
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
-                                    }`}
+                                className={cn(
+                                    "flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 active:scale-95",
+                                    selectedAccreditationStatus === tab.id
+                                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xl ring-1 ring-slate-200 dark:ring-slate-700"
+                                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                                )}
                             >
+                                {tab.dot && <span className={cn("w-1.5 h-1.5 rounded-full", tab.dot)} />}
                                 {tab.label}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* Alerts */}
-                {uploadProgress === 'uploading' && (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-3 text-blue-700 dark:text-blue-400">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <p className="text-sm font-medium">Processing upload...</p>
-                    </div>
-                )}
-
-                {uploadProgress === 'success' && (
-                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3 text-emerald-700 dark:text-emerald-400">
-                        <CheckCircle2 className="w-5 h-5" />
-                        <p className="text-sm font-medium">Updated successfully!</p>
-                    </div>
-                )}
-
-                {error && (
-                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3 text-red-700 dark:text-red-400">
-                        <AlertCircle className="w-5 h-5" />
-                        <p className="text-sm flex-1">{error}</p>
-                        <button onClick={() => setError(null)} className="text-xs font-bold uppercase hover:underline">Dismiss</button>
-                    </div>
-                )}
+                {/* Alerts Area */}
+                <div className="space-y-4">
+                    {uploadProgress === 'uploading' && (
+                        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center gap-3 text-blue-600 dark:text-blue-400 animate-pulse">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">Processing Intelligence Upload...</p>
+                        </div>
+                    )}
+                    {uploadProgress === 'success' && (
+                        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="w-5 h-5" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">Data Synchronization Successful!</p>
+                        </div>
+                    )}
+                    {error && (
+                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-between text-red-600 dark:text-red-400 animate-in slide-in-from-top-2">
+                            <div className="flex items-center gap-3">
+                                <AlertCircle className="w-5 h-5" />
+                                <p className="text-xs font-bold uppercase tracking-tight">{error}</p>
+                            </div>
+                            <button onClick={() => setError(null)} className="text-[10px] font-black uppercase hover:underline tracking-widest">Dismiss</button>
+                        </div>
+                    )}
+                </div>
 
                 {/* Modals adapted for state */}
                 {showAddModal && (
@@ -1004,269 +1033,313 @@ export default function StateSchools() {
                     </div>
                 )}
 
-                {/* List Table */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-300 dark:border-slate-700 overflow-hidden">
-                    <div className="p-4 border-b border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 flex flex-col gap-4">
-                        <div className="relative w-full">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
+                {/* Filters Bar */}
+                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-xl space-y-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="relative flex-1 min-w-[300px]">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Universal search by name or identification code..."
+                                placeholder="Search school by name or number..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 transition-all text-sm font-bold outline-none shadow-sm"
+                                className="w-full pl-11 pr-4 py-3 bg-transparent border-none text-sm font-medium focus:ring-0 placeholder:text-slate-400 text-slate-700 dark:text-slate-200"
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <SearchableSelect
-                                value={selectedLga}
-                                onChange={(val) => {
-                                    setSelectedLga(val);
-                                    setSelectedCustodian('');
-                                }}
-                                options={allLgas.map(lga => ({ value: lga.code, label: lga.name }))}
-                                placeholder="All LGAs"
-                                icon={<Filter className="w-4 h-4 text-slate-600" />}
-                                containerClassName="flex-1"
-                            />
-
-                            <SearchableSelect
-                                value={selectedCustodian}
-                                onChange={setSelectedCustodian}
-                                options={custodians
-                                    .filter(c => !selectedLga || c.lga_code === selectedLga)
-                                    .map(c => ({ value: c.code, label: c.name }))}
-                                placeholder="All Custodians"
-                                icon={<UsersIcon className="w-4 h-4 text-slate-600" />}
-                                containerClassName="flex-1"
-                            />
-
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
-                                <CheckSquare className="w-4 h-4 text-slate-600" />
-                                <select value={selectedAccreditationStatus} onChange={(e) => setSelectedAccreditationStatus(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
-                                    <option value="" className="dark:bg-slate-800">Accre. Status</option>
-                                    <option value="Accredited" className="dark:bg-slate-800">Accredited</option>
-                                    <option value="Unaccredited" className="dark:bg-slate-800">Unaccredited</option>
-                                </select>
+                        <div className="flex items-center flex-wrap gap-3">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                                <SearchableSelect
+                                    value={selectedLga}
+                                    onChange={(val) => {
+                                        setSelectedLga(val);
+                                        setSelectedCustodian('');
+                                    }}
+                                    options={allLgas.map(l => ({ value: l.code, label: l.name }))}
+                                    placeholder="All Regions"
+                                    containerClassName="w-[180px]"
+                                    className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-600 dark:text-slate-300"
+                                />
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
-                                <Upload className="w-4 h-4 text-slate-600" />
-                                <select value={selectedProofStatus} onChange={(e) => setSelectedProofStatus(e.target.value)} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
-                                    <option value="" className="dark:bg-slate-800">Payment Status</option>
-                                    <option value="Paid" className="dark:bg-slate-800">Paid (Verified)</option>
-                                    <option value="Pending" className="dark:bg-slate-800">Pending Approval</option>
-                                    <option value="No Proof" className="dark:bg-slate-800">No Proof</option>
-                                </select>
+                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <UsersIcon className="w-3.5 h-3.5 text-slate-400" />
+                                <SearchableSelect
+                                    value={selectedCustodian}
+                                    onChange={setSelectedCustodian}
+                                    options={custodians
+                                        .filter(c => !selectedLga || c.lga_code === selectedLga)
+                                        .map(c => ({ value: c.code, label: c.name }))}
+                                    placeholder="All Custodians"
+                                    containerClassName="w-[180px]"
+                                    className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-600 dark:text-slate-300"
+                                />
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
-                                <GraduationCap className="w-4 h-4 text-slate-600" />
-                                <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
-                                    <option value="" className="dark:bg-slate-800">All Categories</option>
-                                    <option value="Public" className="dark:bg-slate-800">Public</option>
-                                    <option value="Private" className="dark:bg-slate-800">Private</option>
-                                    <option value="Federal" className="dark:bg-slate-800">Federal</option>
-                                </select>
-                            </div>
-
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm">
-                                <CheckCircle2 className="w-4 h-4 text-slate-600" />
-                                <select value={selectedAccreditationType} onChange={(e) => { setSelectedAccreditationType(e.target.value); setCurrentPage(1); }} className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer">
-                                    <option value="" className="dark:bg-slate-800">Accreditation Type (All)</option>
-                                    <option value="Fresh Accreditation" className="dark:bg-slate-800">Fresh Accreditation</option>
-                                    <option value="Re-Accreditation" className="dark:bg-slate-800">Re-Accreditation</option>
-                                </select>
-                            </div>
-
-
-                            <div className="relative group">
-                                <button className="flex items-center justify-center gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm font-black text-[10px] uppercase tracking-widest text-slate-900 dark:text-white" title="Download Report">
-                                    <Download className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                                    <span>Export Report</span>
-                                </button>
-                                <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2">
-                                    <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden">
-                                        <button onClick={() => handleExport('excel')} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800">
-                                            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                                            <span>Export to Excel</span>
-                                        </button>
-                                        <button onClick={() => handleExport('pdf')} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-300">
-                                            <FileText className="w-4 h-4 text-red-600" />
-                                            <span>Export to PDF</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {selectedSchools.size > 0 && !isPortalLocked && (
-                                <button
-                                    onClick={handleBulkDelete}
-                                    disabled={isDeleting}
-                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    DELETE ({selectedSchools.size})
-                                </button>
-                            )}
-
-
-                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm focus-within:ring-2 ring-emerald-500/20">
-                                <span className="text-[10px] font-black text-slate-500 uppercase">Rows:</span>
+                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Category:</span>
                                 <select
-                                    value={rowsPerPage}
-                                    onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                    className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
+                                    value={selectedCategory}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                    className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-900 dark:text-slate-200 cursor-pointer"
                                 >
-                                    {[10, 20, 50, 100].map(size => (
-                                        <option key={size} value={size} className="dark:bg-slate-800">{size}</option>
-                                    ))}
+                                    <option value="" className="dark:bg-slate-900">All</option>
+                                    <option value="Public" className="dark:bg-slate-900">Public</option>
+                                    <option value="Private" className="dark:bg-slate-900">Private</option>
+                                    <option value="Federal" className="dark:bg-slate-900">Federal</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-4">
+                            <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
+                                Filtered: <span className="text-slate-900 dark:text-emerald-400">{filteredSchools.length}</span> Results
+                            </div>
+                            {selectedSchools.size > 0 && (
+                                <button
+                                    onClick={handleBulkDelete}
+                                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Purge Records ({selectedSchools.size})
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Rows Per View:</span>
+                            <select
+                                value={rowsPerPage}
+                                onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                                className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-900 dark:text-slate-200 cursor-pointer"
+                            >
+                                {[10, 20, 50, 100].map(size => (
+                                    <option key={size} value={size} className="dark:bg-slate-900">{size}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Data Table */}
+                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-300 dark:border-slate-700">
-                                <tr>
-                                    <th className="px-4 py-4 w-10">
-                                        <input
-                                            type="checkbox"
-                                            checked={filteredSchools.length > 0 && filteredSchools.every(s => selectedSchools.has(s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code)))}
-                                            onChange={() => toggleSelectAll(filteredSchools)}
-                                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                                        />
+                            <thead>
+                                <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                                    <th className="px-6 py-5 w-12">
+                                        <div className="flex items-center justify-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={filteredSchools.length > 0 && paginatedSchools.every(s => selectedSchools.has(s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code)))}
+                                                onChange={() => toggleSelectAll(paginatedSchools)}
+                                                className="w-5 h-5 rounded-lg border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500/20 transition-all cursor-pointer"
+                                            />
+                                        </div>
                                     </th>
-                                    <th className="px-4 py-4 w-10"></th>
-                                    <th className="px-6 py-4 text-center">ID Code</th>
-                                    <th className="px-6 py-4">Educational Institution</th>
-                                    <th className="px-6 py-4">Category</th>
-                                    <th className="px-6 py-4">Accre. Date</th>
-                                    <th className="px-6 py-4">Status</th>
-                                    {!isPortalLocked && <th className="px-6 py-4 text-right">Actions</th>}
+                                    <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest">School Number</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">School Name</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Custodian Point</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Accreditation Status</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                 {isLoading ? (
-                                    <tr><td colSpan={isPortalLocked ? 7 : 8} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></td></tr>
-                                ) : filteredSchools.length === 0 ? (
-                                    <tr><td colSpan={isPortalLocked ? 7 : 8} className="py-20 text-center text-slate-500">No schools found for this selection.</td></tr>
+                                    Array(rowsPerPage).fill(0).map((_, i) => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td colSpan={6} className="px-8 py-8">
+                                                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : paginatedSchools.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-8 py-32 text-center">
+                                            <div className="flex flex-col items-center gap-4 opacity-40">
+                                                <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                                    <Search className="w-10 h-10 text-slate-400" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">No Intelligence Found</h3>
+                                                    <p className="text-sm font-medium text-slate-500">Adjust your reconnaissance filters or search terms.</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 ) : (
-                                    paginatedSchools.map(school => {
-                                        const rowId = school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code;
+                                    paginatedSchools.map((school) => {
+                                        const rowId = school.accrd_year ? `${school.code}-${school.accrd_year}` : String(school.code);
                                         const isExpanded = expandedRows.has(rowId);
+                                        const isSelected = selectedSchools.has(rowId);
+
                                         return (
                                             <React.Fragment key={rowId}>
-                                                <tr className="hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors group">
-                                                    <td className="px-4 py-4 text-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedSchools.has(rowId)}
-                                                            onChange={() => toggleSelectSchool(school.code, school.accrd_year)}
-                                                            className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-4 text-center">
-                                                        <button
-                                                            onClick={() => toggleRow(school.code, school.accrd_year)}
-                                                            className="p-1 hover:bg-slate-300 dark:hover:bg-slate-700 rounded transition-colors text-slate-500"
-                                                        >
-                                                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-6 py-4"><span className="text-xs font-mono font-black text-slate-900 dark:text-emerald-400 bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">{school.code}</span></td>
+                                                <tr className={cn(
+                                                    "group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all duration-300",
+                                                    isSelected && "bg-emerald-500/5 dark:bg-emerald-500/5"
+                                                )}>
                                                     <td className="px-6 py-4">
-                                                        <p className="font-black text-slate-950 dark:text-white uppercase tracking-tight">{school.name}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest leading-tight">
-                                                                {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
-                                                                    school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
-                                                                        school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
-                                                                            school.category || 'N/A'}
-                                                            </span>
+                                                        <div className="flex items-center justify-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isSelected}
+                                                                onChange={() => toggleSelectSchool(school.code, school.accrd_year)}
+                                                                className="w-5 h-5 rounded-lg border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500/20 transition-all cursor-pointer"
+                                                            />
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-xs font-black text-slate-900 dark:text-slate-300 uppercase">
-                                                        {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
+                                                    <td className="px-4 py-4">
+                                                        <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-emerald-400 text-[10px] font-black tracking-widest border border-slate-200 dark:border-slate-700 shadow-sm">
+                                                            {school.code}
+                                                        </div>
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex flex-col gap-1">
-                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
-                                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                                : school.accreditation_status === 'Failed'
-                                                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                                                }`}>
-                                                                {(school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' ? 'Full' : 'Partial'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}
+                                                    <td className="px-8 py-4">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform duration-500 shadow-lg">
+                                                                <GraduationCap className="w-6 h-6 text-emerald-600" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
+                                                                    {school.name}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <span className={cn(
+                                                                        "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                                                                        school.category === 'PUB' ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400" :
+                                                                            school.category === 'FED' ? "bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400" :
+                                                                                "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400"
+                                                                    )}>
+                                                                        {school.category === 'PUB' ? 'Public' : school.category === 'FED' ? 'Federal' : 'Private'}
+                                                                    </span>
+                                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                                        Center {school.code}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-4">
+                                                        <div className="space-y-1">
+                                                            <div className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
+                                                                {allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}
+                                                            </div>
+                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1.5">
+                                                                <UsersIcon className="w-3 h-3" />
+                                                                {custodians.find(c => c.code === school.custodian_code)?.name || 'Unknown Custodian'}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-4">
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <span className={cn(
+                                                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm w-fit",
+                                                                (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
+                                                                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400"
+                                                                    : school.accreditation_status === 'Failed'
+                                                                        ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400"
+                                                                        : "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400"
+                                                            )}>
+                                                                <span className={cn("w-1.5 h-1.5 rounded-full",
+                                                                    (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? "bg-emerald-500" :
+                                                                        school.accreditation_status === 'Failed' ? "bg-red-500" : "bg-slate-400"
+                                                                )} />
+                                                                {school.accreditation_status}
                                                             </span>
-                                                            {school.accreditation_type && (
-                                                                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter block mt-0.5">
-                                                                    Type: {school.accreditation_type}
-                                                                </span>
+                                                            {school.accredited_date && (
+                                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1 ml-1">
+                                                                    <Calendar className="w-3 h-3" />
+                                                                    {school.accredited_date} {school.accrd_year && `(${school.accrd_year})`}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </td>
-                                                    {!isPortalLocked && (
-                                                        <td className="px-6 py-4 text-right">
-                                                            <button onClick={() => handleEditClick(school)} className="p-2 text-slate-400 hover:text-emerald-600 dark:hover:bg-emerald-900/10 rounded-lg transition-all"><Edit2 className="w-4 h-4" /></button>
-                                                        </td>
-                                                    )}
+                                                    <td className="px-8 py-4 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                onClick={() => toggleRow(school.code, school.accrd_year)}
+                                                                className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-emerald-600 rounded-xl transition-all shadow-sm active:scale-90"
+                                                            >
+                                                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                            </button>
+                                                            <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1"></div>
+                                                            <button
+                                                                onClick={() => handleEditClick(school)}
+                                                                className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-blue-500 rounded-xl transition-all shadow-sm active:scale-90"
+                                                                disabled={isPortalLocked}
+                                                            >
+                                                                <Edit2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
                                                 </tr>
+
+                                                {/* Expanded Metadata Row */}
                                                 {isExpanded && (
-                                                    <tr className="bg-slate-50 dark:bg-slate-800/20 border-l-4 border-emerald-500 animate-in slide-in-from-top-1">
-                                                        <td colSpan={isPortalLocked ? 7 : 8} className="px-6 py-4">
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                                <div>
-                                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Custodian</p>
-                                                                    <div className="text-[10px] uppercase font-black tracking-widest text-slate-500 underline decoration-slate-200 underline-offset-4">{allLgas.find(l => l.code === school.lga_code)?.name || 'AREA CODE: ' + school.lga_code}</div>
-                                                                    <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">{custodians.find(c => c.code.toString() === school.custodian_code?.toString())?.name || school.custodian_code}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Contact & Category</p>
-                                                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 underline decoration-slate-300 underline-offset-2 uppercase">{school.email || 'NO EMAIL REGISTERED'}</p>
-                                                                    <div className="flex items-center gap-2 mt-1">
-                                                                        <p className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase">
-                                                                            {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
-                                                                                school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
-                                                                                    school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
-                                                                                        school.category || 'N/A'}
-                                                                        </p>
+                                                    <tr className="bg-slate-50/50 dark:bg-slate-900/30 animate-in slide-in-from-top-2 duration-300">
+                                                        <td colSpan={6} className="px-8 py-8">
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                                <div className="space-y-4">
+                                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-800">Operational Intel</h4>
+                                                                    <div className="grid grid-cols-1 gap-3">
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Institution Type</span>
+                                                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{activeTab} National Assessment</span>
+                                                                        </div>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Official Correspondence</span>
+                                                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 lowercase">{school.email || 'No institutional email registered'}</span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                                <div>
-                                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status Summary</p>
-                                                                    <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">
-                                                                        Current: {(school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' ? 'Full' : 'Partial'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}
-                                                                    </p>
-                                                                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">
-                                                                        Recorded on: {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString() : 'NO DATE'}
-                                                                    </p>
-                                                                    <div className="mt-2 text-[10px]">
-                                                                        {school.payment_url ? (
-                                                                            <div className="flex flex-col gap-1.5">
+
+                                                                <div className="space-y-4">
+                                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-800">Security & Logistics</h4>
+                                                                    <div className="grid grid-cols-1 gap-3">
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">LGA Command</span>
+                                                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{allLgas.find(l => l.code === school.lga_code)?.name || 'Unspecified'}</span>
+                                                                        </div>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Primary Custodian</span>
+                                                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{custodians.find(c => c.code === school.custodian_code)?.name || 'Unassigned'}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-4">
+                                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-800">Accreditation Record</h4>
+                                                                    <div className="grid grid-cols-1 gap-3">
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Current Status</span>
+                                                                            <div className="flex items-center gap-2 mt-1">
+                                                                                <span className={cn(
+                                                                                    "px-2 py-0.5 rounded-md text-[9px] font-black uppercase",
+                                                                                    school.approval_status === 'Approved' ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                                                                                )}>
+                                                                                    {school.approval_status === 'Approved' ? 'Verified Paid' : 'Payment Verification Required'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Reconnaissance Proof</span>
+                                                                            {school.payment_url ? (
                                                                                 <a
                                                                                     href={school.payment_url.startsWith('http') ? school.payment_url : `${baseURL}/payment-proof/${school.payment_url.split('/').pop()}`}
                                                                                     target="_blank"
                                                                                     rel="noopener noreferrer"
-                                                                                    className="inline-flex items-center gap-1.5 px-2 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-bold uppercase tracking-widest rounded transition-colors w-fit"
+                                                                                    className="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:underline mt-1"
                                                                                 >
-                                                                                    <ExternalLink className="w-3 h-3" />
-                                                                                    View Proof
+                                                                                    <ExternalLink className="w-3.5 h-3.5" />
+                                                                                    View Uploaded Document
                                                                                 </a>
-                                                                                <span className={cn(
-                                                                                    "text-[9px] font-black uppercase px-2 py-0.5 rounded w-fit",
-                                                                                    school.approval_status === 'Approved' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30" : "bg-slate-200 text-slate-500"
-                                                                                )}>
-                                                                                    {school.approval_status === 'Approved' ? 'Verified Payment' : 'Verification Pending'}
-                                                                                </span>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <span className="text-slate-400 font-bold uppercase tracking-widest">No Proof Uploaded</span>
-                                                                        )}
+                                                                            ) : (
+                                                                                <span className="text-xs font-bold text-slate-400 mt-1 italic tracking-tight">No document footprint found</span>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1281,69 +1354,60 @@ export default function StateSchools() {
                         </table>
                     </div>
 
-                    {/* Pagination Controls */}
                     {!isLoading && filteredSchools.length > 0 && (
-                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
-                                Showing <span className="text-slate-950 dark:text-white">{startIndex + 1}</span> to{' '}
-                                <span className="text-slate-950 dark:text-white">{Math.min(startIndex + rowsPerPage, filteredSchools.length)}</span> of{' '}
-                                <span className="text-slate-950 dark:text-white">{filteredSchools.length}</span> entries
-                            </p>
+                        <div className="p-8 bg-slate-50/50 dark:bg-slate-950/50 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-4">
+                                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                    Intelligence <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{startIndex + 1}</span> — <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{Math.min(startIndex + rowsPerPage, filteredSchools.length)}</span> of <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{filteredSchools.length}</span>
+                                </div>
+                            </div>
 
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                     disabled={currentPage === 1}
-                                    className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase tracking-widest text-slate-900 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-all shadow-sm"
+                                    className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
                                 >
-                                    Previous
+                                    <ChevronDown className="w-4 h-4 rotate-90" />
                                 </button>
-                                <div className="flex items-center gap-1">
+
+                                <div className="flex items-center gap-1.5">
                                     {(() => {
                                         const pages = [];
-                                        if (totalPages <= 7) {
-                                            for (let i = 1; i <= totalPages; i++) pages.push(i);
-                                        } else {
-                                            pages.push(1);
-                                            if (currentPage > 3) pages.push('...');
-
-                                            const start = Math.max(2, currentPage - 1);
-                                            const end = Math.min(totalPages - 1, currentPage + 1);
-
-                                            for (let i = start; i <= end; i++) {
-                                                if (!pages.includes(i)) pages.push(i);
+                                        for (let i = 1; i <= totalPages; i++) {
+                                            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                                                pages.push(i);
+                                            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                                                pages.push('...');
                                             }
-
-                                            if (currentPage < totalPages - 2) pages.push('...');
-                                            pages.push(totalPages);
                                         }
-
-                                        return pages.map((page, i) => (
-                                            typeof page === 'number' ? (
+                                        return [...new Set(pages)].map((p, i) => (
+                                            typeof p === 'number' ? (
                                                 <button
                                                     key={i}
-                                                    onClick={() => setCurrentPage(page)}
-                                                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all ${currentPage === page
-                                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
-                                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-                                                        }`}
+                                                    onClick={() => setCurrentPage(p)}
+                                                    className={cn(
+                                                        "w-10 h-10 rounded-xl text-xs font-black transition-all active:scale-90 shadow-sm",
+                                                        currentPage === p
+                                                            ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-emerald-500/20"
+                                                            : "bg-white dark:bg-slate-800 text-slate-500 hover:text-emerald-600 border border-slate-200 dark:border-slate-700"
+                                                    )}
                                                 >
-                                                    {page}
+                                                    {p}
                                                 </button>
                                             ) : (
-                                                <span key={i} className="w-8 h-8 flex items-center justify-center text-slate-400 text-xs font-black">
-                                                    {page}
-                                                </span>
+                                                <span key={i} className="px-2 text-slate-300 font-bold">...</span>
                                             )
                                         ));
                                     })()}
                                 </div>
+
                                 <button
                                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                     disabled={currentPage === totalPages}
-                                    className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-black uppercase tracking-widest text-slate-900 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-all shadow-sm"
+                                    className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
                                 >
-                                    Next
+                                    <ChevronDown className="w-4 h-4 -rotate-90" />
                                 </button>
                             </div>
                         </div>

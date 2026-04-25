@@ -19,7 +19,7 @@ import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import TemplateDownloadModal from '../../components/modals/TemplateDownloadModal';
 import { useFilterContext } from '../../context/FilterContext';
-import { cn } from '../../components/layout/DashboardLayout';
+import { cn } from '../../lib/utils';
 
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];

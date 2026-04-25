@@ -20,7 +20,7 @@ import {
     Shield,
     Calendar
 } from 'lucide-react';
-import { cn } from '../../components/layout/DashboardLayout';
+import { cn } from '../../lib/utils';
 import DataService from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
 import AuthService from '../../api/services/auth.service';

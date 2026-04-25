@@ -16,6 +16,7 @@ import {
 import DataService, { LGA } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
+import { cn } from '../../lib/utils';
 
 type SchoolType = components['schemas']['School'];
 type BECESchoolType = components['schemas']['BECESchool'];
@@ -177,180 +178,205 @@ export default function StateReports() {
     }
 
     return (
-        <div className="space-y-8 print:p-0 print:m-0 print:space-y-6 print:bg-white print:text-black">
-            {/* Header section - hide buttons on print */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6 print:border-b-2 print:border-black print:pb-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 print:text-black">
-                        <BarChart3 className="w-8 h-8 text-emerald-600 print:text-black" />
-                        Statistical Reports
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1 print:text-black font-semibold text-lg">
-                        {stateName} Office Analytics
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-3 print:hidden">
-                    <button
-                        onClick={() => fetchInitialData()}
-                        disabled={isLoading}
-                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                        title="Refresh Data"
-                    >
-                        <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </button>
-
-                    <button
-                        onClick={handlePrintSummary}
-                        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
-                    >
-                        <Printer className="w-4 h-4" />
-                        <span>Generate Summary Report</span>
-                    </button>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-semibold text-slate-600 dark:text-slate-300">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <span>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+        <div className="space-y-8 animate-in fade-in duration-700 print:p-0 print:m-0 print:space-y-6 print:bg-white print:text-black">
+            {/* Header section */}
+            <div className="relative group print:hidden">
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+                <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <BarChart3 className="w-4 h-4" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Statistical Analytics</span>
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                            {stateName} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Report Page</span>
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
+                            Consolidated data insights and accreditation performance metrics for your state.</p>
                     </div>
-                </div>
 
-                {/* Print only current date */}
-                <div className="hidden print:block text-sm font-bold opacity-70">
-                    Generated on: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl">
+                            <Calendar className="w-4 h-4 text-emerald-500" />
+                            <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">
+                                {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                        </div>
+
+                        <button
+                            onClick={() => fetchInitialData()}
+                            disabled={isLoading}
+                            className="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-emerald-600 rounded-2xl transition-all shadow-xl active:scale-95 disabled:opacity-50"
+                            title="Refresh Intelligence"
+                        >
+                            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                        </button>
+
+                        <button
+                            onClick={handlePrintSummary}
+                            className="flex items-center gap-3 px-8 py-4 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl hover:scale-105 transition-all active:scale-95 group"
+                        >
+                            <Printer className="w-4 h-4 group-hover:animate-bounce" />
+                            Generate Summary Report
+                        </button>
+                    </div>
                 </div>
             </div>
 
+            {/* Print Header */}
+            <div className="hidden print:flex flex-col items-center justify-center text-center pb-8 border-b-2 border-black">
+                <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">National Examinations Council (NECO)</h1>
+                <h2 className="text-xl font-bold text-emerald-700 uppercase">{stateName} State Office</h2>
+                <p className="text-sm font-bold text-slate-500 mt-2">Comprehensive Statistical Report — {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            </div>
+
             {error && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3 text-red-700 dark:text-red-400 print:hidden">
-                    <AlertCircle className="w-5 h-5" />
-                    <p className="text-sm font-medium">{error}</p>
-                    <button onClick={() => setError(null)} className="ml-auto text-xs font-black uppercase tracking-widest">Clear</button>
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-2 print:hidden">
+                    <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                        <p className="text-xs font-bold uppercase tracking-wider">{error}</p>
+                    </div>
+                    <button onClick={() => setError(null)} className="text-[10px] font-black uppercase hover:underline">Dismiss</button>
                 </div>
             )}
 
             {/* Summary Statistics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 print:grid-cols-3">
-                {/* Total Stats */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm print:border-slate-300 print:shadow-none">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 flex items-center justify-center print:bg-transparent print:text-black">
-                            <School className="w-5 h-5 print:w-6 print:h-6" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-md print:bg-transparent print:border print:border-black print:text-black">Total Registered</span>
-                    </div>
-                    <div className="flex justify-between items-end">
-                        <div>
-                            <p className="text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest print:text-slate-700">SSCE Schools</p>
-                            <h3 className="text-3xl font-black mt-1 text-slate-950 dark:text-white print:text-black">{totalSsce.toLocaleString()}</h3>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest print:text-slate-700">BECE Schools</p>
-                            <h3 className="text-xl font-bold mt-1 text-slate-700 dark:text-slate-300 print:text-slate-800">{totalBece.toLocaleString()}</h3>
-                        </div>
-                    </div>
-                </div>
+                {[
+                    {
+                        label: 'Total Registered',
+                        sub: 'INSTITUTIONS',
+                        main: totalSsce,
+                        mainLabel: 'SSCE',
+                        sec: totalBece,
+                        secLabel: 'BECE',
+                        icon: School,
+                        color: 'from-blue-600 to-indigo-600',
+                        bg: 'bg-blue-500/10',
+                        text: 'text-blue-600'
+                    },
+                    {
+                        label: 'Valid Accreditation',
+                        sub: 'OPERATIONAL',
+                        main: activeSsce,
+                        mainLabel: 'SSCE',
+                        sec: activeBece,
+                        secLabel: 'BECE',
+                        icon: CheckCircle,
+                        color: 'from-emerald-600 to-teal-600',
+                        bg: 'bg-emerald-500/10',
+                        text: 'text-emerald-600'
+                    },
+                    {
+                        label: 'Pending Action',
+                        sub: 'EXPIRED/DUE',
+                        main: pendingSsce,
+                        mainLabel: 'SSCE',
+                        sec: pendingBece,
+                        secLabel: 'BECE',
+                        icon: Calendar,
+                        color: 'from-orange-600 to-amber-600',
+                        bg: 'bg-orange-500/10',
+                        text: 'text-orange-600'
+                    }
+                ].map((stat, i) => (
+                    <div key={i} className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-br opacity-0 group-hover:opacity-10 rounded-3xl transition duration-500 blur-lg"></div>
+                        <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-xl group-hover:translate-y-[-4px] transition-all duration-500">
+                            <div className="flex items-center justify-between mb-8">
+                                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner border", stat.bg, stat.text, "border-current/10")}>
+                                    <stat.icon className="w-7 h-7" />
+                                </div>
+                                <div className="text-right">
+                                    <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full border shadow-sm", stat.bg, stat.text, "border-current/20")}>
+                                        {stat.sub}
+                                    </span>
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{stat.label}</h4>
+                                </div>
+                            </div>
 
-                {/* Accredited Stats */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm print:border-slate-300 print:shadow-none">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center print:bg-transparent print:text-black">
-                            <CheckCircle className="w-5 h-5 print:w-6 print:h-6" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-md print:bg-transparent print:border print:border-black print:text-black">Valid Accreditation</span>
-                    </div>
-                    <div className="flex justify-between items-end">
-                        <div>
-                            <p className="text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest print:text-slate-700">SSCE Accredited</p>
-                            <h3 className="text-3xl font-black mt-1 text-slate-950 dark:text-white print:text-black">{activeSsce.toLocaleString()}</h3>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest print:text-slate-700">BECE Accredited</p>
-                            <h3 className="text-xl font-bold mt-1 text-slate-700 dark:text-slate-300 print:text-slate-800">{activeBece.toLocaleString()}</h3>
+                            <div className="grid grid-cols-2 gap-8 relative">
+                                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{stat.mainLabel}</p>
+                                    <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mt-1 tabular-nums">{stat.main.toLocaleString()}</h3>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{stat.secLabel}</p>
+                                    <h3 className="text-xl font-black text-slate-700 dark:text-slate-400 tracking-tighter mt-1 tabular-nums">{stat.sec.toLocaleString()}</h3>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Pending/Yet to be Accredited Stats */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm print:border-slate-300 print:shadow-none">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-400 flex items-center justify-center print:bg-transparent print:text-black">
-                            <Calendar className="w-5 h-5 print:w-6 print:h-6" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-md print:bg-transparent print:border print:border-black print:text-black">Yet To Be Accredited</span>
-                    </div>
-                    <div className="flex justify-between items-end">
-                        <div>
-                            <p className="text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest print:text-slate-700">Pending SSCE</p>
-                            <h3 className="text-3xl font-black mt-1 text-slate-950 dark:text-white print:text-black">{pendingSsce.toLocaleString()}</h3>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest print:text-slate-700">Pending BECE</p>
-                            <h3 className="text-xl font-bold mt-1 text-slate-700 dark:text-slate-300 print:text-slate-800">{pendingBece.toLocaleString()}</h3>
-                        </div>
-                    </div>
-                </div>
+                ))}
             </div>
 
             {/* LGA Statistical Breakdown Table */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-300 dark:border-slate-700 overflow-hidden print:border-black print:shadow-none">
-                <div className="p-4 sm:p-6 border-b border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 print:bg-transparent print:border-black">
-                    <h3 className="font-black text-lg text-slate-950 dark:text-white uppercase tracking-tight print:text-black">Accreditation Spread by LGA</h3>
-                    <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-widest mt-1 print:text-slate-700">Detailed Statistical Breakdown</p>
+            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden print:border-black print:shadow-none print:bg-white print:rounded-none">
+                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/20 print:bg-slate-100 print:border-black">
+                    <div>
+                        <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight print:text-black">LGA Statistics</h3>
+                        <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1 print:text-slate-700">Detailed Regional Performance Metrics</p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-3 print:hidden">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            <Map className="w-3.5 h-3.5 text-emerald-500" />
+                            {lgaStats.length} LGAs
+                        </div>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-300 dark:border-slate-700 print:bg-slate-100 print:text-black print:border-black print:border-b-2">
-                            <tr>
-                                <th className="px-6 py-4 border-r border-slate-300 dark:border-slate-700 print:border-black" rowSpan={2}>LGA Name</th>
-                                <th className="px-6 py-2 text-center border-b border-r border-slate-300 dark:border-slate-700 print:border-black" colSpan={3}>SSCE Schools</th>
-                                <th className="px-6 py-2 text-center border-b border-slate-300 dark:border-slate-700 print:border-black" colSpan={3}>BECE Schools</th>
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="bg-slate-100/50 dark:bg-slate-800/30 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em] border-b border-slate-200 dark:border-slate-800 print:bg-slate-200 print:text-black print:border-black">
+                                <th className="px-8 py-6 border-r border-slate-200 dark:border-slate-800 print:border-black" rowSpan={2}>Regional LGA</th>
+                                <th className="px-6 py-3 text-center border-b border-r border-slate-200 dark:border-slate-800 print:border-black" colSpan={3}>SSCE Capacity</th>
+                                <th className="px-6 py-3 text-center border-b border-slate-200 dark:border-slate-800 print:border-black" colSpan={3}>BECE Capacity</th>
                             </tr>
-                            <tr>
-                                <th className="px-4 py-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-300 dark:border-slate-700 print:border-black text-slate-500 print:text-black">Total</th>
-                                <th className="px-4 py-2 text-center bg-emerald-50 dark:bg-emerald-900/20 border-r border-slate-300 dark:border-slate-700 print:border-black text-emerald-700 print:text-black">Accredited</th>
-                                <th className="px-4 py-2 text-center bg-amber-50 dark:bg-amber-900/20 border-r border-slate-300 dark:border-slate-700 print:border-black text-amber-700 print:text-black">Pending</th>
+                            <tr className="bg-slate-50/30 dark:bg-slate-800/10 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-200 dark:border-slate-800 print:bg-white print:text-black print:border-black">
+                                <th className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black">Total</th>
+                                <th className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black text-emerald-600 dark:text-emerald-400">Valid</th>
+                                <th className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black text-amber-600 dark:text-amber-400">Due</th>
 
-                                <th className="px-4 py-2 text-center bg-slate-100 dark:bg-slate-800/80 border-r border-slate-300 dark:border-slate-700 print:border-black text-slate-500 print:text-black">Total</th>
-                                <th className="px-4 py-2 text-center bg-blue-50 dark:bg-blue-900/20 border-r border-slate-300 dark:border-slate-700 print:border-black text-blue-700 print:text-black">Accredited</th>
-                                <th className="px-4 py-2 text-center bg-orange-50 dark:bg-orange-900/20 print:border-black text-orange-700 print:text-black">Pending</th>
+                                <th className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black">Total</th>
+                                <th className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black text-blue-600 dark:text-blue-400">Valid</th>
+                                <th className="px-4 py-3 text-center text-orange-600 dark:text-orange-400 print:border-black">Due</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-300 dark:divide-slate-800 print:divide-black">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 print:divide-black tabular-nums">
                             {lgaStats.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">No LGA data available to display.</td>
+                                    <td colSpan={7} className="px-8 py-20 text-center text-slate-400 font-black uppercase text-xs tracking-widest">No intelligence data available.</td>
                                 </tr>
                             ) : (
                                 lgaStats.map((lga, index) => (
-                                    <tr key={lga.lgaCode} className={index % 2 === 0 ? 'bg-white dark:bg-slate-900 print:bg-white' : 'bg-slate-50/50 dark:bg-slate-800/20 print:bg-white'}>
-                                        <td className="px-6 py-3 border-r border-slate-200 dark:border-slate-800 print:border-black">
-                                            <span className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-tight print:text-black">{lga.lgaName}</span>
+                                    <tr key={lga.lgaCode} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all duration-300 print:bg-white">
+                                        <td className="px-8 py-4 border-r border-slate-50 dark:border-slate-800/50 print:border-black">
+                                            <span className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-emerald-600 transition-colors print:text-black">{lga.lgaName}</span>
                                         </td>
 
-                                        {/* SSCE Columns */}
-                                        <td className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black font-semibold text-slate-700 dark:text-slate-300 print:text-slate-800">{lga.totalSsce}</td>
-                                        <td className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black font-black text-emerald-600 dark:text-emerald-400 print:text-black">{lga.accreditedSsce}</td>
-                                        <td className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black font-bold text-amber-600 dark:text-amber-400 print:text-slate-600">{lga.pendingSsce}</td>
+                                        <td className="px-4 py-4 text-center border-r border-slate-50 dark:border-slate-800/50 print:border-black font-bold text-slate-600 dark:text-slate-400 print:text-black">{lga.totalSsce}</td>
+                                        <td className="px-4 py-4 text-center border-r border-slate-50 dark:border-slate-800/50 print:border-black font-black text-emerald-600 dark:text-emerald-400 print:text-black">{lga.accreditedSsce}</td>
+                                        <td className="px-4 py-4 text-center border-r border-slate-50 dark:border-slate-800/50 print:border-black font-bold text-amber-500/80 dark:text-amber-400/80 print:text-slate-600">{lga.pendingSsce}</td>
 
-                                        {/* BECE Columns */}
-                                        <td className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black font-semibold text-slate-700 dark:text-slate-300 print:text-slate-800">{lga.totalBece}</td>
-                                        <td className="px-4 py-3 text-center border-r border-slate-200 dark:border-slate-800 print:border-black font-black text-blue-600 dark:text-blue-400 print:text-black">{lga.accreditedBece}</td>
-                                        <td className="px-4 py-3 text-center font-bold text-orange-600 dark:text-orange-400 print:text-slate-600 print:border-black">{lga.pendingBece}</td>
+                                        <td className="px-4 py-4 text-center border-r border-slate-50 dark:border-slate-800/50 print:border-black font-bold text-slate-600 dark:text-slate-400 print:text-black">{lga.totalBece}</td>
+                                        <td className="px-4 py-4 text-center border-r border-slate-50 dark:border-slate-800/50 print:border-black font-black text-blue-600 dark:text-blue-400 print:text-black">{lga.accreditedBece}</td>
+                                        <td className="px-4 py-4 text-center font-bold text-orange-500/80 dark:text-orange-400/80 print:text-slate-600 print:border-black">{lga.pendingBece}</td>
                                     </tr>
                                 ))
                             )}
 
                             {/* Summary Footer Row */}
                             {lgaStats.length > 0 && (
-                                <tr className="bg-slate-200 dark:bg-slate-800 font-black text-slate-900 dark:text-white print:bg-slate-200 print:text-black uppercase text-sm border-t-2 border-slate-400 dark:border-slate-600 print:border-black print:border-t-4">
-                                    <td className="px-6 py-4 text-right border-r border-slate-300 dark:border-slate-700 print:border-black">Grand Total</td>
-                                    <td className="px-4 py-4 text-center border-r border-slate-300 dark:border-slate-700 print:border-black">{totalSsce}</td>
-                                    <td className="px-4 py-4 text-center border-r border-slate-300 dark:border-slate-700 print:border-black text-emerald-700 dark:text-emerald-400 print:text-black">{activeSsce}</td>
-                                    <td className="px-4 py-4 text-center border-r border-slate-300 dark:border-slate-700 print:border-black text-amber-700 dark:text-amber-400 print:text-black">{pendingSsce}</td>
-                                    <td className="px-4 py-4 text-center border-r border-slate-300 dark:border-slate-700 print:border-black">{totalBece}</td>
-                                    <td className="px-4 py-4 text-center border-r border-slate-300 dark:border-slate-700 print:border-black text-blue-700 dark:text-blue-400 print:text-black">{activeBece}</td>
-                                    <td className="px-4 py-4 text-center text-orange-700 dark:text-orange-400 print:text-black print:border-black">{pendingBece}</td>
+                                <tr className="bg-slate-900 dark:bg-emerald-600 font-black text-white uppercase text-xs border-t-2 border-slate-400 dark:border-slate-600 print:bg-slate-200 print:text-black print:border-black print:border-t-4">
+                                    <td className="px-8 py-6 text-right border-r border-white/10 dark:border-white/20 print:border-black">Grand Statistics</td>
+                                    <td className="px-4 py-6 text-center border-r border-white/10 dark:border-white/20 print:border-black">{totalSsce}</td>
+                                    <td className="px-4 py-6 text-center border-r border-white/10 dark:border-white/20 print:border-black">{activeSsce}</td>
+                                    <td className="px-4 py-6 text-center border-r border-white/10 dark:border-white/20 print:border-black">{pendingSsce}</td>
+                                    <td className="px-4 py-6 text-center border-r border-white/10 dark:border-white/20 print:border-black">{totalBece}</td>
+                                    <td className="px-4 py-6 text-center border-r border-white/10 dark:border-white/20 print:border-black">{activeBece}</td>
+                                    <td className="px-4 py-6 text-center print:border-black">{pendingBece}</td>
                                 </tr>
                             )}
                         </tbody>
@@ -358,14 +384,9 @@ export default function StateReports() {
                 </div>
             </div>
 
-            {/* Footer space for printed page */}
-            <div className="hidden print:block mt-8 text-center text-[10px] text-slate-500 border-t border-black pt-4">
-                <p>This report is system generated and does not require a signature.</p>
-                <p>NECO Accreditation System &copy; {new Date().getFullYear()}</p>
-            </div>
-
-            {/* Printable Summary Report (matching report.png) */}
-            <div id="summary-report-print" className={`hidden ${isPrintingSummary ? 'print:block' : ''} p-8 bg-white text-black font-sans min-h-screen`}>
+            {/* Printable Summary Report Overlay */}
+            <div id="summary-report-print" className={cn("hidden p-12 bg-white text-black font-sans min-h-screen", isPrintingSummary && "print:block")}>
+                {/* ... (Printable styles and structure remain consistent for functional accuracy) */}
                 <style dangerouslySetInnerHTML={{
                     __html: `
                     @media print {

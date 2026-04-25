@@ -19,10 +19,11 @@ import {
     Download,
     FileSpreadsheet,
     FileText,
-    Trash2
+    Trash2,
+    GraduationCap
 } from 'lucide-react';
 
-import { cn } from '../../components/layout/DashboardLayout';
+import { cn } from '../../lib/utils';
 import DataService, { School } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
@@ -457,571 +458,565 @@ export default function StateApplications() {
     };
 
 
-
     return (
         <>
-            <div className="space-y-6 print:hidden">
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{userStateName} Proof of Payment</h1>
-                        <p className="text-slate-500 dark:text-slate-400">Manage and submit proof of payment submissions for {userStateName}.</p>
-                    </div>
-
-                    <div className="flex flex-col md:flex-row items-center gap-3">
-                        <div className="flex items-center gap-2 p-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg">
-                            <button
-                                onClick={() => setSchoolType('SSCE')}
-                                className={cn(
-                                    "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                                    schoolType === 'SSCE'
-                                        ? "bg-emerald-600 text-white"
-                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                )}
-                            >
-                                SSCE Schools
-                            </button>
-                            <button
-                                onClick={() => setSchoolType('BECE')}
-                                className={cn(
-                                    "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                                    schoolType === 'BECE'
-                                        ? "bg-emerald-600 text-white"
-                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                )}
-                            >
-                                BECE Schools
-                            </button>
+            <div className="space-y-8 animate-in fade-in duration-700 print:hidden">
+                {/* Header Section */}
+                <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+                    <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
+                        <div className="space-y-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <FileText className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Financial Compliance</span>
+                            </div>
+                            <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                                {userStateName} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Proof of Payment</span>
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
+                                Securely manage and submit accreditation payment proofs for all schools in your state.
+                            </p>
                         </div>
 
-                        <button
-                            onClick={() => fetchData()}
-                            disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                            title="Refresh Data"
-                        >
-                            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                            Refresh
-                        </button>
-
-                        {/* <button
-                            onClick={() => {
-                                setSelectedSchool(null);
-                                setIsUploadModalOpen(true);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-bold shadow-lg active:scale-95 group"
-                        >
-                            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-                            <span>New Application</span>
-                        </button>*/}
-
-                        {selectedSchools.size > 0 && (
-                            <button
-                                onClick={handleBulkDelete}
-                                disabled={isDeleting}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all text-sm font-bold shadow-lg active:scale-95"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                <span>Delete ({selectedSchools.size})</span>
-                            </button>
-                        )}
-
-
-                        <div className="relative group">
-                            <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shadow-sm font-bold text-sm text-slate-700 dark:text-slate-300">
-                                <Download className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                                <span>Export</span>
-                            </button>
-                            <div className="absolute right-0 top-full pt-2 w-48 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2">
-                                <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden">
-                                    <button onClick={() => handleExport('excel')} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800">
-                                        <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                                        <span>Export to Excel</span>
-                                    </button>
-                                    <button onClick={() => handleExport('pdf')} className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-300">
-                                        <FileText className="w-4 h-4 text-red-600" />
-                                        <span>Export to PDF</span>
-                                    </button>
-                                </div>
+                        <div className="flex flex-wrap items-center gap-4">
+                            {/* Type Switcher */}
+                            <div className="p-1 bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md rounded-xl border border-white/20 dark:border-slate-700/50 flex items-center">
+                                <button
+                                    onClick={() => setSchoolType('SSCE')}
+                                    className={cn(
+                                        "px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                                        schoolType === 'SSCE'
+                                            ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-lg"
+                                            : "text-slate-500 hover:text-slate-700"
+                                    )}
+                                >
+                                    SSCE
+                                </button>
+                                <button
+                                    onClick={() => setSchoolType('BECE')}
+                                    className={cn(
+                                        "px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                                        schoolType === 'BECE'
+                                            ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-lg"
+                                            : "text-slate-500 hover:text-slate-700"
+                                    )}
+                                >
+                                    BECE
+                                </button>
                             </div>
 
+                            <button
+                                onClick={() => fetchData()}
+                                disabled={loading}
+                                className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 hover:text-emerald-600 transition-all shadow-md active:scale-95 disabled:opacity-50"
+                                title="Refresh Data"
+                            >
+                                <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                            </button>
+
+                            <div className="relative group/export">
+                                <button className="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl active:scale-95">
+                                    <Download className="w-4 h-4" />
+                                    Export Records
+                                </button>
+                                <div className="absolute right-0 top-full pt-3 w-48 opacity-0 translate-y-2 pointer-events-none group-hover/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:pointer-events-auto transition-all z-50">
+                                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
+                                        <button onClick={() => handleExport('excel')} className="w-full px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800">
+                                            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                            CSV / Excel
+                                        </button>
+                                        <button onClick={() => handleExport('pdf')} className="w-full px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
+                                            <FileText className="w-4 h-4 text-red-600" />
+                                            PDF Report
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Filters Bar */}
+                <div className="flex flex-wrap items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-xl">
+                    <div className="relative flex-1 min-w-[300px]">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by school name or ID code..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-11 pr-4 py-3 bg-transparent border-none text-sm font-medium focus:ring-0 placeholder:text-slate-400 text-slate-700 dark:text-slate-200"
+                        />
+                    </div>
 
-                <div className="space-y-4">
-                    {/* Schools List */}
-                    <div className="space-y-4">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-800 shadow-sm overflow-hidden">
-                            <div className="p-4 border-b border-slate-300 dark:border-slate-800 flex flex-wrap items-center gap-4">
-                                <div className="relative w-full md:w-auto flex-1">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search schools..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20"
-                                    />
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                                    <div className="flex-1 md:flex-none flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[140px]">
-                                        <CheckCircle2 className="w-4 h-4 text-slate-400 shrink-0" />
-                                        <select
-                                            value={selectedAccreditationStatus}
-                                            onChange={(e) => setSelectedAccreditationStatus(e.target.value)}
-                                            className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
-                                        >
-                                            <option value="" className="dark:bg-slate-800">Accre. Status</option>
-                                            <option value="Accredited" className="dark:bg-slate-800">Accredited</option>
-                                            <option value="Unaccredited" className="dark:bg-slate-800">Unaccredited</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="flex-1 md:flex-none flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[140px]">
-                                        <Upload className="w-4 h-4 text-slate-400 shrink-0" />
-                                        <select
-                                            value={selectedProofStatus}
-                                            onChange={(e) => setSelectedProofStatus(e.target.value)}
-                                            className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
-                                        >
-                                            <option value="" className="dark:bg-slate-800">Payment Status</option>
-                                            <option value="Paid" className="dark:bg-slate-800">Paid (Verified)</option>
-                                            <option value="Pending" className="dark:bg-slate-800">Pending Approval</option>
-                                            <option value="No Proof" className="dark:bg-slate-800">No Proof</option>
-                                        </select>
-                                    </div>
-
-
-                                    <div className="flex-1 md:flex-none flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[140px]">
-                                        <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-                                        <select
-                                            value={selectedCategory}
-                                            onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-                                            className="bg-transparent border-none text-xs font-black uppercase tracking-wider w-full outline-none dark:text-slate-200 cursor-pointer"
-                                        >
-                                            <option value="" className="dark:bg-slate-800">Category</option>
-                                            <option value="Public" className="dark:bg-slate-800">Public</option>
-                                            <option value="Private" className="dark:bg-slate-800">Private</option>
-                                            <option value="Federal" className="dark:bg-slate-800">Federal</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="flex-1 md:flex-none flex items-center justify-between md:justify-start gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg min-w-[100px]">
-                                        <span className="text-[10px] font-black text-slate-500 uppercase">Rows:</span>
-                                        <select
-                                            value={rowsPerPage}
-                                            onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                            className="bg-transparent border-none text-xs font-black uppercase tracking-wider outline-none dark:text-slate-200 cursor-pointer"
-                                        >
-                                            {[10, 20, 50, 100].map(size => (
-                                                <option key={size} value={size} className="dark:bg-slate-800">{size}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        {[
+                            { value: selectedAccreditationStatus, setter: setSelectedAccreditationStatus, label: 'Accr. Status', icon: CheckCircle2, options: ['Accredited', 'Unaccredited'] },
+                            { value: selectedProofStatus, setter: setSelectedProofStatus, label: 'Payment', icon: Upload, options: ['Paid', 'Pending', 'No Proof'] },
+                            { value: selectedCategory, setter: setSelectedCategory, label: 'Category', icon: Filter, options: ['Public', 'Private', 'Federal'] }
+                        ].map((filter, idx) => (
+                            <div key={idx} className="flex items-center gap-2 px-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 transition-all hover:border-emerald-500/50">
+                                <filter.icon className="w-4 h-4 text-slate-400" />
+                                <select
+                                    value={filter.value}
+                                    onChange={(e) => filter.setter(e.target.value)}
+                                    className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-600 dark:text-slate-300 cursor-pointer"
+                                >
+                                    <option value="" className="dark:bg-slate-900">{filter.label}</option>
+                                    {filter.options.map(opt => <option key={opt} value={opt} className="dark:bg-slate-900">{opt}</option>)}
+                                </select>
                             </div>
+                        ))}
 
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead>
-                                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 font-medium">
-                                            <th className="px-4 py-4 w-10"></th>
-                                            <th className="px-4 py-4 w-10">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={paginatedSchools.length > 0 && paginatedSchools.every(s => selectedSchools.has(String(s.code)))}
-                                                    onChange={() => toggleSelectAll(paginatedSchools)}
-                                                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                                                />
-                                            </th>
-                                            <th className="px-6 py-4">ID Code</th>
-                                            <th className="px-6 py-4">School</th>
-                                            <th className="px-6 py-4">Category</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                                        {loading ? (
-                                            <tr>
-                                                <td colSpan={3} className="px-6 py-8 text-center text-slate-500">Loading schools...</td>
-                                            </tr>
-                                        ) : filteredSchools.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No schools found</td>
-                                            </tr>
-                                        ) : paginatedSchools.map((school) => {
-                                            const isExpanded = expandedRows.has(school.code);
-                                            return (
-                                                <React.Fragment key={school.code}>
-                                                    <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                                        <td className="px-4 py-4 text-center">
-                                                            <button
-                                                                onClick={() => toggleRow(school.code)}
-                                                                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-500"
-                                                            >
-                                                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                            </button>
-                                                        </td>
-                                                        <td className="px-4 py-4 text-center">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={selectedSchools.has(String(school.code))}
-                                                                onChange={() => toggleSelectSchool(school.code)}
-                                                                className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                                                            />
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className="text-xs font-mono font-black text-slate-900 dark:text-emerald-400 bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">{school.code}</span>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="font-semibold text-slate-900 dark:text-white">{school.name}</div>
-                                                            <div className="text-[10px] font-bold text-slate-500 uppercase">{school.accredited_date ? new Date(school.accredited_date).toLocaleDateString() : 'No Date'}</div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-xs font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest leading-tight">
-                                                                    {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
-                                                                        school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
-                                                                            school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
-                                                                                school.category || 'N/A'}
-                                                                </span>
+                        <div className="h-6 w-[1px] bg-slate-300 dark:bg-slate-700 mx-1"></div>
+
+                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Limit:</span>
+                            <select
+                                value={rowsPerPage}
+                                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-900 dark:text-slate-200 cursor-pointer"
+                            >
+                                {[10, 20, 50, 100].map(size => (
+                                    <option key={size} value={size} className="dark:bg-slate-900">{size}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Data Section */}
+                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Details</th>
+                                    <th className="px-8 py-5">
+                                        <div className="relative cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                checked={paginatedSchools.length > 0 && paginatedSchools.every(s => selectedSchools.has(String(s.code)))}
+                                                onChange={() => toggleSelectAll(paginatedSchools)}
+                                                className="peer sr-only"
+                                            />
+                                            <div className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 peer-checked:border-emerald-500 peer-checked:bg-emerald-500 transition-all"></div>
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100">
+                                                <CheckCircle2 className="w-3 h-3 text-white" />
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Center ID</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Institution Name</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-center">Payment Status</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200/50 dark:divide-slate-800/50">
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-20 text-center">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                                                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Loading Institutions...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : filteredSchools.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-20 text-center">
+                                            <div className="flex flex-col items-center gap-4 opacity-40">
+                                                <Search className="w-12 h-12 text-slate-400" />
+                                                <span className="text-sm font-bold text-slate-500">No matching institutions found</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : paginatedSchools.map((school) => {
+                                    const isExpanded = expandedRows.has(school.code);
+                                    const isSelected = selectedSchools.has(String(school.code));
+
+                                    return (
+                                        <React.Fragment key={school.code}>
+                                            <tr className={cn(
+                                                "group transition-all duration-300",
+                                                isSelected ? "bg-emerald-500/5" : "hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                                            )}>
+                                                <td className="px-8 py-6">
+                                                    <button
+                                                        onClick={() => toggleRow(school.code)}
+                                                        className={cn(
+                                                            "p-2 rounded-xl transition-all duration-300",
+                                                            isExpanded ? "bg-emerald-500 text-white shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                                                        )}
+                                                    >
+                                                        <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", isExpanded && "rotate-180")} />
+                                                    </button>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <label className="relative cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isSelected}
+                                                            onChange={() => toggleSelectSchool(school.code)}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 peer-checked:border-emerald-500 peer-checked:bg-emerald-500 transition-all"></div>
+                                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100">
+                                                            <CheckCircle2 className="w-3 h-3 text-white" />
+                                                        </div>
+                                                    </label>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <span className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">{school.code}</span>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <div className="space-y-1">
+                                                        <p className="font-bold text-slate-900 dark:text-white text-base leading-tight group-hover:text-emerald-600 transition-colors">{school.name}</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{school.category || 'CATEGORY N/A'}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{school.accredited_date ? new Date(school.accredited_date).getFullYear() : 'PENDING'}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        {school.payment_url ? (
+                                                            <div className={cn(
+                                                                "flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest",
+                                                                school.approval_status === 'Approved'
+                                                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                                                    : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                                            )}>
+                                                                <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", school.approval_status === 'Approved' ? "bg-emerald-500" : "bg-amber-500")}></div>
+                                                                {school.approval_status === 'Approved' ? 'Verified Paid' : 'Pending Verification'}
                                                             </div>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex flex-col gap-1">
-                                                                <span className={cn(
-                                                                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                                                                    (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')
-                                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                                                        : school.accreditation_status === 'Failed'
-                                                                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                                                )}>
-                                                                    {(school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                                                                    {(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? 'Accredited' : school.accreditation_status === 'Failed' ? 'Unaccredited' : school.accreditation_status}
-                                                                </span>
-                                                                {school.payment_url && (
-                                                                    <span className={cn(
-                                                                        "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase",
-                                                                        school.approval_status === 'Approved'
-                                                                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                                                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                                                                    )}>
-                                                                        {school.approval_status === 'Approved' ? 'Paid & Verified' : 'Payment Pending Approval'}
-                                                                    </span>
-                                                                )}
+                                                        ) : (
+                                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] font-black uppercase tracking-widest">
+                                                                <X className="w-3 h-3" />
+                                                                No Proof
                                                             </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-right">
-                                                            {school.payment_url && (
-                                                                <a
-                                                                    href={school.payment_url.startsWith('http') ? school.payment_url : `${baseURL}/payment-proof/${school.payment_url.split('/').pop()}`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-colors mr-2 border border-slate-300 dark:border-slate-700 shadow-sm"
-                                                                >
-                                                                    <ExternalLink className="w-3 h-3" />
-                                                                    View Proof
-                                                                </a>
-                                                            )}
-                                                            <button
-                                                                onClick={() => {
-                                                                    setSelectedSchool(school);
-                                                                    setIsUploadModalOpen(true);
-                                                                }}
-                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors"
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {school.payment_url && (
+                                                            <a
+                                                                href={school.payment_url.startsWith('http') ? school.payment_url : `${baseURL}/payment-proof/${school.payment_url.split('/').pop()}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-emerald-600 rounded-xl transition-all border border-slate-200 dark:border-slate-700 shadow-sm"
+                                                                title="View Proof"
                                                             >
-                                                                <Plus className="w-3 h-3" />
-                                                                {school.payment_url ? 'Update' : 'Submit'}
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                    {isExpanded && (
-                                                        <tr className="bg-slate-50 dark:bg-slate-800/20 border-l-4 border-emerald-500 animate-in slide-in-from-top-1">
-                                                            <td colSpan={7} className="px-6 py-4">
-                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                    <div>
-                                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Administrative Details</p>
-                                                                        <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">{school.lga_name || 'LGA: ' + school.lga_code}</p>
-                                                                        <p className="text-[10px] font-bold text-slate-600 dark:text-slate-500 underline decoration-slate-300 underline-offset-2 uppercase">{school.email || 'NO EMAIL'}</p>
+                                                                <ExternalLink className="w-4 h-4" />
+                                                            </a>
+                                                        )}
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedSchool(school);
+                                                                setIsUploadModalOpen(true);
+                                                            }}
+                                                            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                                                        >
+                                                            <Upload className="w-3.5 h-3.5" />
+                                                            {school.payment_url ? 'Update' : 'Submit'}
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {isExpanded && (
+                                                <tr className="bg-emerald-500/[0.02] dark:bg-emerald-500/[0.01]">
+                                                    <td colSpan={6} className="px-8 py-8 border-l-4 border-emerald-500">
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                            <div className="space-y-4">
+                                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Institutional Metadata</p>
+                                                                <div className="space-y-2">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-700">
+                                                                            <Filter className="w-3.5 h-3.5 text-emerald-500" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[9px] font-black uppercase text-slate-400">LGA Region</p>
+                                                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{school.lga_name || 'NOT ASSIGNED'}</p>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="flex flex-col justify-center">
-                                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Category & Year</p>
-                                                                        <p className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">
-                                                                            {school.category === 'PUB' || school.category === 'Public' ? 'Public' :
-                                                                                school.category === 'FED' || school.category === 'Federal' ? 'Federal' :
-                                                                                    school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private' ? 'Private' :
-                                                                                        school.category || 'N/A'} — {school.accrd_year || 'N/A'}
-                                                                        </p>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-700">
+                                                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[9px] font-black uppercase text-slate-400">Current Status</p>
+                                                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{school.accreditation_status || 'PENDING'}</p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </React.Fragment>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                            </div>
 
-                            {/* Pagination Controls */}
-                            {!loading && filteredSchools.length > 0 && (
-                                <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                    <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
-                                        Showing <span className="text-slate-950 dark:text-white">{startIndex + 1}</span> to{' '}
-                                        <span className="text-slate-950 dark:text-white">{Math.min(startIndex + rowsPerPage, filteredSchools.length)}</span> of{' '}
-                                        <span className="text-slate-950 dark:text-white">{filteredSchools.length}</span> entries
-                                    </p>
+                                                            <div className="space-y-4">
+                                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Timeline Records</p>
+                                                                <div className="space-y-3">
+                                                                    <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                                                                        <p className="text-[9px] font-black uppercase text-slate-400 mb-1">Accreditation Cycle</p>
+                                                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{school.accrd_year || 'Not Set'} Academic Session</p>
+                                                                    </div>
+                                                                    <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                                                                        <p className="text-[9px] font-black uppercase text-slate-400 mb-1">Contact Reach</p>
+                                                                        <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 truncate">{school.email || 'NO EMAIL ON RECORD'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
 
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                            disabled={currentPage === 1}
-                                            className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-900 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition-all shadow-sm"
-                                        >
-                                            Previous
-                                        </button>
-                                        <div className="flex items-center gap-1">
-                                            {(() => {
-                                                const pages = [];
-                                                if (totalPages <= 7) {
-                                                    for (let i = 1; i <= totalPages; i++) pages.push(i);
-                                                } else {
-                                                    pages.push(1);
-                                                    if (currentPage > 3) pages.push('...');
-
-                                                    const start = Math.max(2, currentPage - 1);
-                                                    const end = Math.min(totalPages - 1, currentPage + 1);
-
-                                                    for (let i = start; i <= end; i++) {
-                                                        if (!pages.includes(i)) pages.push(i);
-                                                    }
-
-                                                    if (currentPage < totalPages - 2) pages.push('...');
-                                                    pages.push(totalPages);
-                                                }
-
-                                                return pages.map((page, i) => (
-                                                    typeof page === 'number' ? (
-                                                        <button
-                                                            key={i}
-                                                            onClick={() => setCurrentPage(page)}
-                                                            className={cn(
-                                                                "w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all",
-                                                                currentPage === page
-                                                                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
-                                                                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-                                                            )}
-                                                        >
-                                                            {page}
-                                                        </button>
-                                                    ) : (
-                                                        <span key={i} className="w-8 h-8 flex items-center justify-center text-slate-400 text-xs font-black">
-                                                            {page}
-                                                        </span>
-                                                    )
-                                                ));
-                                            })()}
-                                        </div>
-                                        <button
-                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                            disabled={currentPage === totalPages}
-                                            className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-900 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition-all shadow-sm"
-                                        >
-                                            Next
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                                                            <div className="flex flex-col justify-center gap-4">
+                                                                <div className="p-6 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl text-white shadow-xl shadow-emerald-500/20">
+                                                                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2">Category Verification</p>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                                                                            <GraduationCap className="w-6 h-6 text-white" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-xl font-black uppercase tracking-tighter leading-none">{schoolType}</p>
+                                                                            <p className="text-[10px] font-bold opacity-70 uppercase mt-1">{school.category || 'Standard'} Tier</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
 
-                </div>
+                    {/* Pagination Glass Footer */}
+                    {!loading && filteredSchools.length > 0 && (
+                        <div className="px-8 py-6 border-t border-slate-200/50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+                                Displaying <span className="text-slate-900 dark:text-white underline decoration-emerald-500 decoration-2 underline-offset-4">{startIndex + 1} — {Math.min(startIndex + rowsPerPage, filteredSchools.length)}</span> of {filteredSchools.length}
+                            </p>
 
-                {/* Upload Modal */}
-                {
-                    isUploadModalOpen && (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-800 shadow-2xl w-full max-w-lg overflow-hidden">
-                                <div className="p-6 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between">
-                                    <div>
-                                        <h2 className="text-xl font-bold dark:text-white">Submit Proof of Payment</h2>
-                                        <p className="text-sm text-slate-500">{selectedSchool ? selectedSchool.name : 'Select a school to continue'}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            setIsUploadModalOpen(false);
-                                            setUploadFiles([]);
-                                            setSelectedSchool(null);
-                                        }}
-                                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
+                                >
+                                    <ChevronDown className="w-4 h-4 rotate-90" />
+                                </button>
 
-                                <div className="px-6 pt-6">
-                                    {!selectedSchool && (
-                                        <div className="space-y-1.5">
-                                            <label className="text-xs font-black uppercase text-slate-400 tracking-widest pl-1">Select School</label>
-                                            <select
-                                                onChange={(e) => {
-                                                    const school = schools.find(s => s.code === e.target.value);
-                                                    if (school) setSelectedSchool(school);
-                                                }}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold"
-                                            >
-                                                <option value="">Choose a school...</option>
-                                                {schools.map(s => (
-                                                    <option key={s.code} value={s.code}>{s.name} ({s.code})</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    {(() => {
+                                        const pages = [];
+                                        if (totalPages <= 5) {
+                                            for (let i = 1; i <= totalPages; i++) pages.push(i);
+                                        } else {
+                                            pages.push(1);
+                                            if (currentPage > 3) pages.push('...');
+                                            const start = Math.max(2, currentPage - 1);
+                                            const end = Math.min(totalPages - 1, currentPage + 1);
+                                            for (let i = start; i <= end; i++) {
+                                                if (!pages.includes(i)) pages.push(i);
+                                            }
+                                            if (currentPage < totalPages - 2) pages.push('...');
+                                            pages.push(totalPages);
+                                        }
 
-                                <div className="p-6 space-y-6">
-                                    {/* File Dropzone / Upload area */}
-                                    <div className="space-y-4">
-                                        {isCameraOpen ? (
-                                            <div className="rounded-xl overflow-hidden bg-black border border-slate-300 dark:border-slate-700 relative flex flex-col items-center justify-center min-h-[300px]">
-                                                {!capturedImage ? (
-                                                    <>
-                                                        <video
-                                                            ref={videoRef}
-                                                            autoPlay
-                                                            playsInline
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                        <div className="absolute bottom-4 left-0 right-0 gap-4 flex justify-center">
-                                                            <button onClick={stopCamera} className="px-4 py-2 bg-slate-800/80 text-white rounded-full text-sm font-bold backdrop-blur">Cancel</button>
-                                                            <button onClick={takeSnapshot} className="w-14 h-14 bg-white rounded-full border-4 border-slate-300 shadow-xl flex items-center justify-center hover:scale-105 transition-transform"><CameraIcon className="w-6 h-6 text-slate-800" /></button>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <img src={capturedImage} alt="Captured proof" className="w-full h-full object-contain" />
-                                                        <div className="absolute bottom-4 left-0 right-0 gap-4 flex justify-center">
-                                                            <button onClick={startCamera} className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 text-white rounded-full text-sm font-bold backdrop-blur"><RefreshCw className="w-4 h-4" /> Retake</button>
-                                                            <button onClick={acceptSnapshot} className="flex items-center gap-2 px-4 py-2 bg-emerald-600/90 text-white rounded-full text-sm font-bold backdrop-blur"><Check className="w-4 h-4" /> Accept</button>
-                                                        </div>
-                                                    </>
-                                                )}
-                                                <canvas ref={canvasRef} className="hidden" />
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-2 gap-4">
+                                        return pages.map((page, i) => (
+                                            typeof page === 'number' ? (
                                                 <button
-                                                    onClick={() => {
-                                                        if (!selectedSchool) {
-                                                            alert('Please select a school first');
-                                                            return;
-                                                        }
-                                                        startCamera();
-                                                    }}
-                                                    className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all group"
+                                                    key={i}
+                                                    onClick={() => setCurrentPage(page)}
+                                                    className={cn(
+                                                        "w-10 h-10 flex items-center justify-center rounded-xl text-xs font-black transition-all duration-300",
+                                                        currentPage === page
+                                                            ? "bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 scale-110"
+                                                            : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
+                                                    )}
                                                 >
-                                                    <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30 transition-colors">
-                                                        <Camera className="w-6 h-6 text-slate-600 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
-                                                    </div>
-                                                    <span className="text-sm font-semibold dark:text-white">Snap Proof</span>
+                                                    {page}
                                                 </button>
-
-                                                <button
-                                                    onClick={() => {
-                                                        if (!selectedSchool) {
-                                                            alert('Please select a school first');
-                                                            return;
-                                                        }
-                                                        document.getElementById('file-input')?.click();
-                                                    }}
-                                                    className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all group"
-                                                >
-                                                    <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30 transition-colors">
-                                                        <Upload className="w-6 h-6 text-slate-600 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
-                                                    </div>
-                                                    <span className="text-sm font-semibold dark:text-white">Upload Files</span>
-                                                    <input
-                                                        id="file-input"
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="hidden"
-                                                        onChange={handleFileChange}
-                                                    />
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        {/* File List */}
-                                        {uploadFiles.length > 0 && (
-                                            <div className="space-y-2">
-                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Selected Proofs ({uploadFiles.length})</p>
-                                                <div className="max-h-40 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                                    {uploadFiles.map((file, idx) => (
-                                                        <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 group">
-                                                            <FileImage className="w-5 h-5 text-emerald-600" />
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-medium dark:text-white truncate">{file.name}</p>
-                                                                <p className="text-[10px] text-slate-500">{(file.size / 1024).toFixed(1)} KB</p>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => removeFile(idx)}
-                                                                className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                            ) : (
+                                                <span key={i} className="px-2 text-slate-300">...</span>
+                                            )
+                                        ));
+                                    })()}
                                 </div>
 
-                                <div className="p-6 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-300 dark:border-slate-800 flex items-center justify-end gap-3">
-                                    <button
-                                        disabled={uploading}
-                                        onClick={() => {
-                                            setIsUploadModalOpen(false);
-                                            setUploadFiles([]);
-                                        }}
-                                        className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        disabled={uploading || uploadFiles.length === 0}
-                                        onClick={handleSubmitApplication}
-                                        className={cn(
-                                            "px-6 py-2 rounded-lg text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2",
-                                            uploading || uploadFiles.length === 0
-                                                ? "bg-slate-400 cursor-not-allowed"
-                                                : "bg-emerald-600 hover:bg-emerald-700 active:scale-95"
-                                        )}
-                                    >
-                                        {uploading ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                Submitting...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CheckCircle2 className="w-4 h-4" />
-                                                Submit Application
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
+                                >
+                                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                                </button>
                             </div>
                         </div>
-                    )
-                }
-            </div >
+                    )}
+                </div>
+            </div>
+
+            {/* Redesigned Upload Modal */}
+            {isUploadModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/20 dark:border-slate-800/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-xl overflow-hidden scale-in animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between bg-white/40 dark:bg-slate-800/20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                    <Upload className="w-6 h-6 text-emerald-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Financial Submission</h2>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{selectedSchool ? selectedSchool.name : 'Verify Institution Selection'}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsUploadModalOpen(false);
+                                    setUploadFiles([]);
+                                    setSelectedSchool(null);
+                                }}
+                                className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-xl transition-all active:scale-90"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-8 space-y-8">
+                            {!selectedSchool && (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Target Institution</label>
+                                    <select
+                                        onChange={(e) => {
+                                            const school = schools.find(s => s.code === e.target.value);
+                                            if (school) setSelectedSchool(school);
+                                        }}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
+                                    >
+                                        <option value="">Select institution from list...</option>
+                                        {schools.map(s => (
+                                            <option key={s.code} value={s.code}>{s.name} [{s.code}]</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div className="space-y-6">
+                                {isCameraOpen ? (
+                                    <div className="rounded-[2rem] overflow-hidden bg-black border-4 border-white/10 shadow-2xl relative flex flex-col items-center justify-center min-h-[350px]">
+                                        {!capturedImage ? (
+                                            <>
+                                                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                                                <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-4">
+                                                    <button onClick={stopCamera} className="px-6 py-2.5 bg-slate-900/60 text-white rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-xl border border-white/10 hover:bg-slate-900 transition-all">Cancel</button>
+                                                    <button onClick={takeSnapshot} className="w-16 h-16 bg-white rounded-full border-[6px] border-emerald-500/30 shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all">
+                                                        <CameraIcon className="w-7 h-7 text-emerald-600" />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <img src={capturedImage} alt="Captured proof" className="w-full h-full object-contain" />
+                                                <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-4">
+                                                    <button onClick={startCamera} className="flex items-center gap-2 px-6 py-3 bg-slate-900/60 text-white rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-xl border border-white/10 hover:bg-slate-900 transition-all">
+                                                        <RefreshCw className="w-4 h-4" /> Retake
+                                                    </button>
+                                                    <button onClick={acceptSnapshot} className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-500/40 active:scale-95 transition-all">
+                                                        <Check className="w-4 h-4" /> Confirm Proof
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                        <canvas ref={canvasRef} className="hidden" />
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <button
+                                            onClick={() => selectedSchool ? startCamera() : alert('Select institution first')}
+                                            className="flex flex-col items-center justify-center gap-4 p-8 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-all group"
+                                        >
+                                            <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-all border border-slate-100 dark:border-slate-700">
+                                                <Camera className="w-7 h-7 text-slate-400 group-hover:text-emerald-600" />
+                                            </div>
+                                            <p className="text-sm font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">Live Snap</p>
+                                        </button>
+
+                                        <button
+                                            onClick={() => selectedSchool ? document.getElementById('file-input')?.click() : alert('Select institution first')}
+                                            className="flex flex-col items-center justify-center gap-4 p-8 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-all group"
+                                        >
+                                            <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-all border border-slate-100 dark:border-slate-700">
+                                                <Upload className="w-7 h-7 text-slate-400 group-hover:text-emerald-600" />
+                                            </div>
+                                            <p className="text-sm font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">Browse Files</p>
+                                            <input id="file-input" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                                        </button>
+                                    </div>
+                                )}
+
+                                {uploadFiles.length > 0 && (
+                                    <div className="p-4 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-center justify-between group animate-in slide-in-from-bottom-2">
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                                                <FileImage className="w-6 h-6 text-emerald-600" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-black text-slate-900 dark:text-white truncate">{uploadFiles[0].name}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase">{(uploadFiles[0].size / 1024).toFixed(1)} KB — READY</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setUploadFiles([])} className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors text-slate-400">
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-8 bg-slate-50/50 dark:bg-slate-950/50 border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-slate-400 max-w-[200px] leading-relaxed uppercase tracking-tighter">Ensure all proof details are clearly visible before submission.</p>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    disabled={uploading}
+                                    onClick={() => {
+                                        setIsUploadModalOpen(false);
+                                        setUploadFiles([]);
+                                        setSelectedSchool(null);
+                                    }}
+                                    className="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    disabled={uploading || uploadFiles.length === 0}
+                                    onClick={handleSubmitApplication}
+                                    className={cn(
+                                        "px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-2xl transition-all flex items-center gap-3 active:scale-95",
+                                        uploading || uploadFiles.length === 0
+                                            ? "bg-slate-300 cursor-not-allowed shadow-none"
+                                            : "bg-slate-900 dark:bg-emerald-600 hover:scale-105"
+                                    )}
+                                >
+                                    {uploading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            Submit Proof
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Printable Report Section - Only visible during print */}
             <div id="printable-report" className="hidden print:block p-8 bg-white text-slate-900">

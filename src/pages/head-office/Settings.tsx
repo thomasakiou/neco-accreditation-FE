@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Copy, AlertTriangle, CheckCircle2, Loader2, Settings, AlertCircle, ShieldAlert } from 'lucide-react';
 import AuthService from '../../api/services/auth.service';
 import DataService from '../../api/services/data.service';
-import { cn } from '../../components/layout/DashboardLayout';
+import { cn } from '../../lib/utils';
 
 export default function HeadOfficeSettings() {
     const [fromYear, setFromYear] = useState('');

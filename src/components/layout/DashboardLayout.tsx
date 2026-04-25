@@ -28,16 +28,12 @@ import {
   ChevronDown
 } from 'lucide-react';
 import AlertModal from '../modals/AlertModal';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '../../lib/utils';
 import { useTheme } from '../../context/ThemeContext';
 import { useFilterContext } from '../../context/FilterContext';
 import AuthService from '../../api/services/auth.service';
 import DataService, { State } from '../../api/services/data.service';
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 interface SidebarItem {
   icon: React.ElementType;

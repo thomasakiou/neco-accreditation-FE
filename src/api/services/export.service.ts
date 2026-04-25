@@ -4,7 +4,7 @@ import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import { components } from '../types';
 
-type School = components['schemas']['School'];
+type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
 type State = components['schemas']['State'];
 type Zone = components['schemas']['Zone'];
 type LGA = components['schemas']['LGA'];

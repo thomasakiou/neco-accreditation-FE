@@ -13,12 +13,15 @@ import {
     Trash2,
     Filter,
     GraduationCap,
-    RefreshCw
+    RefreshCw,
+    ChevronDown,
+    FileSpreadsheet
 } from 'lucide-react';
 import DataService, { Custodian, State, LGA } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import SearchableSelect from '../../components/common/SearchableSelect';
+import { cn } from '../../lib/utils';
 
 export default function StateCustodians() {
     const [custodians, setCustodians] = useState<Custodian[]>([]);
@@ -195,378 +198,241 @@ export default function StateCustodians() {
 
     return (
         <>
-            <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="space-y-8 animate-in fade-in duration-700">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-black text-slate-950 dark:text-white flex items-center gap-2 uppercase tracking-tight">
-                            <ShieldCheck className="w-8 h-8 text-emerald-600" />
-                            {userState?.name || 'State'} Custodians
-                        </h1>
-                        <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Manage {activeTab === 'BECE' ? 'BECE' : 'school'} custodians in your state.</p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => fetchInitialData()}
-                            disabled={isLoading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                            title="Refresh Data"
-                        >
-                            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                            Refresh
-                        </button>
-
-                        {/* <button
-                            onClick={() => setShowAddModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
-                        >
-                            <Plus className="w-4 h-4" />
-                            <span>Add {activeTab} Custodian</span>
-                        </button> */}
-                    </div>
-                </div>
-
-                {/* Tab Interface */}
-                <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl w-fit border border-slate-300 dark:border-slate-700 shadow-inner">
-                    <button
-                        onClick={() => setActiveTab('SSCE')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'SSCE'
-                            ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
-                            }`}
-                    >
-                        SSCE Custodians
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('BECE')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'BECE'
-                            ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-md ring-1 ring-slate-300 dark:ring-slate-700 scale-105'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'
-                            }`}
-                    >
-                        BECE Custodians
-                    </button>
-                </div>
-
-                {error && (
-                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl flex items-center justify-between animate-in slide-in-from-top-2">
-                        <div className="flex items-center gap-3 text-red-700 dark:text-red-400">
-                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                            <p className="text-sm font-medium">{error}</p>
-                        </div>
-                        <button onClick={() => setError(null)} className="text-xs font-bold uppercase hover:underline">Dismiss</button>
-                    </div>
-                )}
-
-                {/* Modals */}
-                {showAddModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-300 dark:border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95">
-                            <div className="p-6 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-slate-950 dark:text-white">Add New {activeTab} Custodian</h2>
-                                <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                                    <X className="w-6 h-6" />
-                                </button>
+                <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+                    <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
+                        <div className="space-y-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <ShieldCheck className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Custodian Management</span>
                             </div>
-
-                            <form onSubmit={handleAddCustodian} className="p-6 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5 col-span-2">
-                                        <label className="text-sm font-black uppercase text-slate-600 tracking-widest">Custodian Name</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="e.g. John Doe"
-                                            value={newCustodian.name}
-                                            onChange={e => setNewCustodian({ ...newCustodian, name: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian Code</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="e.g. CUST001"
-                                            value={newCustodian.code}
-                                            onChange={e => setNewCustodian({ ...newCustodian, code: e.target.value.toUpperCase() })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all uppercase"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
-                                        <select
-                                            required
-                                            value={newCustodian.lga_code}
-                                            onChange={e => setNewCustodian({ ...newCustodian, lga_code: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                        >
-                                            <option value="">Select LGA</option>
-                                            {modalLgas.map(lga => (
-                                                <option key={lga.code} value={lga.code}>{lga.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="space-y-1.5 col-span-2">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Town/Area</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Central Area"
-                                            value={newCustodian.town}
-                                            onChange={e => setNewCustodian({ ...newCustodian, town: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddModal(false)}
-                                        className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                    >
-                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                        Create Custodian
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
-
-                {showEditModal && editingCustodian && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden animate-in zoom-in-95">
-                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Edit Custodian: {editingCustodian.name}</h2>
-                                <button onClick={() => { setShowEditModal(false); setEditingCustodian(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                                    <X className="w-6 h-6" />
-                                </button>
-                            </div>
-
-                            <form onSubmit={handleUpdateCustodian} className="p-6 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5 col-span-2">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian Name</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={editingCustodian.name}
-                                            onChange={e => setEditingCustodian({ ...editingCustodian, name: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Custodian Code</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            disabled
-                                            value={editingCustodian.code}
-                                            className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 outline-none cursor-not-allowed font-mono uppercase"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">LGA</label>
-                                        <select
-                                            required
-                                            value={editingCustodian.lga_code || ''}
-                                            onChange={e => setEditingCustodian({ ...editingCustodian, lga_code: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                        >
-                                            <option value="">Select LGA</option>
-                                            {modalLgas.map(lga => (
-                                                <option key={lga.code} value={lga.code}>{lga.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Town/Area</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Central Area"
-                                            value={editingCustodian.town || ''}
-                                            onChange={e => setEditingCustodian({ ...editingCustodian, town: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Status</label>
-                                        <select
-                                            required
-                                            value={editingCustodian.status || 'active'}
-                                            onChange={e => setEditingCustodian({ ...editingCustodian, status: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold"
-                                        >
-                                            <option value="active">Active</option>
-                                            <option value="inactive">Inactive</option>
-                                            <option value="suspended">Suspended</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => { setShowEditModal(false); setEditingCustodian(null); }}
-                                        className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                    >
-                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                                        Save Changes
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
-
-                {/* Content Container */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-300 dark:border-slate-700 overflow-hidden">
-                    <div className="p-4 border-b border-slate-300 dark:border-slate-800 flex flex-wrap items-center justify-between bg-slate-200 dark:bg-slate-900/50 gap-4">
-                        <div className="relative w-full md:w-auto flex-1 max-w-md">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-                            <input
-                                type="text"
-                                placeholder="Search custodians..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
-                            />
+                            <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                                {userState?.name} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Custodians</span>
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
+                                Manage {activeTab === 'BECE' ? 'BECE' : 'SSCE'} Custodian points in your state.
+                            </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto md:ml-auto">
-                            <div className="flex items-center gap-2 flex-1 md:flex-none min-w-[160px]">
-                                <SearchableSelect
-                                    value={selectedLga}
-                                    onChange={(val) => { setSelectedLga(val); setCurrentPage(1); }}
-                                    options={lgas.map(l => ({ value: l.code, label: l.name }))}
-                                    placeholder="All LGAs"
-                                    icon={<Filter className="w-3.5 h-3.5 text-slate-400" />}
-                                    containerClassName="w-full"
-                                />
-                            </div>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <button
+                                onClick={() => fetchInitialData()}
+                                disabled={isLoading}
+                                className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+                            >
+                                <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+                                Synchronize
+                            </button>
 
-                            <div className="flex items-center gap-3 md:flex-none">
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Rows:</span>
-                                <select
-                                    value={rowsPerPage}
-                                    onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                                    className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold py-1.5 pl-2 pr-6 focus:ring-2 focus:ring-emerald-500 outline-none transition-all cursor-pointer"
-                                >
-                                    {[10, 20, 50].map(size => (
-                                        <option key={size} value={size}>{size}</option>
-                                    ))}
-                                </select>
-                            </div>
                             {isSuperAdmin && (
-                                <div className="flex items-center gap-2 md:flex-none">
-                                    <button
-                                        onClick={() => activeTab === 'SSCE'
-                                            ? DataService.exportCustodians('excel', { state_code: userState?.code })
-                                            : DataService.exportBeceCustodians('excel', { state_code: userState?.code })}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-                                        title="Export Excel"
-                                    >
-                                        <Download className="w-4 h-4 text-emerald-600" />
-                                        EXCEL
+                                <div className="relative group/export">
+                                    <button className="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95">
+                                        <Download className="w-4 h-4" />
+                                        Export Data
                                     </button>
+                                    <div className="absolute right-0 top-full pt-3 w-48 opacity-0 translate-y-2 pointer-events-none group-hover/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:pointer-events-auto transition-all z-50">
+                                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
+                                            <button
+                                                onClick={() => activeTab === 'SSCE'
+                                                    ? DataService.exportCustodians('excel', { state_code: userState?.code })
+                                                    : DataService.exportBeceCustodians('excel', { state_code: userState?.code })}
+                                                className="w-full px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800"
+                                            >
+                                                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                                Excel Spreadsheet
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
+                </div>
 
+                {/* Tab switcher */}
+                <div className="flex justify-center">
+                    <div className="inline-flex p-1.5 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 rounded-2xl shadow-inner">
+                        {[
+                            { id: 'SSCE', label: 'SSCE Custodians', icon: GraduationCap },
+                            { id: 'BECE', label: 'BECE Custodians', icon: ShieldCheck }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as 'SSCE' | 'BECE')}
+                                className={cn(
+                                    "flex items-center gap-3 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 active:scale-95",
+                                    activeTab === tab.id
+                                        ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xl ring-1 ring-slate-200 dark:ring-slate-700"
+                                        : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                                )}
+                            >
+                                <tab.icon className={cn("w-4 h-4", activeTab === tab.id ? "text-emerald-500" : "text-slate-400")} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-2">
+                        <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                            <p className="text-xs font-bold uppercase tracking-wider">{error}</p>
+                        </div>
+                        <button onClick={() => setError(null)} className="text-[10px] font-black uppercase hover:underline">Dismiss</button>
+                    </div>
+                )}
+
+                {/* Filters Bar */}
+                <div className="flex flex-wrap items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-xl">
+                    <div className="relative flex-1 min-w-[300px]">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by custodian name or code..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-11 pr-4 py-3 bg-transparent border-none text-sm font-medium focus:ring-0 placeholder:text-slate-400 text-slate-700 dark:text-slate-200"
+                        />
+                    </div>
+
+                    <div className="flex items-center flex-wrap gap-3">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <Filter className="w-3.5 h-3.5 text-slate-400" />
+                            <SearchableSelect
+                                value={selectedLga}
+                                onChange={(val) => { setSelectedLga(val); setCurrentPage(1); }}
+                                options={lgas.map(l => ({ value: l.code, label: l.name }))}
+                                placeholder="All LGAs"
+                                containerClassName="w-[180px]"
+                                className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-600 dark:text-slate-300"
+                            />
+                        </div>
+
+                        <div className="h-6 w-[1px] bg-slate-300 dark:bg-slate-700 mx-1"></div>
+
+                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Limit:</span>
+                            <select
+                                value={rowsPerPage}
+                                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-900 dark:text-slate-200 cursor-pointer"
+                            >
+                                {[10, 20, 50, 100].map(size => (
+                                    <option key={size} value={size} className="dark:bg-slate-900">{size}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Data Section */}
+                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 text-[11px] font-black uppercase tracking-widest">
-                                <tr>
-                                    <th className="px-6 py-4">Code</th>
-                                    <th className="px-6 py-4">Custodian Name</th>
-                                    <th className="px-6 py-4">LGA</th>
-                                    <th className="px-6 py-4">Town</th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Custodian Code</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Custodian Detail</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Town</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Status</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-300 dark:divide-slate-800">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                 {isLoading ? (
                                     Array(5).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={5} className="px-6 py-4">
-                                                <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
+                                            <td colSpan={5} className="px-8 py-8">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl"></div>
+                                                    <div className="space-y-2 flex-1">
+                                                        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4"></div>
+                                                        <div className="h-3 bg-slate-100 dark:bg-slate-800/50 rounded w-1/2"></div>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
                                 ) : paginatedCustodians.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <ShieldCheck className="w-12 h-12 text-slate-200 dark:text-slate-700" />
-                                                <p className="text-slate-500 dark:text-slate-400 font-medium">No custodians found in your state</p>
+                                        <td colSpan={5} className="px-8 py-24 text-center">
+                                            <div className="flex flex-col items-center gap-4 opacity-40">
+                                                <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                                    <Search className="w-10 h-10 text-slate-400" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">No Custodians Found</h3>
+                                                    <p className="text-sm font-medium text-slate-500">Try adjusting your filters or search terms.</p>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : (
                                     paginatedCustodians.map((custodian) => (
-                                        <tr key={custodian.code} className="group hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-400 text-xs font-mono font-black">
+                                        <tr key={custodian.code} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all duration-300">
+                                            <td className="px-8 py-6">
+                                                <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-emerald-400 text-[10px] font-black tracking-widest border border-slate-200 dark:border-slate-700 shadow-sm">
                                                     {custodian.code}
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform duration-500 shadow-lg">
+                                                        <ShieldCheck className="w-6 h-6 text-emerald-600" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
+                                                            {custodian.name}
+                                                        </div>
+                                                        <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-tighter">
+                                                            ID: {custodian.code} — Registered Personnel
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="space-y-1">
+                                                    <div className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
+                                                        {lgas.find(l => l.code === custodian.lga_code)?.name || custodian.lga_code}
+                                                    </div>
+                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                        {custodian.town || 'Unspecified Town'}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm",
+                                                    custodian.status === 'active'
+                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+                                                        : custodian.status === 'suspended'
+                                                            ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+                                                            : "bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                                                )}>
+                                                    <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse",
+                                                        custodian.status === 'active' ? "bg-emerald-500" : custodian.status === 'suspended' ? "bg-amber-500" : "bg-red-500"
+                                                    )} />
+                                                    {custodian.status || 'active'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm font-black text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors uppercase tracking-tight">
-                                                    {custodian.name}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">
-                                                    {lgas.find(l => l.code === custodian.lga_code)?.name || custodian.lga_code}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">
-                                                    {custodian.town || '—'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={() => handleEditClick(custodian)}
-                                                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
-                                                        title="Edit Custodian"
+                                                        className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-emerald-600 rounded-xl transition-all shadow-sm active:scale-90"
+                                                        title="Modify Record"
                                                     >
                                                         <Edit2 className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteCustodian(custodian.code, custodian.name)}
-                                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
-                                                        title="Delete Custodian"
+                                                        className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-red-500 rounded-xl transition-all shadow-sm active:scale-90"
+                                                        title="Purge Record"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1.5">
-                                                        <MoreVertical className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -578,67 +444,270 @@ export default function StateCustodians() {
                     </div>
 
                     {!isLoading && filteredCustodians.length > 0 && (
-                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
-                            <p className="font-medium">
-                                Showing <span className="font-black text-slate-900 dark:text-white">{startIndex + 1}</span> to{' '}
-                                <span className="font-black text-slate-900 dark:text-white">
-                                    {Math.min(startIndex + rowsPerPage, filteredCustodians.length)}
-                                </span> of{' '}
-                                <span className="font-black text-slate-900 dark:text-white">{filteredCustodians.length}</span> custodians
-                            </p>
+                        <div className="p-8 bg-slate-50/50 dark:bg-slate-950/50 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-4">
+                                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                    Showing <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{startIndex + 1}</span> — <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{Math.min(startIndex + rowsPerPage, filteredCustodians.length)}</span> of <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{filteredCustodians.length}</span>
+                                </div>
+                            </div>
 
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                     disabled={currentPage === 1}
-                                    className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs uppercase"
+                                    className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
                                 >
-                                    Previous
+                                    <ChevronDown className="w-4 h-4 rotate-90" />
                                 </button>
 
-                                <div className="flex items-center gap-1">
-                                    {[...Array(totalPages)].map((_, i) => {
-                                        const pageNum = i + 1;
-                                        if (
-                                            totalPages <= 5 ||
-                                            pageNum === 1 ||
-                                            pageNum === totalPages ||
-                                            (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                                        ) {
-                                            return (
-                                                <button
-                                                    key={pageNum}
-                                                    onClick={() => setCurrentPage(pageNum)}
-                                                    className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all ${currentPage === pageNum
-                                                        ? 'bg-emerald-600 text-white shadow-sm'
-                                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-                                                        }`}
-                                                >
-                                                    {pageNum}
-                                                </button>
-                                            );
-                                        } else if (
-                                            pageNum === currentPage - 2 ||
-                                            pageNum === currentPage + 2
-                                        ) {
-                                            return <span key={pageNum} className="px-1 text-slate-400 font-black">...</span>;
+                                <div className="flex items-center gap-1.5">
+                                    {(() => {
+                                        const pages = [];
+                                        for (let i = 1; i <= totalPages; i++) {
+                                            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                                                pages.push(i);
+                                            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                                                pages.push('...');
+                                            }
                                         }
-                                        return null;
-                                    })}
+                                        return [...new Set(pages)].map((p, i) => (
+                                            typeof p === 'number' ? (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setCurrentPage(p)}
+                                                    className={cn(
+                                                        "w-10 h-10 rounded-xl text-xs font-black transition-all active:scale-90 shadow-sm",
+                                                        currentPage === p
+                                                            ? "bg-slate-900 dark:bg-emerald-600 text-white shadow-emerald-500/20"
+                                                            : "bg-white dark:bg-slate-800 text-slate-500 hover:text-emerald-600 border border-slate-200 dark:border-slate-700"
+                                                    )}
+                                                >
+                                                    {p}
+                                                </button>
+                                            ) : (
+                                                <span key={i} className="px-2 text-slate-300">...</span>
+                                            )
+                                        ));
+                                    })()}
                                 </div>
 
                                 <button
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                     disabled={currentPage === totalPages}
-                                    className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs uppercase"
+                                    className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
                                 >
-                                    Next
+                                    <ChevronDown className="w-4 h-4 -rotate-90" />
                                 </button>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Redesigned Modals */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/20 dark:border-slate-800/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-lg overflow-hidden scale-in animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between bg-white/40 dark:bg-slate-800/20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                    <Plus className="w-6 h-6 text-emerald-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">New Custodian</h2>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Register security-sensitive personnel</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowAddModal(false)}
+                                className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-xl transition-all active:scale-90"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAddCustodian} className="p-8 space-y-6">
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2 col-span-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Custodian Full Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Enter legal name..."
+                                        value={newCustodian.name}
+                                        onChange={e => setNewCustodian({ ...newCustodian, name: e.target.value })}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Unique Code</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="CUST-000"
+                                        value={newCustodian.code}
+                                        onChange={e => setNewCustodian({ ...newCustodian, code: e.target.value.toUpperCase() })}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono font-bold text-sm uppercase"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Local Govt Area</label>
+                                    <select
+                                        required
+                                        value={newCustodian.lga_code}
+                                        onChange={e => setNewCustodian({ ...newCustodian, lga_code: e.target.value })}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
+                                    >
+                                        <option value="">Select LGA</option>
+                                        {modalLgas.map(lga => (
+                                            <option key={lga.code} value={lga.code}>{lga.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2 col-span-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Town / Catchment Area</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Central Metropolitan"
+                                        value={newCustodian.town}
+                                        onChange={e => setNewCustodian({ ...newCustodian, town: e.target.value })}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddModal(false)}
+                                    className="flex-1 px-8 py-4 border-2 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="flex-[2] px-8 py-4 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl hover:scale-105 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                                >
+                                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                                    Create Custodian
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {showEditModal && editingCustodian && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2rem] border border-white/20 dark:border-slate-800/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-lg overflow-hidden scale-in animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between bg-white/40 dark:bg-slate-800/20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                                    <Edit2 className="w-6 h-6 text-blue-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Update Record</h2>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Modifying: {editingCustodian.name}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => { setShowEditModal(false); setEditingCustodian(null); }}
+                                className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-xl transition-all active:scale-90"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleUpdateCustodian} className="p-8 space-y-6">
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2 col-span-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Custodian Full Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={editingCustodian.name}
+                                        onChange={e => setEditingCustodian({ ...editingCustodian, name: e.target.value })}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">ID Code (Read Only)</label>
+                                    <input
+                                        type="text"
+                                        disabled
+                                        value={editingCustodian.code}
+                                        className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/20 border-2 border-transparent rounded-2xl text-slate-400 font-mono font-bold text-sm uppercase cursor-not-allowed"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Local Govt Area</label>
+                                    <select
+                                        required
+                                        value={editingCustodian.lga_code || ''}
+                                        onChange={e => setEditingCustodian({ ...editingCustodian, lga_code: e.target.value })}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
+                                    >
+                                        <option value="">Select LGA</option>
+                                        {modalLgas.map(lga => (
+                                            <option key={lga.code} value={lga.code}>{lga.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Town / Area</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Central Area"
+                                        value={editingCustodian.town || ''}
+                                        onChange={e => setEditingCustodian({ ...editingCustodian, town: e.target.value })}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-sm"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Logistics Status</label>
+                                    <select
+                                        required
+                                        value={editingCustodian.status || 'active'}
+                                        onChange={e => setEditingCustodian({ ...editingCustodian, status: e.target.value })}
+                                        className="w-full px-5 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-black text-sm uppercase tracking-widest"
+                                    >
+                                        <option value="active">Operational (Active)</option>
+                                        <option value="inactive">Non-Operational</option>
+                                        <option value="suspended">Restricted / Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowEditModal(false); setEditingCustodian(null); }}
+                                    className="flex-1 px-8 py-4 border-2 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="flex-[2] px-8 py-4 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl hover:scale-105 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                                >
+                                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                                    Apply Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             <ConfirmDialog
                 isOpen={confirmDialog.isOpen}
                 title={confirmDialog.title}
