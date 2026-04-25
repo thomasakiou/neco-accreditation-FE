@@ -33,6 +33,7 @@ import { baseURL } from '../../api/client';
 import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import { useFilterContext } from '../../context/FilterContext';
+import { cn } from '../../lib/utils';
 
 type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
 type State = components['schemas']['State'];
@@ -531,7 +532,7 @@ export default function HeadOfficeFinalApproval() {
                                 onChange={(e) => setSelectedAccrFilter(e.target.value)}
                                 className="w-full h-full pl-10 pr-8 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-0 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200"
                             >
-                                <option value="">All</option>
+                                <option value="">All Status</option>
                                 <option value="Accredited">Accredited</option>
                                 <option value="Unaccredited">Unaccredited</option>
                                 <option value="Full">Full</option>
@@ -549,7 +550,7 @@ export default function HeadOfficeFinalApproval() {
                                 onChange={(e) => setSelectedProofFilter(e.target.value)}
                                 className="w-full h-full pl-10 pr-8 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-0 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200"
                             >
-                                <option value="">All</option>
+                                <option value="">All Proofs</option>
                                 <option value="Proof">Proof Uploaded</option>
                                 <option value="Approved">Approved</option>
                                 <option value="Unapproved">Unapproved</option>
@@ -558,21 +559,20 @@ export default function HeadOfficeFinalApproval() {
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         </div>
-                        <div className="relative min-w-[140px] flex-1 lg:flex-none">
-                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                <Calendar className="w-4 h-4 text-slate-400" />
-                            </div>
-                            <select
-                                value={selectedDueFilter}
-                                onChange={(e) => setSelectedDueFilter(e.target.value)}
-                                className="w-full h-full pl-10 pr-8 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-0 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200"
-                            >
-                                <option value="">All</option>
-                                <option value="Due">Due</option>
-                                <option value="Not Due">Not Due</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        </div>
+                        <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 hidden lg:block"></div>
+
+                        <button
+                            onClick={() => setSelectedDueFilter(prev => prev === 'Due' ? '' : 'Due')}
+                            className={cn(
+                                "flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all duration-300 font-black uppercase tracking-widest text-xs",
+                                selectedDueFilter === 'Due'
+                                    ? "bg-amber-500/10 border-amber-500/50 text-amber-600 shadow-lg shadow-amber-500/5"
+                                    : "bg-slate-100/50 dark:bg-slate-800/50 border-transparent text-slate-400 hover:border-amber-500/30"
+                            )}
+                        >
+                            <ShieldAlert className={cn("w-4 h-4", selectedDueFilter === 'Due' ? "text-amber-500" : "text-slate-400")} />
+                            <span>Only Due</span>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -345,17 +345,17 @@ export default function ReviewApplications() {
                                     {isExporting === 'csv' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                                     CSV
                                 </button>
-                                <button
-                                    onClick={() => handleExportPDF()}
-                                    disabled={isExporting !== null}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-slate-400 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-all shadow-sm shadow-red-600/20 hover:shadow-red-600/40"
-                                    title="Download as PDF"
-                                >
-                                    {isExporting === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
-                                    PDF
-                                </button>
                             </>
                         )}
+                        <button
+                            onClick={() => handleExportPDF()}
+                            disabled={isExporting !== null}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-slate-400 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-all shadow-sm shadow-red-600/20 hover:shadow-red-600/40"
+                            title="Download as PDF"
+                        >
+                            {isExporting === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                            PDF
+                        </button>
                         <button
                             onClick={() => handleExportSummaryReport()}
                             disabled={isExporting !== null}

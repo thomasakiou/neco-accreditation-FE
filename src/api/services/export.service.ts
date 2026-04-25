@@ -12,15 +12,15 @@ type Custodian = components['schemas']['Custodian'];
 
 interface EnrichedSchool {
   'School Code': string;
-  'School Name': string;
+  'School': string;
   'Zone Code': string;
-  'Zone Name': string;
+  'Zone': string;
   'State Code': string;
-  'State Name': string;
+  'State': string;
   'LGA Code': string;
-  'LGA Name': string;
+  'LGA': string;
   'Custodian Code': string;
-  'Custodian Name': string;
+  'Custodian': string;
   'Category': string;
   'Email': string;
   'Accreditation Status': string;
@@ -62,15 +62,15 @@ const enrichSchoolData = (
 
     return {
       'School Code': school.code || '',
-      'School Name': school.name || '',
+      'School': school.name || '',
       'Zone Code': zone?.code || '',
-      'Zone Name': zone?.name || '',
+      'Zone': zone?.name || '',
       'State Code': state?.code || '',
-      'State Name': state?.name || '',
+      'State': state?.name || '',
       'LGA Code': lga?.code || '',
-      'LGA Name': lga?.name || '',
+      'LGA': lga?.name || '',
       'Custodian Code': custodian?.code || '',
-      'Custodian Name': custodian?.name || '',
+      'Custodian': custodian?.name || '',
       'Category': school.category || '',
       'Email': school.email || '',
       'Accreditation Status': school.accreditation_status || '',
@@ -83,9 +83,9 @@ const enrichSchoolData = (
 
   // Sort by State Name (ascending), then by School Name
   enrichedSchools.sort((a, b) => {
-    const stateCompare = a['State Name'].localeCompare(b['State Name']);
+    const stateCompare = a['State'].localeCompare(b['State']);
     if (stateCompare !== 0) return stateCompare;
-    return a['School Name'].localeCompare(b['School Name']);
+    return a['School'].localeCompare(b['School']);
   });
 
   return enrichedSchools;
@@ -127,15 +127,15 @@ const exportToExcel = (enrichedSchools: EnrichedSchool[]): void => {
   const worksheet = XLSX.utils.json_to_sheet(enrichedSchools, {
     header: [
       'School Code',
-      'School Name',
+      'School',
       'Zone Code',
-      'Zone Name',
+      'Zone',
       'State Code',
-      'State Name',
+      'State',
       'LGA Code',
-      'LGA Name',
+      'LGA',
       'Custodian Code',
-      'Custodian Name',
+      'Custodian',
       'Category',
       'Email',
       'Accreditation Status',
@@ -193,26 +193,18 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
   const pageHeight = doc.internal.pageSize.getHeight();
   const columns = [
     'School Code',
-    'School Name',
-    'Zone Name',
-    'State Name',
-    'LGA Name',
-    'Custodian Name',
-    'Category',
-    'Email',
+    'School',
+    'State',
+    'Custodian',
     'Accreditation Status',
     'Payment',
   ];
 
   const rows = enrichedSchools.map(school => [
     school['School Code'],
-    school['School Name'],
-    school['Zone Name'],
-    school['State Name'],
-    school['LGA Name'],
-    school['Custodian Name'],
-    school['Category'],
-    school['Email'],
+    school['School'],
+    school['State'],
+    school['Custodian'],
     school['Accreditation Status'],
     school['Payment'],
   ]);
@@ -238,7 +230,7 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont(undefined, 'normal');
-  doc.text('Schools Export Report', pageWidth / 2, 24, { align: 'center' });
+  doc.text('SCHOOLS DUE FOR THE UPCOMING ACCREDITATION EXERCISE', pageWidth / 2, 24, { align: 'center' });
 
   // Add date in gray
   doc.setFontSize(9);
@@ -262,6 +254,7 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
     },
     bodyStyles: {
       fontSize: 8,
+      fontStyle: 'bold',
     },
     columnStyles: {
       0: { halign: 'center' }, // School Code
@@ -298,30 +291,30 @@ const exportSummaryDueReport = async (
   const summaryData = states.map(state => {
     // SSCE Stats
     const ssceInState = allSchools.filter(s => s.state_code === state.code && s.school_type === 'SSCE');
-    
+
     // Helper to check if a school is due (matching ReviewApplications logic)
     const isDue = (s: School) => {
-        if (s.accreditation_status === 'Failed') return true;
-        if (!s.accredited_date || !['Full', 'Partial'].includes(s.accreditation_status || '')) return false;
-        const accreditedDate = new Date(s.accredited_date);
-        
-        let yearsToAdd = 5;
-        const schoolState = states.find(st => st.code === s.state_code);
-        const zone = zones.find(z => z.code === schoolState?.zone_code);
-        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+      if (s.accreditation_status === 'Failed') return true;
+      if (!s.accredited_date || !['Full', 'Partial'].includes(s.accreditation_status || '')) return false;
+      const accreditedDate = new Date(s.accredited_date);
 
-        if (isForeign) {
-            yearsToAdd = 10;
-        } else if (s.accreditation_status === 'Partial') {
-            yearsToAdd = 1;
-        }
+      let yearsToAdd = 5;
+      const schoolState = states.find(st => st.code === s.state_code);
+      const zone = zones.find(z => z.code === schoolState?.zone_code);
+      const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
 
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
-        return expiryDate <= sixMonthsFromNow;
+      if (isForeign) {
+        yearsToAdd = 10;
+      } else if (s.accreditation_status === 'Partial') {
+        yearsToAdd = 1;
+      }
+
+      const expiryDate = new Date(accreditedDate);
+      expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+      const today = new Date();
+      const sixMonthsFromNow = new Date();
+      sixMonthsFromNow.setMonth(today.getMonth() + 6);
+      return expiryDate <= sixMonthsFromNow;
     };
 
     const ssceDue = ssceInState.filter(isDue);
@@ -415,12 +408,12 @@ const exportSummaryDueReport = async (
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.text('NATIONAL EXAMINATIONS COUNCIL (NECO)', pageWidth / 2, 12, { align: 'center' });
-    
+
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(10);
     doc.text('QUALITY ASSURANCE DEPARTMENT', pageWidth / 2, 17, { align: 'center' });
     doc.text('ACCREDITATION DIVISION', pageWidth / 2, 22, { align: 'center' });
-    
+
     const currentMonth = new Date().toLocaleString('default', { month: 'long' }).toUpperCase();
     const currentYear = new Date().getFullYear();
     doc.text(`SCHOOLS DUE FOR ${currentMonth} ${currentYear} ACCREDITATION`, pageWidth / 2, 27, { align: 'center' });
