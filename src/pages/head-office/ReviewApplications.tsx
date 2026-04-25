@@ -99,6 +99,7 @@ export default function ReviewApplications() {
             setZones(zonesData);
             setAllLgas(lgas);
             setCustodians(custodians);
+            setCurrentUser(userData);
         } catch (err) {
             console.error('Failed to fetch data:', err);
         } finally {

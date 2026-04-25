@@ -13,12 +13,18 @@ let statesCache: State[] | null = null;
 let zonesCache: Zone[] | null = null;
 let lgasCache: Record<string, LGA[]> = {}; // Key: state_code or 'all'
 let schoolsCache: School[] | null = null;
+let beceSchoolsCache: BECESchool[] | null = null;
+let custodiansCache: Custodian[] | null = null;
+let beceCustodiansCache: BECECustodian[] | null = null;
 
 export const clearStaticCache = () => {
     statesCache = null;
     zonesCache = null;
     lgasCache = {};
     schoolsCache = null;
+    beceSchoolsCache = null;
+    custodiansCache = null;
+    beceCustodiansCache = null;
 };
 
 const DataService = {
@@ -179,12 +185,16 @@ const DataService = {
 
     // BECE Schools
     getBeceSchools: async (params?: { state_code?: string; lga_code?: string; custodian_code?: string }): Promise<BECESchool[]> => {
+        const hasParams = params && Object.values(params).some(v => v !== undefined);
+        if (!hasParams && beceSchoolsCache) return beceSchoolsCache;
         const response = await client.get<BECESchool[]>('/api/v1/data/bece-schools', { params });
+        if (!hasParams) beceSchoolsCache = response.data;
         return response.data;
     },
 
     createBeceSchool: async (school: components['schemas']['BECESchoolCreate']): Promise<BECESchool> => {
         const response = await client.post<BECESchool>('/api/v1/data/bece-schools', school);
+        beceSchoolsCache = null;
         return response.data;
     },
 
@@ -192,6 +202,7 @@ const DataService = {
         const response = await client.put<BECESchool>(`/api/v1/data/bece-schools/${code}`, school, {
             params: { accrd_year }
         });
+        beceSchoolsCache = null;
         return response.data;
     },
 
@@ -203,6 +214,7 @@ const DataService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        beceSchoolsCache = null;
         return response.data;
     },
 
@@ -218,10 +230,12 @@ const DataService = {
         await client.delete(`/api/v1/data/bece-schools/${code}`, {
             params: { accrd_year }
         });
+        beceSchoolsCache = null;
     },
 
     deleteAllBeceSchools: async () => {
         await client.delete('/api/v1/data/bece-schools/all');
+        beceSchoolsCache = null;
     },
 
     uploadSchoolPaymentProof: async (code: string, file: File, accrd_year?: string | number): Promise<School> => {
@@ -310,17 +324,22 @@ const DataService = {
 
     // Custodians
     getCustodians: async (params?: { state_code?: string; lga_code?: string }): Promise<Custodian[]> => {
+        const hasParams = params && Object.values(params).some(v => v !== undefined);
+        if (!hasParams && custodiansCache) return custodiansCache;
         const response = await client.get<Custodian[]>('/api/v1/data/custodians', { params });
+        if (!hasParams) custodiansCache = response.data;
         return response.data;
     },
 
     createCustodian: async (custodian: components['schemas']['CustodianCreate']): Promise<Custodian> => {
         const response = await client.post<Custodian>('/api/v1/data/custodians', custodian);
+        custodiansCache = null;
         return response.data;
     },
 
     updateCustodian: async (code: string, custodian: components['schemas']['CustodianUpdate']): Promise<Custodian> => {
         const response = await client.put<Custodian>(`/api/v1/data/custodians/${code}`, custodian);
+        custodiansCache = null;
         return response.data;
     },
 
@@ -338,17 +357,22 @@ const DataService = {
 
     // BECE Custodians
     getBeceCustodians: async (params?: { state_code?: string; lga_code?: string }): Promise<BECECustodian[]> => {
+        const hasParams = params && Object.values(params).some(v => v !== undefined);
+        if (!hasParams && beceCustodiansCache) return beceCustodiansCache;
         const response = await client.get<BECECustodian[]>('/api/v1/data/bece-custodians', { params });
+        if (!hasParams) beceCustodiansCache = response.data;
         return response.data;
     },
 
     createBeceCustodian: async (custodian: components['schemas']['BECECustodianCreate']): Promise<BECECustodian> => {
         const response = await client.post<BECECustodian>('/api/v1/data/bece-custodians', custodian);
+        beceCustodiansCache = null;
         return response.data;
     },
 
     updateBeceCustodian: async (code: string, custodian: components['schemas']['BECECustodianUpdate']): Promise<BECECustodian> => {
         const response = await client.put<BECECustodian>(`/api/v1/data/bece-custodians/${code}`, custodian);
+        beceCustodiansCache = null;
         return response.data;
     },
 
@@ -372,6 +396,7 @@ const DataService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        beceCustodiansCache = null;
         return response.data;
     },
 

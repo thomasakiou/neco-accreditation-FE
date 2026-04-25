@@ -39,8 +39,10 @@ type School = components['schemas']['School'];
 type State = components['schemas']['State'];
 
 export default function HeadOfficeSchools() {
-    const [schools, setSchools] = useState<School[]>([]);
+    const [ssceSchools, setSsceSchools] = useState<School[]>([]);
+    const [beceSchools, setBeceSchools] = useState<School[]>([]);
     const [states, setStates] = useState<State[]>([]);
+    const [allLgas, setAllLgas] = useState<LGA[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userEmail, setUserEmail] = useState<string>('');
@@ -56,14 +58,17 @@ export default function HeadOfficeSchools() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingSchool, setEditingSchool] = useState<School | null>(null);
-    const [custodians, setCustodians] = useState<Custodian[]>([]);
-    const [allLgas, setAllLgas] = useState<LGA[]>([]);
+    const [ssceCustodians, setSsceCustodians] = useState<Custodian[]>([]);
+    const [beceCustodiansList, setBeceCustodiansList] = useState<Custodian[]>([]);
     const [modalLgas, setModalLgas] = useState<LGA[]>([]);
     const [modalCustodians, setModalCustodians] = useState<Custodian[]>([]);
     const [isLoadingLgas, setIsLoadingLgas] = useState(false);
     const [isLoadingCustodians, setIsLoadingCustodians] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState<'SSCE' | 'BECE'>('SSCE');
+    // Derived from activeTab — must come after its declaration
+    const schools = activeTab === 'SSCE' ? ssceSchools : beceSchools;
+    const custodians = activeTab === 'SSCE' ? ssceCustodians : beceCustodiansList;
     const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean; title: string; message: string; confirmLabel?: string;
@@ -198,17 +203,26 @@ export default function HeadOfficeSchools() {
             const role = AuthService.getUserRole();
             setUserRole(role);
 
-            const [schoolsData, beceSchoolsData, statesData, custodiansData, lgasData, zonesData] = await Promise.all([
+            // Fetch ALL data in parallel — SSCE + BECE + reference data simultaneously
+            const [
+                ssceData, beceData,
+                statesData, ssceCustodiansData, beceCustodiansData,
+                lgasData, zonesData
+            ] = await Promise.all([
                 DataService.getSchools(),
                 DataService.getBeceSchools(),
                 DataService.getStates(),
-                activeTab === 'SSCE' ? DataService.getCustodians() : DataService.getBeceCustodians(),
+                DataService.getCustodians(),
+                DataService.getBeceCustodians(),
                 DataService.getLGAs(),
                 DataService.getZones()
             ]);
-            setSchools(activeTab === 'SSCE' ? schoolsData : beceSchoolsData);
+
+            setSsceSchools(ssceData);
+            setBeceSchools(beceData as unknown as School[]);
             setStates(statesData);
-            setCustodians(custodiansData);
+            setSsceCustodians(ssceCustodiansData);
+            setBeceCustodiansList(beceCustodiansData as unknown as Custodian[]);
             setAllLgas(lgasData);
             setZones(zonesData);
         } catch (err: any) {
@@ -221,13 +235,22 @@ export default function HeadOfficeSchools() {
     const fetchSchools = async () => {
         try {
             setIsLoading(true);
-            const [data, custodiansData] = await Promise.all([
-                activeTab === 'SSCE' ? DataService.getSchools() : DataService.getBeceSchools(),
-                activeTab === 'SSCE' ? DataService.getCustodians() : DataService.getBeceCustodians()
-            ]);
-            setSchools(data);
-            setCustodians(custodiansData);
-            setSelectedSchools(new Set()); // Reset selection on refresh
+            if (activeTab === 'SSCE') {
+                const [data, custodiansData] = await Promise.all([
+                    DataService.getSchools(),
+                    DataService.getCustodians()
+                ]);
+                setSsceSchools(data);
+                setSsceCustodians(custodiansData);
+            } else {
+                const [data, custodiansData] = await Promise.all([
+                    DataService.getBeceSchools(),
+                    DataService.getBeceCustodians()
+                ]);
+                setBeceSchools(data as unknown as School[]);
+                setBeceCustodiansList(custodiansData as unknown as Custodian[]);
+            }
+            setSelectedSchools(new Set());
         } catch (err: any) {
             setError('Failed to refresh schools list.');
         } finally {
@@ -298,7 +321,7 @@ export default function HeadOfficeSchools() {
         setSelectedAccreditationType('');
         setSearchTerm('');
         setCurrentPage(1);
-        fetchSchools();
+        // No fetch needed — data already loaded on mount
     }, [activeTab]);
 
     const fetchLgasForState = async (stateCode: string) => {
@@ -560,9 +583,8 @@ export default function HeadOfficeSchools() {
 
     const handleExportSchools = async (selectedState: string | null) => {
         try {
-            const schoolsToExport = schools;
             const result = await ExportService.exportSchoolsByState(
-                schoolsToExport,
+                schools,
                 states,
                 zones,
                 allLgas,
