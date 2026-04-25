@@ -169,7 +169,11 @@ export default function HeadOfficeDashboard() {
       change: 'Global View',
       up: true,
       color: 'blue',
-      iconBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+      iconBg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+      subStats: [
+        { label: 'SSCE', value: totalSsceSchools.toLocaleString() },
+        { label: 'BECE', value: totalBeceSchools.toLocaleString() }
+      ]
     },
     {
       icon: MapPin,
@@ -293,7 +297,7 @@ export default function HeadOfficeDashboard() {
         {stats.map((s, idx) => (
           <div
             key={s.label}
-            className="group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+            className="group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-[2rem] border border-white dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col"
           >
             <div className={`absolute top-0 right-0 w-24 h-24 bg-${s.color}-500/5 rounded-full -mr-8 -mt-8 blur-2xl group-hover:bg-${s.color}-500/10 transition-all duration-500`} />
             <div className="flex items-center justify-between mb-5 relative z-10">
@@ -307,9 +311,21 @@ export default function HeadOfficeDashboard() {
                 {s.change}
               </div>
             </div>
-            <div className="relative z-10">
-              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">{s.label}</p>
-              <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mt-1">{s.value}</h3>
+            <div className="relative z-10 flex-1 flex flex-col">
+              <div>
+                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">{s.label}</p>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mt-1">{s.value}</h3>
+              </div>
+              {s.subStats && (
+                <div className="flex gap-10 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
+                  {s.subStats.map((sub, i) => (
+                    <div key={i}>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{sub.label}</p>
+                      <p className="text-lg font-black text-slate-700 dark:text-slate-300 tracking-tighter">{sub.value}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}
