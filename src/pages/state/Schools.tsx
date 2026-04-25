@@ -576,7 +576,7 @@ export default function StateSchools() {
                             <GraduationCap className="w-8 h-8 text-emerald-600" />
                             {userStateName} Schools
                         </h1>
-                        <p className="text-slate-700 dark:text-slate-400 font-bold mt-1">Manage and track accreditation status for all schools within your jurisdiction.</p>
+                        <p className="text-slate-700 dark:text-slate-400 font-bold mt-1">Manage and track accreditation status for all schools within your state.</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">

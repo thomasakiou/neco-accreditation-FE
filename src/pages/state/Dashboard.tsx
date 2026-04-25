@@ -235,7 +235,7 @@ export default function StateDashboard() {
             {stateName}
             <span className="text-sm font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full lowercase tracking-normal">office dashboard</span>
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 font-bold max-w-xl">Comprehensive metrics and accreditation analytics for institutions within your state jurisdiction.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 font-bold max-w-xl">Comprehensive metrics and accreditation analytics for institutions within your state.</p>
         </div>
 
         <button
@@ -273,21 +273,21 @@ export default function StateDashboard() {
         <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm p-8 hover:shadow-lg transition-all duration-500">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                    <SchoolIcon className="w-5 h-5 text-emerald-600" />
-                </div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">SSCE Analytics</h2>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <SchoolIcon className="w-5 h-5 text-emerald-600" />
+              </div>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">SSCE Analytics</h2>
             </div>
             <div className="px-3 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Annual</div>
           </div>
-          
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {statsCards.slice(0, 4).map((card) => (
               <div key={card.label} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">{card.label}</p>
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:scale-110 transition-transform origin-left">{card.value}</h3>
                 <div className={`mt-3 w-8 h-1 rounded-full bg-${card.color}-500/30 overflow-hidden`}>
-                    <div className={`h-full bg-${card.color}-500 w-2/3`} />
+                  <div className={`h-full bg-${card.color}-500 w-2/3`} />
                 </div>
               </div>
             ))}
@@ -298,21 +298,21 @@ export default function StateDashboard() {
         <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm p-8 hover:shadow-lg transition-all duration-500">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                    <GraduationCap className="w-5 h-5 text-blue-600" />
-                </div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">BECE Analytics</h2>
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <GraduationCap className="w-5 h-5 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-widest">BECE Analytics</h2>
             </div>
             <div className="px-3 py-1 bg-blue-500/10 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/20">Annual</div>
           </div>
-          
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {statsCards.slice(4, 8).map((card) => (
               <div key={card.label} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-700/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">{card.label}</p>
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:scale-110 transition-transform origin-left">{card.value}</h3>
                 <div className={`mt-3 w-8 h-1 rounded-full bg-${card.color}-500/30 overflow-hidden`}>
-                    <div className={`h-full bg-${card.color}-500 w-2/3`} />
+                  <div className={`h-full bg-${card.color}-500 w-2/3`} />
                 </div>
               </div>
             ))}
@@ -325,12 +325,12 @@ export default function StateDashboard() {
         <div className="lg:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm overflow-hidden flex flex-col hover:shadow-lg transition-all duration-500">
           <div className="p-8 border-b border-white dark:border-slate-800 flex items-center justify-between">
             <div>
-                <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-widest">State Registry</h3>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Live updates from localized applications</p>
+              <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-widest">State Registry</h3>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Live updates from localized applications</p>
             </div>
             <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-500 text-slate-600 dark:text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Full Registry →</button>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -345,15 +345,15 @@ export default function StateDashboard() {
                 {recentApplications.map((app) => (
                   <tr key={app.school} className="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors group">
                     <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-500">
-                                {app.school.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                                <p className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-tight">{app.school}</p>
-                                <p className="text-[10px] font-bold text-slate-500 tracking-wider">LGA: {app.lga}</p>
-                            </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-500">
+                          {app.school.substring(0, 2).toUpperCase()}
                         </div>
+                        <div>
+                          <p className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-tight">{app.school}</p>
+                          <p className="text-[10px] font-bold text-slate-500 tracking-wider">LGA: {app.lga}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex flex-col">
@@ -365,9 +365,9 @@ export default function StateDashboard() {
                       <span className={cn(
                         "inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
                         app.statusColor === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-500/20' :
-                        app.statusColor === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-500/20' :
-                        app.statusColor === 'amber' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-500/20' :
-                        'bg-slate-50 dark:bg-slate-900 text-slate-600 border-slate-700'
+                          app.statusColor === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-500/20' :
+                            app.statusColor === 'amber' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-500/20' :
+                              'bg-slate-50 dark:bg-slate-900 text-slate-600 border-slate-700'
                       )}>
                         {app.status}
                       </span>
@@ -390,7 +390,7 @@ export default function StateDashboard() {
             <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-widest">Regional Density</h3>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">LGA Distribution metrics</p>
           </div>
-          
+
           <div className="flex-1 space-y-6">
             {dashboardLgaData.map((lga) => (
               <div key={lga.name} className="group/lga cursor-default">
@@ -399,9 +399,9 @@ export default function StateDashboard() {
                   <span className="text-slate-500">{lga.count} Institutions</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-3 p-0.5 border border-slate-200 dark:border-slate-800">
-                  <div 
-                    className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.3)]" 
-                    style={{ width: `${lga.percent}%` }} 
+                  <div
+                    className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                    style={{ width: `${lga.percent}%` }}
                   />
                 </div>
               </div>
@@ -413,18 +413,18 @@ export default function StateDashboard() {
               </div>
             )}
           </div>
-          
+
           <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800">
             <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Compliance Rate</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-emerald-400 tracking-tighter">
-                        {totalSsce > 0 ? ((activeSsce / totalSsce) * 100).toFixed(1) : '0.0'}%
-                    </p>
-                </div>
-                <div className="w-12 h-12 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 flex items-center justify-center font-black text-[10px] text-emerald-600">
-                    OK
-                </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Compliance Rate</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-emerald-400 tracking-tighter">
+                  {totalSsce > 0 ? ((activeSsce / totalSsce) * 100).toFixed(1) : '0.0'}%
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 flex items-center justify-center font-black text-[10px] text-emerald-600">
+                OK
+              </div>
             </div>
           </div>
         </div>
