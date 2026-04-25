@@ -122,7 +122,7 @@ export default function Zones() {
                         <Layers className="w-8 h-8 text-emerald-600" />
                         Geopolitical Zones
                     </h1>
-                    <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Manage National Geopolitical Zones and their regions.</p>
+                    <p className="text-slate-700 dark:text-slate-400 mt-1 font-medium">Manage Geopolitical Zones.</p>
                 </div>
 
                 <button

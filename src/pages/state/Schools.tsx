@@ -23,7 +23,8 @@ import {
     RefreshCw,
     Check,
     FileSpreadsheet,
-    FileText
+    FileText,
+    ShieldAlert
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
@@ -72,6 +73,9 @@ export default function StateSchools() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingSchool, setEditingSchool] = useState<School | null>(null);
+
+    const [zones, setZones] = useState<any[]>([]);
+    const [currentState, setCurrentState] = useState<any>(null);
 
     const [allLgas, setAllLgas] = useState<LGA[]>([]);
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -195,13 +199,17 @@ export default function StateSchools() {
                 setIsPortalLocked(!!currentState.is_locked);
             }
 
-            const [ssceSchools, beceSchools, ssceCustodians, beceCustodians, lgasData] = await Promise.all([
+            const [ssceSchools, beceSchools, ssceCustodians, beceCustodians, lgasData, zonesData] = await Promise.all([
                 DataService.getSchools({ state_code: user.state_code }),
                 DataService.getBeceSchools({ state_code: user.state_code }),
                 DataService.getCustodians({ state_code: user.state_code }),
                 DataService.getBeceCustodians({ state_code: user.state_code }),
-                DataService.getLGAs({ state_code: user.state_code })
+                DataService.getLGAs({ state_code: user.state_code }),
+                DataService.getZones()
             ]);
+
+            setZones(zonesData);
+            setCurrentState(currentState || null);
 
             setAllSchools([
                 ...ssceSchools.map(s => ({ ...s, school_type: 'SSCE' as const })),
@@ -1203,8 +1211,42 @@ export default function StateSchools() {
                                                                 <GraduationCap className="w-6 h-6 text-emerald-600" />
                                                             </div>
                                                             <div>
-                                                                <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
-                                                                    {school.name}
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
+                                                                        {school.name}
+                                                                    </div>
+                                                                    {(() => {
+                                                                        let isDue = false;
+
+                                                                        if (school.accreditation_status === 'Failed') {
+                                                                            isDue = true;
+                                                                        } else if (school.accredited_date && ['Full', 'Partial'].includes(school.accreditation_status || '')) {
+                                                                            const accreditedDate = new Date(school.accredited_date);
+                                                                            let yearsToAdd = 5;
+
+                                                                            const zone = zones.find(z => z.code === currentState?.zone_code);
+                                                                            const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+                                                                            if (isForeign) yearsToAdd = 10;
+                                                                            else if (school.accreditation_status === 'Partial') yearsToAdd = 1;
+
+                                                                            const expiryDate = new Date(accreditedDate);
+                                                                            expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+
+                                                                            const today = new Date();
+                                                                            const sixMonthsFromNow = new Date();
+                                                                            sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+                                                                            isDue = expiryDate <= sixMonthsFromNow;
+                                                                        }
+
+                                                                        return isDue && (
+                                                                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[8px] font-black uppercase tracking-widest animate-pulse">
+                                                                                <ShieldAlert className="w-3 h-3" />
+                                                                                Due
+                                                                            </span>
+                                                                        );
+                                                                    })()}
                                                                 </div>
                                                                 <div className="flex items-center gap-2 mt-1">
                                                                     <span className={cn(

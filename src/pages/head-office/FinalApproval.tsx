@@ -23,7 +23,8 @@ import {
     RefreshCw,
     GraduationCap,
     BookOpen,
-    Library
+    Library,
+    Clock
 } from 'lucide-react';
 import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
@@ -357,8 +358,8 @@ export default function HeadOfficeFinalApproval() {
                     <div>
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-4">
                             <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                             </span>
                             Live System
                         </div>
@@ -409,63 +410,83 @@ export default function HeadOfficeFinalApproval() {
             </div>
 
             {/* Premium Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="col-span-2 lg:col-span-1 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow group">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                {/* 1. Total Schools */}
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 group-hover:scale-110 transition-transform">
+                        <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl group-hover:scale-110 transition-transform">
                             <Library className="w-5 h-5" />
                         </div>
-                        <span className="text-[10px] font-black px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg uppercase tracking-wider">Total</span>
                     </div>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-1">{totalSchools}</h3>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Registered Schools</p>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-0.5">{totalSchools.toLocaleString()}</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Schools</p>
                 </div>
 
-                <div className="col-span-2 lg:col-span-1 bg-gradient-to-br from-emerald-500 to-emerald-700 p-5 rounded-3xl shadow-lg shadow-emerald-500/20 text-white relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-                    <div className="absolute right-0 top-0 -mt-4 -mr-4 opacity-20 group-hover:scale-110 transition-transform pointer-events-none">
-                        <ShieldCheck className="w-24 h-24" />
-                    </div>
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-md">
-                                <ShieldCheck className="w-5 h-5" />
-                            </div>
-                        </div>
-                        <h3 className="text-3xl font-black mb-1">{accreditedCount}</h3>
-                        <p className="text-xs font-bold text-emerald-100 uppercase tracking-widest">Fully Accredited</p>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
+                {/* 2. Total Due */}
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl group-hover:scale-110 transition-transform">
+                        <div className="p-2.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl group-hover:scale-110 transition-transform">
+                            <Clock className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-0.5">{dueCount.toLocaleString()}</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Due</p>
+                </div>
+
+                {/* 3. Total Paid */}
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl group-hover:scale-110 transition-transform">
+                            <FileText className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-0.5">{proofCount.toLocaleString()}</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Paid</p>
+                </div>
+
+                {/* 4. Total Verified */}
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl group-hover:scale-110 transition-transform">
+                            <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-0.5">{approvedPayments.toLocaleString()}</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Verified</p>
+                </div>
+
+                {/* 5. Total Yet to Pay */}
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl group-hover:scale-110 transition-transform">
                             <AlertCircle className="w-5 h-5" />
                         </div>
                     </div>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-1">{dueCount}</h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Due for Renewal</p>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-0.5">{(dueCount - proofCount > 0 ? dueCount - proofCount : 0).toLocaleString()}</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Yet to Pay</p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group flex flex-col justify-between">
+                {/* 6. Upload Statistics Card (Kept as requested) */}
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between">
                     <div>
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl group-hover:scale-110 transition-transform">
-                                <Upload className="w-5 h-5" />
+                        <div className="flex justify-between items-start mb-3">
+                            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500">
+                                <Upload className="w-4 h-4" />
                             </div>
-                            <span className="text-[10px] font-black px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg uppercase tracking-wider">{proofCount} Uploads</span>
+                            <span className="text-[9px] font-black px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md uppercase tracking-wider">{proofCount} Proofs</span>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                            <span className="text-emerald-600 dark:text-emerald-400">Approved</span>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-tight">
+                            <span className="text-emerald-600 dark:text-emerald-400">Verified</span>
                             <span className="text-slate-900 dark:text-white">{approvedPayments}</span>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                            <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${proofCount > 0 ? (approvedPayments / proofCount) * 100 : 0}%` }}></div>
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                            <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000" style={{ width: `${proofCount > 0 ? (approvedPayments / proofCount) * 100 : 0}%` }}></div>
                         </div>
-                        <div className="flex items-center justify-between text-xs font-bold pt-1">
-                            <span className="text-rose-500 dark:text-rose-400">Unapproved</span>
-                            <span className="text-slate-900 dark:text-white">{unapprovedPayments}</span>
+                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-tight pt-0.5">
+                            <span className="text-slate-400">Rate</span>
+                            <span className="text-slate-900 dark:text-white">{proofCount > 0 ? Math.round((approvedPayments / proofCount) * 100) : 0}%</span>
                         </div>
                     </div>
                 </div>
@@ -505,12 +526,12 @@ export default function HeadOfficeFinalApproval() {
                             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                                 <Shield className="w-4 h-4 text-slate-400" />
                             </div>
-                            <select 
-                                value={selectedAccrFilter} 
-                                onChange={(e) => setSelectedAccrFilter(e.target.value)} 
+                            <select
+                                value={selectedAccrFilter}
+                                onChange={(e) => setSelectedAccrFilter(e.target.value)}
                                 className="w-full h-full pl-10 pr-8 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-0 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200"
                             >
-                                <option value="">Accreditation</option>
+                                <option value="">All</option>
                                 <option value="Accredited">Accredited</option>
                                 <option value="Unaccredited">Unaccredited</option>
                                 <option value="Full">Full</option>
@@ -523,12 +544,12 @@ export default function HeadOfficeFinalApproval() {
                             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                                 <Upload className="w-4 h-4 text-slate-400" />
                             </div>
-                            <select 
-                                value={selectedProofFilter} 
-                                onChange={(e) => setSelectedProofFilter(e.target.value)} 
+                            <select
+                                value={selectedProofFilter}
+                                onChange={(e) => setSelectedProofFilter(e.target.value)}
                                 className="w-full h-full pl-10 pr-8 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-0 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200"
                             >
-                                <option value="">Proof Status</option>
+                                <option value="">All</option>
                                 <option value="Proof">Proof Uploaded</option>
                                 <option value="Approved">Approved</option>
                                 <option value="Unapproved">Unapproved</option>
@@ -541,12 +562,12 @@ export default function HeadOfficeFinalApproval() {
                             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                                 <Calendar className="w-4 h-4 text-slate-400" />
                             </div>
-                            <select 
-                                value={selectedDueFilter} 
-                                onChange={(e) => setSelectedDueFilter(e.target.value)} 
+                            <select
+                                value={selectedDueFilter}
+                                onChange={(e) => setSelectedDueFilter(e.target.value)}
                                 className="w-full h-full pl-10 pr-8 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-0 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200"
                             >
-                                <option value="">Due Date</option>
+                                <option value="">All</option>
                                 <option value="Due">Due</option>
                                 <option value="Not Due">Not Due</option>
                             </select>
@@ -611,19 +632,19 @@ export default function HeadOfficeFinalApproval() {
                                 </div>
                                 <div className="flex items-center gap-4 sm:gap-6 bg-slate-50 dark:bg-slate-950/50 p-3 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
                                     <div className="text-center px-3 border-r border-slate-200 dark:border-slate-800">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1"><ShieldCheck className="w-3 h-3"/> Full</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1"><ShieldCheck className="w-3 h-3" /> Full</p>
                                         <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 leading-none">{stateSchools.filter(s => s.accreditation_status === 'Full').length}</p>
                                     </div>
                                     <div className="text-center px-3 border-r border-slate-200 dark:border-slate-800">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1"><ShieldAlert className="w-3 h-3"/> Partial</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1"><ShieldAlert className="w-3 h-3" /> Partial</p>
                                         <p className="text-lg font-black text-amber-600 dark:text-amber-400 leading-none">{stateSchools.filter(s => s.accreditation_status === 'Partial').length}</p>
                                     </div>
                                     <div className="text-center px-3 border-r border-slate-200 dark:border-slate-800">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1"><ShieldX className="w-3 h-3"/> Failed</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1"><ShieldX className="w-3 h-3" /> Failed</p>
                                         <p className="text-lg font-black text-red-600 dark:text-red-400 leading-none">{stateSchools.filter(s => s.accreditation_status === 'Failed').length}</p>
                                     </div>
                                     <div className="text-center px-3">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1"><CheckCircle2 className="w-3 h-3"/> Paid</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center justify-center gap-1"><CheckCircle2 className="w-3 h-3" /> Paid</p>
                                         <p className="text-lg font-black text-blue-600 dark:text-blue-400 leading-none">{stateSchools.filter(s => s.approval_status === 'Approved').length}</p>
                                     </div>
                                 </div>
@@ -775,7 +796,7 @@ export default function HeadOfficeFinalApproval() {
                                             <div className="p-6 bg-white dark:bg-slate-800 rounded-full shadow-sm">
                                                 <FileText className="w-12 h-12 text-slate-400" />
                                             </div>
-                                            <p className="font-bold text-sm text-center">Document uploaded<br/><span className="text-xs font-medium text-slate-400">PDF or external file format</span></p>
+                                            <p className="font-bold text-sm text-center">Document uploaded<br /><span className="text-xs font-medium text-slate-400">PDF or external file format</span></p>
                                             <a
                                                 href={selectedSchool.payment_url.startsWith('http') ? selectedSchool.payment_url : `${baseURL}${selectedSchool.payment_url}`}
                                                 target="_blank"
@@ -970,7 +991,7 @@ export default function HeadOfficeFinalApproval() {
                                             <li>Check payment date and reference.</li>
                                         </ul>
                                     </div>
-                                    
+
                                     <div className="p-5 rounded-2xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200/50 dark:border-blue-700/50 shadow-sm">
                                         <div className="flex items-start gap-3">
                                             <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-xl mt-1">

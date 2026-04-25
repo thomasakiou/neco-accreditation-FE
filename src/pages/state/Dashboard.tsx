@@ -11,7 +11,10 @@ import {
   GraduationCap,
   Loader2,
   Lock,
-  RefreshCw
+  RefreshCw,
+  TrendingUp,
+  FileCheck,
+  CheckCircle2
 } from 'lucide-react';
 import AuthService from '../../api/services/auth.service';
 import DataService from '../../api/services/data.service';
@@ -25,10 +28,12 @@ export default function StateDashboard() {
   const [ssceSchools, setSsceSchools] = React.useState<School[]>([]);
   const [beceSchools, setBeceSchools] = React.useState<School[]>([]);
   const [lgas, setLgas] = React.useState<components['schemas']['LGA'][]>([]);
+  const [zones, setZones] = React.useState<components['schemas']['Zone'][]>([]);
   const [custodians, setCustodians] = React.useState<components['schemas']['Custodian'][]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [stateName, setStateName] = React.useState<string>('State Office');
+  const [currentState, setCurrentState] = React.useState<components['schemas']['State'] | null>(null);
   const [isLocked, setIsLocked] = React.useState(false);
 
   const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
@@ -42,18 +47,21 @@ export default function StateDashboard() {
         const statesData = await DataService.getStates();
         const currentState = statesData.find(s => s.code === user.state_code);
         setStateName(currentState?.name || user.state_name || user.state_code);
+        setCurrentState(currentState || null);
 
-        const [ssceData, beceData, lgaData, custodianData] = await Promise.all([
+        const [ssceData, beceData, lgaData, custodianData, zonesData] = await Promise.all([
           DataService.getSchools({ state_code: user.state_code }),
           DataService.getBeceSchools({ state_code: user.state_code }),
           DataService.getLGAs({ state_code: user.state_code }),
-          DataService.getCustodians({ state_code: user.state_code })
+          DataService.getCustodians({ state_code: user.state_code }),
+          DataService.getZones()
         ]);
 
         setSsceSchools(ssceData);
         setBeceSchools(beceData);
         setLgas(lgaData);
         setCustodians(custodianData);
+        setZones(zonesData);
         setError(null);
 
         if (currentState) {
@@ -106,15 +114,10 @@ export default function StateDashboard() {
   const {
     activeSsce,
     activeBece,
-    fullSsce,
-    partialSsce,
-    failedSsce,
-    pendingSsce,
-    fullBece,
-    partialBece,
-    failedBece,
-    pendingBece,
-    statsCards,
+    ssceStatsCards,
+    beceStatsCards,
+    ssceCompliance,
+    beceCompliance,
     dashboardLgaData,
     recentApplications,
     totalSsce,
@@ -134,33 +137,71 @@ export default function StateDashboard() {
     const totalSsce = filteredSsce.length;
     const totalBece = filteredBece.length;
 
-    // SSCE Stats logic
-    const fullSsce = filteredSsce.filter(s => s.accreditation_status === 'Full').length;
-    const partialSsce = filteredSsce.filter(s => s.accreditation_status === 'Partial').length;
-    const failedSsce = filteredSsce.filter(s => s.accreditation_status === 'Failed').length;
-    const activeSsce = fullSsce + partialSsce;
-    const pendingSsce = filteredSsce.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
+    // Global Stats Calculation (Merged SSCE + BECE)
+    const allSchools = [...filteredSsce, ...filteredBece];
 
-    // BECE Stats logic
-    const fullBece = filteredBece.filter(s => s.accreditation_status === 'Full').length;
-    const partialBece = filteredBece.filter(s => s.accreditation_status === 'Partial').length;
-    const failedBece = filteredBece.filter(s => s.accreditation_status === 'Failed').length;
-    const activeBece = fullBece + partialBece;
-    const pendingBece = filteredBece.filter(s => !!s.payment_url && s.approval_status !== 'Approved').length;
+    const isDueForAccreditation = (school: School) => {
+      if (school.accreditation_status === 'Failed') return true;
+      if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) return false;
 
-    const statsCards = [
-      // SSCE Group
-      { icon: SchoolIcon, label: 'SSCE Total', value: totalSsce.toLocaleString(), change: 'SSCE', color: 'emerald', iconBg: 'bg-emerald-500/10 text-emerald-600' },
-      { icon: CheckCircle, label: 'Accredited', value: activeSsce.toLocaleString(), change: 'Valid', color: 'emerald', iconBg: 'bg-emerald-500/10 text-emerald-600' },
-      { icon: Clock, label: 'In Review', value: pendingSsce.toLocaleString(), change: 'Pending', color: 'amber', iconBg: 'bg-amber-500/10 text-amber-600' },
-      { icon: AlertCircle, label: 'Failed', value: failedSsce.toLocaleString(), change: 'Issue', color: 'red', iconBg: 'bg-red-500/10 text-red-600' },
+      const accreditedDate = new Date(school.accredited_date);
+      let yearsToAdd = 5;
 
-      // BECE Group
-      { icon: GraduationCap, label: 'BECE Total', value: totalBece.toLocaleString(), change: 'BECE', color: 'blue', iconBg: 'bg-blue-500/10 text-blue-600' },
-      { icon: CheckCircle, label: 'Accredited', value: activeBece.toLocaleString(), change: 'Valid', color: 'blue', iconBg: 'bg-blue-500/10 text-blue-600' },
-      { icon: Clock, label: 'In Review', value: pendingBece.toLocaleString(), change: 'Pending', color: 'amber', iconBg: 'bg-amber-500/10 text-amber-600' },
-      { icon: AlertCircle, label: 'Failed', value: failedBece.toLocaleString(), change: 'Issue', color: 'red', iconBg: 'bg-red-500/10 text-red-600' },
+      // Check if school is in a foreign zone
+      const zone = zones.find(z => z.code === currentState?.zone_code);
+      const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+      if (isForeign) {
+        yearsToAdd = 10;
+      } else if (school.accreditation_status === 'Partial') {
+        yearsToAdd = 1;
+      }
+
+      const expiryDate = new Date(accreditedDate);
+      expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+
+      const today = new Date();
+      const sixMonthsFromNow = new Date();
+      sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+      return expiryDate <= sixMonthsFromNow;
+    };
+
+    // SSCE Specific Stats
+    const ssceDue = filteredSsce.filter(isDueForAccreditation);
+    const ssceDueCount = ssceDue.length;
+    const sscePaidCount = ssceDue.filter(s => !!s.payment_url).length;
+    const ssceVerifiedCount = ssceDue.filter(s => s.approval_status === 'Approved').length;
+    const sscePaymentRate = ssceDueCount > 0 ? Math.round((sscePaidCount / ssceDueCount) * 100) : 0;
+
+    // BECE Specific Stats
+    const beceDue = filteredBece.filter(isDueForAccreditation);
+    const beceDueCount = beceDue.length;
+    const becePaidCount = beceDue.filter(s => !!s.payment_url).length;
+    const beceVerifiedCount = beceDue.filter(s => s.approval_status === 'Approved').length;
+    const becePaymentRate = beceDueCount > 0 ? Math.round((becePaidCount / beceDueCount) * 100) : 0;
+
+    const ssceStatsCards = [
+      { icon: Clock, label: 'Due for Accrd.', value: ssceDueCount.toLocaleString(), color: 'amber', iconBg: 'bg-amber-500/10 text-amber-600' },
+      { icon: FileCheck, label: 'Total Paid', value: sscePaidCount.toLocaleString(), color: 'blue', iconBg: 'bg-blue-500/10 text-blue-600' },
+      { icon: CheckCircle2, label: 'Verified', value: ssceVerifiedCount.toLocaleString(), color: 'emerald', iconBg: 'bg-emerald-500/10 text-emerald-600' },
+      { icon: TrendingUp, label: 'Payment Rate', value: `${sscePaymentRate}%`, color: 'purple', iconBg: 'bg-purple-500/10 text-purple-600' },
     ];
+
+    const beceStatsCards = [
+      { icon: Clock, label: 'Due for Accrd.', value: beceDueCount.toLocaleString(), color: 'amber', iconBg: 'bg-amber-500/10 text-amber-600' },
+      { icon: FileCheck, label: 'Total Paid', value: becePaidCount.toLocaleString(), color: 'blue', iconBg: 'bg-blue-500/10 text-blue-600' },
+      { icon: CheckCircle2, label: 'Verified', value: beceVerifiedCount.toLocaleString(), color: 'emerald', iconBg: 'bg-emerald-500/10 text-emerald-600' },
+      { icon: TrendingUp, label: 'Payment Rate', value: `${becePaymentRate}%`, color: 'purple', iconBg: 'bg-purple-500/10 text-purple-600' },
+    ];
+
+    // Recalculate category-specific active counts for charts
+    const activeSsce = filteredSsce.filter(s => ['Full', 'Partial', 'Accredited', 'Passed'].includes(s.accreditation_status || '')).length;
+    const activeBece = filteredBece.filter(s => ['Full', 'Partial', 'Accredited', 'Passed'].includes(s.accreditation_status || '')).length;
+    
+    // Compliance percentage calculation with zero-handling
+    const ssceCompliance = totalSsce > 0 ? Math.round((activeSsce / totalSsce) * 100) : 0;
+    const beceCompliance = totalBece > 0 ? Math.round((activeBece / totalBece) * 100) : 0;
 
     // Group schools by LGA (using SSCE for distribution overview)
     const lgaGrouping = filteredSsce.reduce((acc: Record<string, number>, school) => {
@@ -198,15 +239,10 @@ export default function StateDashboard() {
     return {
       activeSsce,
       activeBece,
-      fullSsce,
-      partialSsce,
-      failedSsce,
-      pendingSsce,
-      fullBece,
-      partialBece,
-      failedBece,
-      pendingBece,
-      statsCards,
+      ssceStatsCards,
+      beceStatsCards,
+      ssceCompliance,
+      beceCompliance,
       dashboardLgaData,
       recentApplications,
       totalSsce,
@@ -310,31 +346,31 @@ export default function StateDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 flex-1">
-              {statsCards.slice(1, 4).map((card, i) => (
-                <div key={card.label} className={cn(
-                  "relative overflow-hidden p-6 rounded-[2rem] border transition-all duration-500 hover:scale-[1.02] active:scale-95 group/card",
-                  card.color === 'emerald' ? "bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/10" :
-                    card.color === 'amber' ? "bg-amber-500/5 border-amber-500/10 hover:bg-amber-500/10" :
-                      "bg-red-500/5 border-red-500/10 hover:bg-red-500/10"
-                )}>
-                  <card.icon className={cn("w-5 h-5 mb-4",
-                    card.color === 'emerald' ? "text-emerald-500" :
-                      card.color === 'amber' ? "text-amber-500" :
-                        "text-red-500"
-                  )} />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{card.label}</p>
-                  <h3 className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">{card.value}</h3>
-                  <div className="absolute top-2 right-2 opacity-10 group-hover/card:scale-110 transition-transform duration-700">
-                    <card.icon className="w-12 h-12" />
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              {ssceStatsCards.map((card) => (
+                <div key={card.label} className="p-4 rounded-3xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", card.iconBg)}>
+                    <card.icon className="w-4 h-4" />
                   </div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{card.label}</p>
+                  <h4 className="text-xl font-black text-slate-950 dark:text-white tracking-tighter">{card.value}</h4>
                 </div>
               ))}
-              <div className="p-6 rounded-[2rem] bg-slate-950 dark:bg-white flex flex-col justify-center items-center text-center shadow-xl">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-1">Compliance</div>
-                <div className="text-3xl font-black text-white dark:text-slate-950 tracking-tighter">
-                  {totalSsce > 0 ? Math.round((activeSsce / totalSsce) * 100) : 0}%
-                </div>
+            </div>
+
+            <div className="mt-10 flex-1 flex flex-col items-center justify-center border-t border-slate-100 dark:border-slate-800/50 pt-10">
+              <div className="w-full max-w-[160px] aspect-square rounded-full border-8 border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative group/chart">
+                <div 
+                  className="absolute inset-[-8px] rounded-full transition-transform duration-1000"
+                  style={{ 
+                    background: `conic-gradient(#10b981 ${ssceCompliance}%, transparent 0)`,
+                    WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 8px), #fff 0)'
+                  }}
+                />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Compliance</span>
+                <span className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">
+                  {ssceCompliance}%
+                </span>
               </div>
             </div>
           </div>
@@ -360,31 +396,31 @@ export default function StateDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 flex-1">
-              {statsCards.slice(5, 8).map((card, i) => (
-                <div key={card.label} className={cn(
-                  "relative overflow-hidden p-6 rounded-[2rem] border transition-all duration-500 hover:scale-[1.02] active:scale-95 group/card",
-                  card.color === 'blue' ? "bg-blue-500/5 border-blue-500/10 hover:bg-blue-500/10" :
-                    card.color === 'amber' ? "bg-amber-500/5 border-amber-500/10 hover:bg-amber-500/10" :
-                      "bg-red-500/5 border-red-500/10 hover:bg-red-500/10"
-                )}>
-                  <card.icon className={cn("w-5 h-5 mb-4",
-                    card.color === 'blue' ? "text-blue-500" :
-                      card.color === 'amber' ? "text-amber-500" :
-                        "text-red-500"
-                  )} />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{card.label}</p>
-                  <h3 className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">{card.value}</h3>
-                  <div className="absolute top-2 right-2 opacity-10 group-hover/card:scale-110 transition-transform duration-700">
-                    <card.icon className="w-12 h-12" />
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              {beceStatsCards.map((card) => (
+                <div key={card.label} className="p-4 rounded-3xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", card.iconBg)}>
+                    <card.icon className="w-4 h-4" />
                   </div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{card.label}</p>
+                  <h4 className="text-xl font-black text-slate-950 dark:text-white tracking-tighter">{card.value}</h4>
                 </div>
               ))}
-              <div className="p-6 rounded-[2rem] bg-slate-100 dark:bg-slate-800 flex flex-col justify-center items-center text-center">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Compliance</div>
-                <div className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">
-                  {totalBece > 0 ? Math.round((activeBece / totalBece) * 100) : 0}%
-                </div>
+            </div>
+
+            <div className="mt-10 flex-1 flex flex-col items-center justify-center border-t border-slate-100 dark:border-slate-800/50 pt-10">
+              <div className="w-full max-w-[160px] aspect-square rounded-full border-8 border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative group/chart">
+                <div 
+                  className="absolute inset-[-8px] rounded-full transition-transform duration-1000"
+                  style={{ 
+                    background: `conic-gradient(#3b82f6 ${beceCompliance}%, transparent 0)`,
+                    WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 8px), #fff 0)'
+                  }}
+                />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Compliance</span>
+                <span className="text-3xl font-black text-slate-950 dark:text-white tracking-tighter">
+                  {beceCompliance}%
+                </span>
               </div>
             </div>
           </div>

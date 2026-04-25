@@ -20,7 +20,9 @@ import {
     FileSpreadsheet,
     FileText,
     Trash2,
-    GraduationCap
+    GraduationCap,
+    Calendar,
+    ShieldAlert
 } from 'lucide-react';
 
 import { cn } from '../../lib/utils';
@@ -56,6 +58,10 @@ export default function StateApplications() {
         variant: 'primary' as 'primary' | 'danger',
         onConfirm: () => { },
     });
+
+    const [isDueOnly, setIsDueOnly] = React.useState(false);
+    const [zones, setZones] = React.useState<any[]>([]);
+    const [currentState, setCurrentState] = React.useState<any>(null);
 
 
     // Camera State
@@ -170,7 +176,7 @@ export default function StateApplications() {
 
     React.useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, schoolType, selectedAccreditationStatus, selectedProofStatus, selectedCategory]);
+    }, [searchQuery, schoolType, selectedAccreditationStatus, selectedProofStatus, selectedCategory, isDueOnly]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -183,9 +189,15 @@ export default function StateApplications() {
                 setUserStateCode(stateCode);
             }
 
-            const statesData = await DataService.getStates();
-            const currentState = statesData.find(s => s.code === stateCode);
-            setUserStateName(currentState?.name || user?.state_name || stateCode || '');
+            const [statesData, zonesData] = await Promise.all([
+                DataService.getStates(),
+                DataService.getZones()
+            ]);
+            
+            const current = statesData.find(s => s.code === stateCode);
+            setCurrentState(current || null);
+            setZones(zonesData);
+            setUserStateName(current?.name || user?.state_name || stateCode || '');
 
             const params = stateCode ? { state_code: stateCode } : {};
 
@@ -313,6 +325,29 @@ export default function StateApplications() {
         }
     };
 
+    const isDueForAccreditation = (school: School) => {
+        if (school.accreditation_status === 'Failed') return true;
+        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) return false;
+
+        const accreditedDate = new Date(school.accredited_date);
+        let yearsToAdd = 5;
+
+        const zone = zones.find(z => z.code === currentState?.zone_code);
+        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+        if (isForeign) yearsToAdd = 10;
+        else if (school.accreditation_status === 'Partial') yearsToAdd = 1;
+
+        const expiryDate = new Date(accreditedDate);
+        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+
+        const today = new Date();
+        const sixMonthsFromNow = new Date();
+        sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+        return expiryDate <= sixMonthsFromNow;
+    };
+
     const { filteredSchools, totalPages, startIndex, paginatedSchools, schools } = React.useMemo(() => {
         const currentSchools = allSchools.filter(s => (s as any).school_type === schoolType);
         const filtered = allSchools.filter(s => {
@@ -340,7 +375,9 @@ export default function StateApplications() {
             const schoolYear = (s as any).accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
             const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
 
-            return matchesSearch && matchesAccreditation && matchesProof && matchesCategory && matchesYear;
+            const matchesDue = !isDueOnly || isDueForAccreditation(s);
+
+            return matchesSearch && matchesAccreditation && matchesProof && matchesCategory && matchesYear && matchesDue;
         });
 
 
@@ -355,7 +392,7 @@ export default function StateApplications() {
             paginatedSchools: paginated,
             schools: currentSchools
         };
-    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, selectedCategory, schoolType, headerYearFilter]);
+    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, selectedCategory, schoolType, headerYearFilter, isDueOnly]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {
@@ -570,6 +607,19 @@ export default function StateApplications() {
 
                         <div className="h-6 w-[1px] bg-slate-300 dark:bg-slate-700 mx-1"></div>
 
+                        <button
+                            onClick={() => setIsDueOnly(!isDueOnly)}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300",
+                                isDueOnly 
+                                    ? "bg-amber-500/10 border-amber-500/50 text-amber-600 shadow-lg shadow-amber-500/5" 
+                                    : "bg-slate-100/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-amber-500/30"
+                            )}
+                        >
+                            <ShieldAlert className={cn("w-4 h-4", isDueOnly ? "text-amber-500" : "text-slate-400")} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Only Due</span>
+                        </button>
+
                         <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Limit:</span>
                             <select
@@ -671,11 +721,22 @@ export default function StateApplications() {
                                                 </td>
                                                 <td className="px-6 py-6">
                                                     <div className="space-y-1">
-                                                        <p className="font-bold text-slate-900 dark:text-white text-base leading-tight group-hover:text-emerald-600 transition-colors">{school.name}</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <p className="font-bold text-slate-900 dark:text-white text-base leading-tight group-hover:text-emerald-600 transition-colors">{school.name}</p>
+                                                            {isDueForAccreditation(school) && (
+                                                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[8px] font-black uppercase tracking-widest animate-pulse">
+                                                                    <ShieldAlert className="w-3 h-3" />
+                                                                    Due
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <div className="flex items-center gap-3">
                                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{school.category || 'CATEGORY N/A'}</span>
                                                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{school.accredited_date ? new Date(school.accredited_date).getFullYear() : 'PENDING'}</span>
+                                                            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                                <Calendar className="w-3 h-3 text-slate-300" />
+                                                                {school.accredited_date ? new Date(school.accredited_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'PENDING'}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </td>
