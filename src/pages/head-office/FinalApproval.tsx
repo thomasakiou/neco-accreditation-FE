@@ -51,7 +51,6 @@ export default function HeadOfficeFinalApproval() {
     const [selectedDueFilter, setSelectedDueFilter] = useState('');
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
     const [currentUser, setCurrentUser] = useState<any>(null);
-    const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
 
@@ -711,34 +710,26 @@ export default function HeadOfficeFinalApproval() {
                                                         </td>
                                                         <td className="px-5 py-4 pr-6">
                                                             <div className="flex items-center justify-end gap-2 opacity-100 lg:opacity-60 group-hover:opacity-100 transition-opacity">
-                                                                {isSuperAdmin ? (
-                                                                    <>
-                                                                        {school.approval_status !== 'Approved' && school.payment_url && (
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    setVerifyingSchool(school);
-                                                                                    setShowVerifyModal(true);
-                                                                                }}
-                                                                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-blue-500/20 flex items-center gap-1.5"
-                                                                            >
-                                                                                <ShieldCheck className="w-3.5 h-3.5" />
-                                                                                Verify
-                                                                            </button>
-                                                                        )}
-                                                                        <button
-                                                                            onClick={() => openReviewModal(school)}
-                                                                            disabled={school.approval_status !== 'Approved'}
-                                                                            className="px-3 py-2 bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-slate-900/10 flex items-center gap-1.5 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
-                                                                        >
-                                                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                                                            Accredit
-                                                                        </button>
-                                                                    </>
-                                                                ) : (
-                                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800">
-                                                                        Admin Only
-                                                                    </span>
+                                                                {school.approval_status !== 'Approved' && school.payment_url && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setVerifyingSchool(school);
+                                                                            setShowVerifyModal(true);
+                                                                        }}
+                                                                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-blue-500/20 flex items-center gap-1.5"
+                                                                    >
+                                                                        <ShieldCheck className="w-3.5 h-3.5" />
+                                                                        Verify
+                                                                    </button>
                                                                 )}
+                                                                <button
+                                                                    onClick={() => openReviewModal(school)}
+                                                                    disabled={school.approval_status !== 'Approved'}
+                                                                    className="px-3 py-2 bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-slate-900/10 flex items-center gap-1.5 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
+                                                                >
+                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    Accredit
+                                                                </button>
                                                             </div>
                                                         </td>
                                                     </tr>
