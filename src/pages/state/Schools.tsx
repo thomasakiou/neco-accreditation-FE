@@ -53,6 +53,7 @@ export default function StateSchools() {
     const [selectedProofStatus, setSelectedProofStatus] = useState<string>('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [selectedAccreditationType, setSelectedAccreditationType] = useState<string>('');
+    const [isDueOnly, setIsDueOnly] = useState(false);
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
     const [isDeleting, setIsDeleting] = useState(false);
@@ -415,6 +416,30 @@ export default function StateSchools() {
         });
     };
 
+    const isDueForAccreditation = (school: School): boolean => {
+        if (school.accreditation_status === 'Failed') return true;
+        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
+            return false;
+        }
+        const accreditedDate = new Date(school.accredited_date);
+        let yearsToAdd = 5;
+
+        const zone = zones.find(z => z.code === currentState?.zone_code);
+        const isForeign = zone?.name?.toLowerCase().includes('foreign') || zone?.name?.toLowerCase().includes('foriegn');
+
+        if (isForeign) yearsToAdd = 10;
+        else if (school.accreditation_status === 'Partial') yearsToAdd = 1;
+
+        const expiryDate = new Date(accreditedDate);
+        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+
+        const today = new Date();
+        const sixMonthsFromNow = new Date();
+        sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+        return expiryDate <= sixMonthsFromNow;
+    };
+
     const { filteredSchools, totalPages, startIndex, paginatedSchools, schools, custodians } = React.useMemo(() => {
         const schools = allSchools.filter(s => (s as any).school_type === activeTab);
         const custodians = allCustodians.filter(c => (c as any).school_type === activeTab);
@@ -443,8 +468,9 @@ export default function StateSchools() {
             const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
 
             const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
+            const matchesDueStatus = !isDueOnly || isDueForAccreditation(school);
 
-            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesAccreditationType && matchesYear;
+            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesAccreditationType && matchesYear && matchesDueStatus;
         });
 
 
@@ -460,7 +486,7 @@ export default function StateSchools() {
             schools,
             custodians
         };
-    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, currentPage, rowsPerPage, activeTab, headerYearFilter]);
+    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, currentPage, rowsPerPage, activeTab, headerYearFilter, isDueOnly, zones, currentState]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {
@@ -614,6 +640,19 @@ export default function StateSchools() {
                                     {/* Register button hidden per original code logic but kept for consistency */}
                                 </div>
                             )}
+
+                            <button
+                                onClick={() => setIsDueOnly(!isDueOnly)}
+                                className={cn(
+                                    "flex items-center gap-2 px-6 py-3 border rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95",
+                                    isDueOnly
+                                        ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 shadow-amber-500/20"
+                                        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                )}
+                            >
+                                <ShieldAlert className={cn("w-4 h-4", isDueOnly && "animate-pulse text-amber-500")} />
+                                Only Due
+                            </button>
 
                             {/* Export Dropdown */}
                             <div className="relative group/export">
@@ -1216,30 +1255,7 @@ export default function StateSchools() {
                                                                         {school.name}
                                                                     </div>
                                                                     {(() => {
-                                                                        let isDue = false;
-
-                                                                        if (school.accreditation_status === 'Failed') {
-                                                                            isDue = true;
-                                                                        } else if (school.accredited_date && ['Full', 'Partial'].includes(school.accreditation_status || '')) {
-                                                                            const accreditedDate = new Date(school.accredited_date);
-                                                                            let yearsToAdd = 5;
-
-                                                                            const zone = zones.find(z => z.code === currentState?.zone_code);
-                                                                            const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-                                                                            if (isForeign) yearsToAdd = 10;
-                                                                            else if (school.accreditation_status === 'Partial') yearsToAdd = 1;
-
-                                                                            const expiryDate = new Date(accreditedDate);
-                                                                            expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-
-                                                                            const today = new Date();
-                                                                            const sixMonthsFromNow = new Date();
-                                                                            sixMonthsFromNow.setMonth(today.getMonth() + 6);
-
-                                                                            isDue = expiryDate <= sixMonthsFromNow;
-                                                                        }
-
+                                                                        const isDue = isDueForAccreditation(school);
                                                                         return isDue && (
                                                                             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[8px] font-black uppercase tracking-widest animate-pulse">
                                                                                 <ShieldAlert className="w-3 h-3" />
