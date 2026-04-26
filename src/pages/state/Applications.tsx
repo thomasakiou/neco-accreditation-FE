@@ -19,7 +19,6 @@ import {
     Download,
     FileSpreadsheet,
     FileText,
-    Trash2,
     GraduationCap,
     Calendar,
     ShieldAlert
@@ -49,7 +48,6 @@ export default function StateApplications() {
     const [selectedCategory, setSelectedCategory] = React.useState<string>('');
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = React.useState<Set<string>>(new Set());
-    const [isDeleting, setIsDeleting] = React.useState(false);
     const [confirmDialog, setConfirmDialog] = React.useState({
         isOpen: false,
         title: '',
@@ -104,41 +102,6 @@ export default function StateApplications() {
             allFilteredCodes.forEach(code => newSelected.add(code));
             setSelectedSchools(newSelected);
         }
-    };
-
-    const handleBulkDelete = async () => {
-        if (selectedSchools.size === 0) return;
-
-        setConfirmDialog({
-            isOpen: true,
-            title: `Delete Selected ${schoolType} Schools`,
-            message: `Are you sure you want to delete the ${selectedSchools.size} selected schools? This action cannot be undone.`,
-            confirmLabel: 'Delete Selected',
-            variant: 'danger',
-            onConfirm: async () => {
-                try {
-                    setIsDeleting(true);
-                    const codesToDelete: string[] = Array.from(selectedSchools);
-
-                    for (const code of codesToDelete) {
-                        if (schoolType === 'SSCE') {
-                            await DataService.deleteSchool(code);
-                        } else {
-                            await DataService.deleteBeceSchool(code);
-                        }
-                    }
-
-                    await fetchData();
-                    setSelectedSchools(new Set());
-                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                } catch (err: any) {
-                    console.error('Failed to delete schools:', err);
-                    alert('Failed to delete some selected schools. Please refresh and try again.');
-                } finally {
-                    setIsDeleting(false);
-                }
-            },
-        });
     };
 
     React.useEffect(() => {

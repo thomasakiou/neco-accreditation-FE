@@ -19,7 +19,6 @@ import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
 import ConfirmDialog from '../../components/modals/ConfirmDialog';
-import { Trash2 } from 'lucide-react';
 import { components } from '../../api/types';
 
 type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
@@ -39,7 +38,6 @@ export default function StateSchoolsDue() {
     const [activeTab, setActiveTab] = React.useState<'SSCE' | 'BECE'>('SSCE');
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = React.useState<Set<string>>(new Set());
-    const [isDeleting, setIsDeleting] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [confirmDialog, setConfirmDialog] = React.useState({
         isOpen: false,
@@ -148,42 +146,6 @@ export default function StateSchoolsDue() {
             allFilteredIds.forEach(id => newSelected.add(id));
             setSelectedSchools(newSelected);
         }
-    };
-
-    const handleBulkDelete = async () => {
-        if (selectedSchools.size === 0) return;
-
-        setConfirmDialog({
-            isOpen: true,
-            title: `Delete Selected ${activeTab} Schools`,
-            message: `Are you sure you want to delete the ${selectedSchools.size} selected schools? This action cannot be undone.`,
-            confirmLabel: 'Delete Selected',
-            variant: 'danger',
-            onConfirm: async () => {
-                try {
-                    setIsDeleting(true);
-                    setError(null);
-                    const idsToDelete: string[] = Array.from(selectedSchools);
-
-                    for (const id of idsToDelete) {
-                        const [code, accrd_year] = id.includes('-') ? id.split('-') : [id, undefined];
-                        if (activeTab === 'SSCE') {
-                            await DataService.deleteSchool(code, accrd_year);
-                        } else {
-                            await DataService.deleteBeceSchool(code, accrd_year);
-                        }
-                    }
-
-                    await fetchData();
-                    setSelectedSchools(new Set());
-                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                } catch (err: any) {
-                    setError(`Failed to delete some selected schools. Please refresh and try again.`);
-                } finally {
-                    setIsDeleting(false);
-                }
-            },
-        });
     };
 
     // Determine if a school is due for accreditation
@@ -583,17 +545,7 @@ export default function StateSchoolsDue() {
                                 </button>
                             </div>
 
-                            {selectedSchools.size > 0 && (
-                                <button
-                                    onClick={handleBulkDelete}
-                                    disabled={isDeleting}
-                                    className="group flex items-center gap-3 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg hover:shadow-red-500/20 active:scale-95"
-                                >
-                                    <Trash2 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                                    Delete Selection ({selectedSchools.size})
-                                </button>
-                            )}
-                        </div>
+                            </div>
 
                         {/* Modernized Schools List */}
                         <div className="divide-y divide-slate-200/50 dark:divide-slate-800/50">

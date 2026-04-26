@@ -6,7 +6,6 @@ import {
     Search,
     Filter,
     MoreVertical,
-    Trash2,
     Download,
     Loader2,
     AlertCircle,
@@ -56,7 +55,6 @@ export default function StateSchools() {
     const [isDueOnly, setIsDueOnly] = useState(false);
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
-    const [isDeleting, setIsDeleting] = useState(false);
     const [confirmDialog, setConfirmDialog] = useState({
         isOpen: false,
         title: '',
@@ -376,44 +374,6 @@ export default function StateSchools() {
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const handleBulkDelete = async () => {
-        if (selectedSchools.size === 0) return;
-
-        setConfirmDialog({
-            isOpen: true,
-            title: `Delete Selected ${activeTab} Schools`,
-            message: `Are you sure you want to delete the ${selectedSchools.size} selected schools? This action cannot be undone.`,
-            confirmLabel: 'Delete Selected',
-            variant: 'danger',
-            onConfirm: async () => {
-                try {
-                    setIsDeleting(true);
-                    setError(null);
-                    const idsToDelete: string[] = Array.from(selectedSchools);
-
-                    // Delete schools one by one as there is no bulk endpoint
-                    for (const id of idsToDelete) {
-                        const [code, accrd_year] = id.includes('-') ? id.split('-') : [id, undefined];
-                        if (activeTab === 'SSCE') {
-                            await DataService.deleteSchool(code, accrd_year);
-                        } else {
-                            await DataService.deleteBeceSchool(code, accrd_year);
-                        }
-                    }
-
-                    // Refresh data
-                    await fetchSchools();
-                    setSelectedSchools(new Set());
-                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                } catch (err: any) {
-                    setError(`Failed to delete some selected schools. Please refresh and try again.`);
-                } finally {
-                    setIsDeleting(false);
-                }
-            },
-        });
     };
 
     const isDueForAccreditation = (school: School): boolean => {
@@ -1145,16 +1105,7 @@ export default function StateSchools() {
                             <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
                                 Filtered: <span className="text-slate-900 dark:text-emerald-400">{filteredSchools.length}</span> Results
                             </div>
-                            {selectedSchools.size > 0 && (
-                                <button
-                                    onClick={handleBulkDelete}
-                                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95"
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    Purge Records ({selectedSchools.size})
-                                </button>
-                            )}
-                        </div>
+                            </div>
 
                         <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Rows Per View:</span>

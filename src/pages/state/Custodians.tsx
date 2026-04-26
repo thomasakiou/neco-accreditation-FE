@@ -10,7 +10,6 @@ import {
     X,
     Edit2,
     Download,
-    Trash2,
     Filter,
     GraduationCap,
     RefreshCw,
@@ -51,9 +50,7 @@ export default function StateCustodians() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean; title: string; message: string; confirmLabel?: string;
-        variant?: 'danger' | 'warning'; onConfirm: () => void;
     }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
-    const [isDeleting, setIsDeleting] = useState(false);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
@@ -148,32 +145,6 @@ export default function StateCustodians() {
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const handleDeleteCustodian = async (code: string, name: string) => {
-        setConfirmDialog({
-            isOpen: true,
-            title: 'Delete Custodian',
-            message: `Are you sure you want to delete "${name}"? All associated schools will be affected.`,
-            confirmLabel: 'Delete',
-            variant: 'danger',
-            onConfirm: async () => {
-                try {
-                    setIsDeleting(true);
-                    if (activeTab === 'SSCE') {
-                        await DataService.deleteCustodian(code);
-                    } else {
-                        await DataService.deleteBeceCustodian(code);
-                    }
-                    fetchInitialData();
-                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                } catch (err: any) {
-                    setError('Failed to delete custodian.');
-                } finally {
-                    setIsDeleting(false);
-                }
-            },
-        });
     };
 
     const { filteredCustodians, totalPages, startIndex, paginatedCustodians } = React.useMemo(() => {
@@ -412,12 +383,6 @@ export default function StateCustodians() {
                                                     >
                                                         <Edit2 className="w-4 h-4" />
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleDeleteCustodian(custodian.code, custodian.name)}
-                                                        className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-red-500 rounded-xl transition-all shadow-sm active:scale-90"
-                                                        title="Purge Record"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </td>
