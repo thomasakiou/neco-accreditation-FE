@@ -431,11 +431,37 @@ const DataService = {
         return response.data;
     },
 
-    downloadTemplate: async (tableName: string) => {
-        const response = await client.get(`/api/v1/data/upload/templates/${tableName}`, {
-            responseType: 'blob',
-        });
-        DataService.downloadBlob(response.data, `${tableName}_template`, 'csv');
+    downloadTemplate: (tableName: string) => {
+        let headers = '';
+        let fileName = '';
+
+        switch (tableName.toLowerCase()) {
+            case 'lgas':
+                headers = 'name,code,state_code';
+                fileName = 'lgas_template';
+                break;
+            case 'schools':
+                headers = 'name,code,state_code,lga_code,custodian_code,email,category,status';
+                fileName = 'schools_template';
+                break;
+            case 'custodians':
+                headers = 'name,code,state_code,lga_code,town,status';
+                fileName = 'custodians_template';
+                break;
+            default:
+                headers = 'name,code';
+                fileName = `${tableName}_template`;
+        }
+
+        const blob = new Blob([headers], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${fileName}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
     },
 
     // Audit Logs

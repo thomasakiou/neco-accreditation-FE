@@ -407,6 +407,10 @@ export default function HeadOfficeSchools() {
         }
     };
 
+    const handleDownloadTemplate = () => {
+        DataService.downloadTemplate('schools');
+    };
+
     const generateNextSchoolCode = (stateCode: string) => {
         if (!stateCode) return '';
 
@@ -532,7 +536,11 @@ export default function HeadOfficeSchools() {
                     } else {
                         await DataService.deleteAllBeceSchools();
                     }
-                    setSchools([]);
+                    if (activeTab === 'SSCE') {
+                        setSsceSchools([]);
+                    } else {
+                        setBeceSchools([]);
+                    }
                     setConfirmDialog(prev => ({ ...prev, isOpen: false }));
                 } catch (err: any) {
                     setError(`Failed to delete ${activeTab} schools.`);
@@ -730,11 +738,21 @@ export default function HeadOfficeSchools() {
 
                     <div className="flex flex-wrap items-center gap-3">
                         {isSuperAdmin && (
-                            <label className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-all text-slate-900 dark:text-slate-200 text-sm font-bold shadow-sm">
-                                <Upload className="w-4 h-4" />
-                                <span>Bulk Upload</span>
-                                <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
-                            </label>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleDownloadTemplate}
+                                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-emerald-900/20 border border-slate-700 dark:border-emerald-500/30 text-white dark:text-emerald-400 rounded-lg hover:bg-slate-800 dark:hover:bg-emerald-900/40 transition-all text-sm font-bold shadow-sm"
+                                    title="Download CSV Template for Upload"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span>Template</span>
+                                </button>
+                                <label className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 transition-all text-slate-900 dark:text-slate-200 text-sm font-bold shadow-sm">
+                                    <Upload className="w-4 h-4" />
+                                    <span>Bulk Upload</span>
+                                    <input type="file" className="hidden" accept=".csv,.xlsx" onChange={handleUpload} />
+                                </label>
+                            </div>
                         )}
 
                         <button

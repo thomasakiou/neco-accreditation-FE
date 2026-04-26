@@ -166,6 +166,10 @@ export default function LGAs() {
         }
     };
 
+    const handleDownloadTemplate = () => {
+        DataService.downloadTemplate('lgas');
+    };
+
     const filteredLgas = lgas.filter(lga => {
         const matchesSearch = lga.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             lga.code.toLowerCase().includes(searchTerm.toLowerCase());
@@ -216,6 +220,14 @@ export default function LGAs() {
                                     accept=".csv"
                                     className="hidden"
                                 />
+                                <button
+                                    onClick={handleDownloadTemplate}
+                                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-emerald-900/20 border border-slate-700 dark:border-emerald-500/30 text-white dark:text-emerald-400 rounded-lg hover:bg-slate-800 dark:hover:bg-emerald-900/40 transition-all text-sm font-bold shadow-sm"
+                                    title="Download CSV Template for Upload"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span>Template</span>
+                                </button>
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isUploading}

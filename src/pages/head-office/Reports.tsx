@@ -45,6 +45,7 @@ export default function HeadOfficeReports() {
     const [isPrintingSummary, setIsPrintingSummary] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState<'OVERALL' | 'SSCE' | 'BECE'>('OVERALL');
     const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
     const fetchData = async () => {
@@ -94,7 +95,11 @@ export default function HeadOfficeReports() {
 
     // Calculate aggregated stats
     const aggregatedStats = useMemo(() => {
-        if (!ssceSchools.length && !beceSchools.length) return null;
+        const schoolsToProcess = activeTab === 'OVERALL' 
+            ? [...ssceSchools, ...beceSchools]
+            : activeTab === 'SSCE' ? ssceSchools : beceSchools;
+
+        if (!schoolsToProcess.length) return null;
 
         let totalAccredited = 0;
         let totalPartial = 0;
@@ -102,9 +107,7 @@ export default function HeadOfficeReports() {
         let totalPending = 0;
         let totalPaid = 0;
 
-        const allSchools = [...ssceSchools, ...beceSchools];
-
-        allSchools.forEach(s => {
+        schoolsToProcess.forEach(s => {
             if (s.accreditation_status === 'Full') totalAccredited++;
             else if (s.accreditation_status === 'Partial') totalPartial++;
             else if (s.accreditation_status === 'Failed') totalFailed++;
@@ -116,7 +119,7 @@ export default function HeadOfficeReports() {
             }
         });
 
-        const total = allSchools.length;
+        const total = schoolsToProcess.length;
         const completionRate = Math.round(((totalAccredited + totalPartial) / total) * 100) || 0;
 
         return {
@@ -128,7 +131,7 @@ export default function HeadOfficeReports() {
             totalPaid,
             completionRate
         };
-    }, [ssceSchools, beceSchools]);
+    }, [ssceSchools, beceSchools, activeTab]);
 
     // Determine if a school is due for accreditation
     const isDueForAccreditation = (school: any): boolean => {
@@ -244,9 +247,11 @@ export default function HeadOfficeReports() {
             });
         });
 
-        const allSchools = [...ssceSchools, ...beceSchools];
+        const schoolsToProcess = activeTab === 'OVERALL' 
+            ? [...ssceSchools, ...beceSchools]
+            : activeTab === 'SSCE' ? ssceSchools : beceSchools;
 
-        allSchools.forEach(school => {
+        schoolsToProcess.forEach(school => {
             const sc = school.state_code || 'UNKNOWN';
             if (!map.has(sc)) {
                 map.set(sc, { code: sc, name: sc, total: 0, full: 0, partial: 0, failed: 0, paid: 0, pending: 0 });
@@ -273,13 +278,16 @@ export default function HeadOfficeReports() {
         return Array.from(map.values())
             .filter((s: StateStat) => s.total > 0)
             .sort((a: StateStat, b: StateStat) => b.total - a.total); // Sort by highest total schools
-    }, [ssceSchools, beceSchools, states]);
+    }, [ssceSchools, beceSchools, states, activeTab]);
 
     // Calculate Category stats (PUB vs PRI)
     const categoryStats = useMemo(() => {
         const stats = { PUB: 0, PRI: 0, FED: 0 };
-        const allSchools = [...ssceSchools, ...beceSchools];
-        allSchools.forEach(s => {
+        const schoolsToProcess = activeTab === 'OVERALL' 
+            ? [...ssceSchools, ...beceSchools]
+            : activeTab === 'SSCE' ? ssceSchools : beceSchools;
+            
+        schoolsToProcess.forEach(s => {
             if (s.category === 'PUB') stats.PUB++;
             else if (s.category === 'PRV' || s.category === 'PRI') stats.PRI++;
             else if (s.category === 'FED') stats.FED++;
@@ -289,7 +297,7 @@ export default function HeadOfficeReports() {
             { name: 'Private Schools', value: stats.PRI, color: '#ec4899' }, // pink-500
             { name: 'Federal Schools', value: stats.FED, color: '#8b5cf6' }, // violet-500
         ];
-    }, [ssceSchools, beceSchools]);
+    }, [ssceSchools, beceSchools, activeTab]);
 
     // Calculate Zone stats
     const zoneStats = useMemo(() => {
@@ -311,9 +319,11 @@ export default function HeadOfficeReports() {
             if (s.zone_code) stateToZone.set(s.code, s.zone_code);
         });
 
-        const allSchools = [...ssceSchools, ...beceSchools];
+        const schoolsToProcess = activeTab === 'OVERALL' 
+            ? [...ssceSchools, ...beceSchools]
+            : activeTab === 'SSCE' ? ssceSchools : beceSchools;
 
-        allSchools.forEach(s => {
+        schoolsToProcess.forEach(s => {
             const zCode = stateToZone.get(s.state_code || '');
             if (zCode && zoneMap.has(zCode)) {
                 const zData = zoneMap.get(zCode)!;
@@ -323,7 +333,7 @@ export default function HeadOfficeReports() {
         });
 
         return Array.from(zoneMap.values()).filter((z: ZoneStat) => z.total > 0);
-    }, [ssceSchools, beceSchools, states, zones]);
+    }, [ssceSchools, beceSchools, states, zones, activeTab]);
 
     // Utility to format percentages
     const pct = (val: number, total: number) => {
@@ -369,6 +379,37 @@ export default function HeadOfficeReports() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {/* Tab Switcher */}
+                    <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl border border-slate-300 dark:border-slate-700 shadow-inner">
+                        <button
+                            onClick={() => setActiveTab('OVERALL')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${activeTab === 'OVERALL'
+                                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                }`}
+                        >
+                            Overall
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('SSCE')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${activeTab === 'SSCE'
+                                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                }`}
+                        >
+                            SSCE
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('BECE')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase transition-all ${activeTab === 'BECE'
+                                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                }`}
+                        >
+                            BECE
+                        </button>
+                    </div>
+
                     <button
                         onClick={() => fetchData()}
                         disabled={isLoading}
@@ -378,11 +419,6 @@ export default function HeadOfficeReports() {
                         <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                         Refresh
                     </button>
-
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-semibold text-slate-600 dark:text-slate-300">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <span>Real-time Data</span>
-                    </div>
                 </div>
             </div>
 

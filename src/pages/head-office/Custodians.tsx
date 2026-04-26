@@ -208,6 +208,10 @@ export default function Custodians() {
         });
     };
 
+    const handleDownloadTemplate = () => {
+        DataService.downloadTemplate('custodians');
+    };
+
     const filteredCustodians = custodians.filter(c => {
         const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.code.toLowerCase().includes(searchTerm.toLowerCase());
@@ -245,13 +249,23 @@ export default function Custodians() {
                         </button>
 
                         {isSuperAdmin && (
-                            <button
-                                onClick={() => setShowAddModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
-                            >
-                                <Plus className="w-4 h-4" />
-                                <span>Add {activeTab} Custodian</span>
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleDownloadTemplate}
+                                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-emerald-900/20 border border-slate-700 dark:border-emerald-500/30 text-white dark:text-emerald-400 rounded-lg hover:bg-slate-800 dark:hover:bg-emerald-900/40 transition-all text-sm font-bold shadow-sm"
+                                    title="Download CSV Template for Upload"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span>Template</span>
+                                </button>
+                                <button
+                                    onClick={() => setShowAddModal(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all text-sm font-semibold shadow-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span>Add {activeTab} Custodian</span>
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
