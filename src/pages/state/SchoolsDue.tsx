@@ -336,7 +336,7 @@ export default function StateSchoolsDue() {
             {/* Header Section */}
             <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
-                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
+                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
                     <div className="space-y-2">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                             <Clock className="w-4 h-4" />
@@ -414,7 +414,7 @@ export default function StateSchoolsDue() {
                 </div>
 
                 {/* Filters Glass Card */}
-                <div className="w-full lg:w-auto flex flex-wrap items-center gap-4 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md p-2 rounded-2xl border border-white/20 dark:border-slate-800/50 shadow-xl">
+                <div className="w-full lg:w-auto flex flex-wrap items-center gap-4 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl p-2 rounded-2xl border border-slate-300 dark:border-slate-800/50 shadow-xl">
                     <div className="relative flex-1 min-w-[240px]">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
@@ -505,9 +505,9 @@ export default function StateSchoolsDue() {
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
+                    <div className="bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
                         {/* List Actions */}
-                        <div className="px-8 py-5 flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 bg-white/40 dark:bg-slate-800/20">
+                        <div className="px-8 py-5 flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 bg-slate-100/40 dark:bg-slate-800/20">
                             <div className="flex items-center gap-6">
                                 <label className="flex items-center gap-3 cursor-pointer group">
                                     <div className="relative">
@@ -538,7 +538,7 @@ export default function StateSchoolsDue() {
                             </div>
 
                         {/* Modernized Schools List */}
-                        <div className="divide-y divide-slate-200/50 dark:divide-slate-800/50">
+                        <div className="divide-y divide-slate-400 dark:divide-slate-700">
                             {dueSchools.map((school) => {
                                 const rowId = school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code;
                                 const isSelected = selectedSchools.has(rowId);

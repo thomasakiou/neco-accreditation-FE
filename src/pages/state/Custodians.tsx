@@ -169,7 +169,7 @@ export default function StateCustodians() {
                 {/* Header Section */}
                 <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
-                    <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
+                    <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
                         <div className="space-y-2">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                 <ShieldCheck className="w-4 h-4" />
@@ -253,7 +253,7 @@ export default function StateCustodians() {
                 )}
 
                 {/* Filters Bar */}
-                <div className="flex flex-wrap items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-xl">
+                <div className="flex flex-wrap items-center gap-4 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-slate-300 dark:border-slate-800/50 shadow-xl">
                     <div className="relative flex-1 min-w-[300px]">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
@@ -296,7 +296,7 @@ export default function StateCustodians() {
                 </div>
 
                 {/* Data Section */}
-                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
+                <div className="bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
@@ -307,7 +307,7 @@ export default function StateCustodians() {
                                     <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tbody className="divide-y divide-slate-400 dark:divide-slate-700">
                                 {isLoading ? (
                                     Array(5).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">

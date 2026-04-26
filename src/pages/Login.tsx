@@ -46,7 +46,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100 dark:bg-slate-950 text-slate-950 dark:text-slate-100 font-sans">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
       {/* Left Side - Hero */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-emerald-900 items-center justify-center overflow-hidden">
         <div
@@ -135,7 +135,7 @@ export default function Login() {
             <p className="mt-2 text-slate-700 dark:text-slate-400 font-medium">Please enter your credentials to access your portal.</p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-xl shadow-xl shadow-emerald-900/10 dark:shadow-black/20 border border-slate-300 dark:border-slate-700">
+          <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-xl shadow-xl shadow-emerald-900/10 dark:shadow-black/20 border border-slate-300 dark:border-slate-700">
             {error && (
               <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3 text-red-600 dark:text-red-400 text-sm">
                 <AlertCircle className="w-5 h-5 shrink-0" />
@@ -153,7 +153,7 @@ export default function Login() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-950 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-500 font-medium whitespace-nowrap overflow-hidden"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-950 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-500 font-medium whitespace-nowrap overflow-hidden shadow-sm"
                     placeholder="Email Address"
                   />
                 </div>
@@ -171,7 +171,7 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-950 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-500 font-medium"
+                    className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-950 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-500 font-medium shadow-sm"
                     placeholder="••••••••"
                   />
                   <button

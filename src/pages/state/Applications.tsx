@@ -456,7 +456,7 @@ export default function StateApplications() {
                 {/* Header Section */}
                 <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
-                    <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-2xl">
+                    <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-slate-300 dark:border-slate-800/50 shadow-2xl">
                         <div className="space-y-2">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                 <FileText className="w-4 h-4" />
@@ -529,8 +529,8 @@ export default function StateApplications() {
                 </div>
 
                 {/* Filters Bar */}
-                <div className="flex flex-wrap items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-xl">
-                    <div className="relative flex-1 min-w-[300px]">
+                <div className="flex flex-wrap items-center gap-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-slate-200 dark:border-slate-800/50 shadow-xl">
+                    <div className="relative flex-1 min-w-[300px] bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                             type="text"
@@ -617,7 +617,7 @@ export default function StateApplications() {
                                     <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-200/50 dark:divide-slate-800/50">
+                            <tbody className="divide-y divide-slate-400 dark:divide-slate-700">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-20 text-center">

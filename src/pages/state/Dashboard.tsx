@@ -301,7 +301,7 @@ export default function StateDashboard() {
       </div>
 
       {isLocked && (
-        <div className="relative overflow-hidden p-8 bg-amber-500/5 dark:bg-amber-500/10 backdrop-blur-2xl border border-amber-500/20 rounded-[2.5rem] flex items-center gap-8 text-amber-900 dark:text-amber-400 animate-in slide-in-from-top-8 duration-700 shadow-2xl shadow-amber-500/5">
+        <div className="relative overflow-hidden p-8 bg-amber-500/5 dark:bg-amber-500/10 backdrop-blur-2xl border border-amber-500/20 rounded-[2.5rem] flex items-center gap-8 text-amber-900 dark:text-amber-400 animate-in slide-in-from-top-8 duration-700 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-2xl shadow-amber-500/5">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <Lock className="w-32 h-32 rotate-12" />
           </div>
@@ -329,7 +329,7 @@ export default function StateDashboard() {
         {/* SSCE Intelligence Section */}
         <div className="group relative">
           <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-[3rem] blur opacity-0 group-hover:opacity-100 transition duration-700"></div>
-          <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 shadow-2xl p-10 flex flex-col h-full">
+          <div className="relative bg-slate-50/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[3rem] border border-slate-300 dark:border-slate-800/50 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] dark:shadow-2xl p-10 flex flex-col h-full">
             <div className="flex items-center justify-between mb-10">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-inner">
@@ -348,7 +348,7 @@ export default function StateDashboard() {
 
             <div className="grid grid-cols-2 gap-4 mt-8">
               {ssceStatsCards.map((card) => (
-                <div key={card.label} className="p-4 rounded-3xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                <div key={card.label} className="p-4 rounded-3xl bg-white/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700/50 shadow-[0_10px_25px_rgba(0,0,0,0.08)] dark:shadow-none">
                   <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", card.iconBg)}>
                     <card.icon className="w-4 h-4" />
                   </div>
@@ -379,7 +379,7 @@ export default function StateDashboard() {
         {/* BECE Intelligence Section */}
         <div className="group relative">
           <div className="absolute -inset-0.5 bg-gradient-to-br from-blue-500/10 to-transparent rounded-[3rem] blur opacity-0 group-hover:opacity-100 transition duration-700"></div>
-          <div className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[3rem] border border-white/20 dark:border-slate-800/50 shadow-2xl p-10 flex flex-col h-full">
+          <div className="relative bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-[3rem] border border-slate-300 dark:border-slate-800/50 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] dark:shadow-2xl p-10 flex flex-col h-full">
             <div className="flex items-center justify-between mb-10">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-inner">
@@ -398,7 +398,7 @@ export default function StateDashboard() {
 
             <div className="grid grid-cols-2 gap-4 mt-8">
               {beceStatsCards.map((card) => (
-                <div key={card.label} className="p-4 rounded-3xl bg-white/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                <div key={card.label} className="p-4 rounded-3xl bg-white/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700/50 shadow-[0_10px_25px_rgba(0,0,0,0.08)] dark:shadow-none">
                   <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", card.iconBg)}>
                     <card.icon className="w-4 h-4" />
                   </div>

@@ -263,7 +263,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 flex font-sans text-slate-950 dark:text-slate-100">
+    <div className="min-h-screen bg-[#eaedf1] dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
@@ -274,7 +274,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 bg-white dark:bg-slate-900 border-r border-slate-300 dark:border-slate-700 transform transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col",
+        "fixed inset-y-0 left-0 z-50 bg-[#f8fafc] dark:bg-slate-900 border-r border-slate-300 dark:border-slate-800 transform transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col",
         isDesktopCollapsed ? "w-20" : "w-64",
         isSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full"
       )}>
@@ -451,7 +451,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         isDesktopCollapsed ? "lg:ml-20" : "lg:ml-64"
       )}>
         <header className={cn(
-          "h-16 bg-white dark:bg-slate-900 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between px-4 lg:px-8 fixed top-0 right-0 z-30 transition-all duration-300 ease-in-out left-0",
+          "h-16 bg-[#f8fafc]/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-300/60 dark:border-slate-800 flex items-center justify-between px-4 lg:px-8 fixed top-0 right-0 z-30 transition-all duration-300 ease-in-out left-0",
           isDesktopCollapsed ? "lg:left-20" : "lg:left-64"
         )}>
           <div className="flex items-center gap-4">

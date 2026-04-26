@@ -20,6 +20,7 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #059669;
         /* emerald-600 */
+        border-radius: 10px;
     }
 
     /* Firefox */

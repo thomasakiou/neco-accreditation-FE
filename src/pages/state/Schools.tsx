@@ -1030,7 +1030,7 @@ export default function StateSchools() {
                 )}
 
                 {/* Filters Bar */}
-                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-white/20 dark:border-slate-800/50 shadow-xl space-y-4">
+                <div className="bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-slate-300 dark:border-slate-800/50 shadow-xl space-y-4">
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="relative flex-1 min-w-[300px]">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -1044,7 +1044,7 @@ export default function StateSchools() {
                         </div>
 
                         <div className="flex items-center flex-wrap gap-3">
-                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700">
                                 <Filter className="w-3.5 h-3.5 text-slate-400" />
                                 <SearchableSelect
                                     value={selectedLga}
@@ -1059,7 +1059,7 @@ export default function StateSchools() {
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700">
                                 <UsersIcon className="w-3.5 h-3.5 text-slate-400" />
                                 <SearchableSelect
                                     value={selectedCustodian}
@@ -1073,7 +1073,7 @@ export default function StateSchools() {
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Category:</span>
                                 <select
                                     value={selectedCategory}
@@ -1096,7 +1096,7 @@ export default function StateSchools() {
                             </div>
                             </div>
 
-                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700">
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Rows Per View:</span>
                             <select
                                 value={rowsPerPage}
@@ -1112,19 +1112,25 @@ export default function StateSchools() {
                 </div>
 
                 {/* Data Table */}
-                <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
+                <div className="bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/50 shadow-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 border-b border-slate-200 dark:border-slate-800">
                                     <th className="px-6 py-5 w-12">
                                         <div className="flex items-center justify-center">
-                                            <input
-                                                type="checkbox"
-                                                checked={filteredSchools.length > 0 && paginatedSchools.every(s => selectedSchools.has(s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code)))}
-                                                onChange={() => toggleSelectAll(paginatedSchools)}
-                                                className="w-5 h-5 rounded-lg border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500/20 transition-all cursor-pointer"
-                                            />
+                                            <label className="relative flex items-center justify-center cursor-pointer group/cb">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={filteredSchools.length > 0 && paginatedSchools.every(s => selectedSchools.has(s.accrd_year ? `${s.code}-${s.accrd_year}` : String(s.code)))}
+                                                    onChange={() => toggleSelectAll(paginatedSchools)}
+                                                    className="peer sr-only"
+                                                />
+                                                <div className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 peer-checked:border-emerald-500 peer-checked:bg-emerald-500 transition-all duration-300"></div>
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity">
+                                                    <CheckCircle2 className="w-3 h-3 text-white" />
+                                                </div>
+                                            </label>
                                         </div>
                                     </th>
                                     <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest">School Number</th>
@@ -1134,7 +1140,7 @@ export default function StateSchools() {
                                     <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tbody className="divide-y divide-slate-400 dark:divide-slate-700">
                                 {isLoading ? (
                                     Array(rowsPerPage).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
@@ -1171,12 +1177,18 @@ export default function StateSchools() {
                                                 )}>
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center justify-center">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={isSelected}
-                                                                onChange={() => toggleSelectSchool(school.code, school.accrd_year)}
-                                                                className="w-5 h-5 rounded-lg border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500/20 transition-all cursor-pointer"
-                                                            />
+                                                            <label className="relative flex items-center justify-center cursor-pointer group/cb">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isSelected}
+                                                                    onChange={() => toggleSelectSchool(school.code, school.accrd_year)}
+                                                                    className="peer sr-only"
+                                                                />
+                                                                <div className="w-6 h-6 rounded-xl border-2 border-slate-200 dark:border-slate-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-500 transition-all duration-500 group-hover/cb:border-emerald-500/50 shadow-sm"></div>
+                                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-all duration-500 scale-50 peer-checked:scale-100">
+                                                                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                                                                </div>
+                                                            </label>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-4">
