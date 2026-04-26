@@ -28,7 +28,6 @@ import { cn } from '../../lib/utils';
 import DataService, { School } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
-import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import { baseURL } from '../../api/client';
 
 export default function StateApplications() {
@@ -48,14 +47,7 @@ export default function StateApplications() {
     const [selectedCategory, setSelectedCategory] = React.useState<string>('');
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = React.useState<Set<string>>(new Set());
-    const [confirmDialog, setConfirmDialog] = React.useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        confirmLabel: 'Confirm',
-        variant: 'primary' as 'primary' | 'danger',
-        onConfirm: () => { },
-    });
+    const [isLoading, setIsLoading] = React.useState(false);
 
     const [isDueOnly, setIsDueOnly] = React.useState(false);
     const [zones, setZones] = React.useState<any[]>([]);
@@ -1101,16 +1093,6 @@ export default function StateApplications() {
                 </div>
             </div>
 
-            <ConfirmDialog
-                isOpen={confirmDialog.isOpen}
-                title={confirmDialog.title}
-                message={confirmDialog.message}
-                confirmLabel={confirmDialog.confirmLabel}
-                variant={confirmDialog.variant}
-                isLoading={isDeleting}
-                onConfirm={confirmDialog.onConfirm}
-                onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
-            />
         </>
     );
 }

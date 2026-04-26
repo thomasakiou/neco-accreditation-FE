@@ -18,7 +18,6 @@ import { cn } from '../../lib/utils';
 import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
-import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import { components } from '../../api/types';
 
 type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
@@ -39,15 +38,6 @@ export default function StateSchoolsDue() {
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = React.useState<Set<string>>(new Set());
     const [error, setError] = React.useState<string | null>(null);
-    const [confirmDialog, setConfirmDialog] = React.useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        confirmLabel: 'Confirm',
-        variant: 'primary' as 'primary' | 'danger',
-        onConfirm: () => { },
-    });
-
     React.useEffect(() => {
         fetchData();
     }, []);
@@ -643,17 +633,6 @@ export default function StateSchoolsDue() {
                     </div>
                 )}
             </div>
-
-            <ConfirmDialog
-                isOpen={confirmDialog.isOpen}
-                title={confirmDialog.title}
-                message={confirmDialog.message}
-                confirmLabel={confirmDialog.confirmLabel}
-                variant={confirmDialog.variant}
-                isLoading={isDeleting}
-                onConfirm={confirmDialog.onConfirm}
-                onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
-            />
         </div>
     );
 }

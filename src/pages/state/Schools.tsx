@@ -29,7 +29,6 @@ import { cn } from '../../lib/utils';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
-import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import { baseURL } from '../../api/client';
@@ -55,16 +54,6 @@ export default function StateSchools() {
     const [isDueOnly, setIsDueOnly] = useState(false);
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
-    const [confirmDialog, setConfirmDialog] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        confirmLabel: 'Confirm',
-        variant: 'primary' as 'primary' | 'danger',
-        onConfirm: () => { },
-    });
-
-
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -1490,16 +1479,6 @@ export default function StateSchools() {
                 </div>
             </div>
 
-            <ConfirmDialog
-                isOpen={confirmDialog.isOpen}
-                title={confirmDialog.title}
-                message={confirmDialog.message}
-                confirmLabel={confirmDialog.confirmLabel}
-                variant={confirmDialog.variant}
-                isLoading={isDeleting}
-                onConfirm={confirmDialog.onConfirm}
-                onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
-            />
         </>
     );
 }

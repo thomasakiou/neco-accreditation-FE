@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import DataService, { Custodian, State, LGA } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
-import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import { cn } from '../../lib/utils';
 
@@ -48,9 +47,6 @@ export default function StateCustodians() {
     const [selectedLga, setSelectedLga] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [confirmDialog, setConfirmDialog] = useState<{
-        isOpen: boolean; title: string; message: string; confirmLabel?: string;
-    }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     const [currentUser, setCurrentUser] = useState<any>(null);
     const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
@@ -383,7 +379,6 @@ export default function StateCustodians() {
                                                     >
                                                         <Edit2 className="w-4 h-4" />
                                                     </button>
-                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -658,16 +653,6 @@ export default function StateCustodians() {
                 </div>
             )}
 
-            <ConfirmDialog
-                isOpen={confirmDialog.isOpen}
-                title={confirmDialog.title}
-                message={confirmDialog.message}
-                confirmLabel={confirmDialog.confirmLabel}
-                variant={confirmDialog.variant}
-                isLoading={isDeleting}
-                onConfirm={confirmDialog.onConfirm}
-                onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
-            />
         </>
     );
 }
