@@ -527,7 +527,7 @@ export default function StateSchools() {
                     <td style="font-family:monospace;font-weight:bold">${school.code}</td>
                     <td style="font-weight:600">${school.name}</td>
                     <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
-                    <td>${custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</td>
+                    <td>${school.custodian_code} - ${custodians.find(c => c.code === school.custodian_code)?.name || 'Unknown'}</td>
                     <td>${school.category === 'PUB' ? 'Public' : (school.category === 'FED' ? 'Federal' : 'Private')}</td>
                     <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}</td>
                     <td>${school.accredited_date || 'N/A'}</td>
@@ -551,7 +551,7 @@ export default function StateSchools() {
                 .header-text p { font-size: 14px; color: #64748b; margin: 0; }
                 .meta { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 13px; color: #64748b; font-weight: 600; }
                 table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-                th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; font-size: 12px; }
+                th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; font-size: 12px; word-break: break-word; white-space: normal; }
                 th { background-color: #059669; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 tr:nth-child(even) { background-color: #f0fdf4; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 .footer { margin-top: 30px; padding-top: 16px; border-top: 2px solid #059669; display: flex; justify-content: space-between; font-size: 11px; color: #059669; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
@@ -571,7 +571,7 @@ export default function StateSchools() {
                 <span>Total: ${filteredSchools.length} schools</span>
             </div>
             <table>
-                <thead><tr><th style="background-color:#059669;color:white">S/N</th><th style="background-color:#059669;color:white">Center Code</th><th style="background-color:#059669;color:white">School Name</th><th style="background-color:#059669;color:white">LGA</th><th style="background-color:#059669;color:white">Custodian</th><th style="background-color:#059669;color:white">Category</th><th style="background-color:#059669;color:white">Status</th><th style="background-color:#059669;color:white">Accrd. Date</th></tr></thead>
+                <thead><tr><th style="background-color:#059669;color:white;width:4%">S/N</th><th style="background-color:#059669;color:white;width:10%">Center Code</th><th style="background-color:#059669;color:white;width:30%">School Name</th><th style="background-color:#059669;color:white;width:10%">LGA</th><th style="background-color:#059669;color:white;width:20%">Custodian</th><th style="background-color:#059669;color:white;width:8%">Category</th><th style="background-color:#059669;color:white;width:10%">Status</th><th style="background-color:#059669;color:white;width:15%">Accrd. Date</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
             <div class="footer">

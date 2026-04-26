@@ -9,7 +9,10 @@ import {
     AlertCircle,
     CheckCircle2,
     Clock,
-    RefreshCw
+    RefreshCw,
+    Download,
+    FileSpreadsheet,
+    FileText
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import DataService from '../../api/services/data.service';
@@ -26,6 +29,8 @@ export default function StateSchoolsDue() {
     const [schools, setSchools] = React.useState<School[]>([]);
     const [userState, setUserState] = React.useState<State | null>(null);
     const [zones, setZones] = React.useState<components['schemas']['Zone'][]>([]);
+    const [allLgas, setAllLgas] = React.useState<components['schemas']['LGA'][]>([]);
+    const [allCustodians, setAllCustodians] = React.useState<components['schemas']['Custodian'][]>([]);
     const [loading, setLoading] = React.useState(true);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [expandedStates, setExpandedStates] = React.useState<Record<string, boolean>>({});
@@ -85,14 +90,22 @@ export default function StateSchoolsDue() {
                 return;
             }
 
-            const [schoolsData, beceSchoolsData, statesData, zonesData] = await Promise.all([
+            const [schoolsData, beceSchoolsData, statesData, zonesData, lgasData, ssceCustodians, beceCustodians] = await Promise.all([
                 DataService.getSchools({ state_code: user.state_code }),
                 DataService.getBeceSchools({ state_code: user.state_code }),
                 DataService.getStates(),
-                DataService.getZones()
+                DataService.getZones(),
+                DataService.getLGAs({ state_code: user.state_code }),
+                DataService.getCustodians({ state_code: user.state_code }),
+                DataService.getBeceCustodians({ state_code: user.state_code })
             ]);
 
             setZones(zonesData);
+            setAllLgas(lgasData);
+            setAllCustodians([
+                ...ssceCustodians.map(c => ({ ...c, school_type: 'SSCE' as const })),
+                ...beceCustodians.map(c => ({ ...c, school_type: 'BECE' as const }))
+            ]);
 
             // Merge SSCE and BECE schools and add type for identification
             setSchools([
@@ -261,6 +274,111 @@ export default function StateSchoolsDue() {
 
     const stats = getStats(dueSchools);
 
+    const handleExport = (format: 'excel' | 'pdf') => {
+        const userStateName = userState?.name || 'State Office';
+        const custodians = allCustodians.filter(c => (c as any).school_type === activeTab);
+
+        if (format === 'excel') {
+            const headers = ['Code', 'School Name', 'LGA', 'Custodian', 'Category', 'Accreditation Status', 'Accreditation Date', 'Email'];
+            const csvRows = [headers.join(',')];
+
+            dueSchools.forEach(school => {
+                const lgaName = allLgas.find(lga => lga.code === school.lga_code)?.name || school.lga_code || school.lga_name;
+                const custodianName = custodians.find(cust => cust.code === school.custodian_code)?.name || school.custodian_code;
+
+                const row = [
+                    school.code,
+                    `"${school.name.replace(/"/g, '""')}"`,
+                    lgaName,
+                    custodianName,
+                    school.category === 'PUB' ? 'Public' : (school.category === 'FED' ? 'Federal' : 'Private'),
+                    (school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status,
+                    school.accredited_date || 'N/A',
+                    school.email || 'N/A'
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `${activeTab.toLowerCase()}_schools_due_report_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            const rows = dueSchools.map((school, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td style="font-family:monospace;font-weight:bold">${school.code}</td>
+                    <td style="font-weight:600">${school.name}</td>
+                    <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code || school.lga_name}</td>
+                    <td>${school.custodian_code} - ${custodians.find(c => c.code === school.custodian_code)?.name || 'Unknown'}</td>
+                    <td>${school.category === 'PUB' ? 'Public' : (school.category === 'FED' ? 'Federal' : 'Private')}</td>
+                    <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}</td>
+                    <td>${school.accredited_date || 'N/A'}</td>
+                </tr>
+            `).join('');
+
+            const logoUrl = window.location.origin + '/images/neco.png';
+            const html = `<!DOCTYPE html><html><head><title>${activeTab} Schools Due Report</title>
+            <style>
+                * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+                @page { size: landscape; margin: 1cm; }
+                body { font-family: Arial, sans-serif; color: #1e293b; padding: 30px; position: relative; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .watermark { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; opacity: 0.04; z-index: 0; pointer-events: none; }
+                .watermark img { width: 90vw; height: 90vh; object-fit: contain; }
+                .content { position: relative; z-index: 1; }
+                .header { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #059669; padding-bottom: 20px; margin-bottom: 24px; }
+                .header img { width: 70px; height: 70px; object-fit: contain; }
+                .header-text { flex: 1; }
+                .header-text h1 { font-size: 28px; margin: 0 0 4px 0; color: #059669; font-weight: 800; }
+                .header-text h2 { font-size: 18px; color: #059669; margin: 0 0 4px 0; font-weight: 700; }
+                .header-text p { font-size: 14px; color: #64748b; margin: 0; }
+                .meta { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 13px; color: #64748b; font-weight: 600; }
+                table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+                th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; font-size: 12px; word-break: break-word; white-space: normal; }
+                th { background-color: #059669; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                tr:nth-child(even) { background-color: #f0fdf4; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .footer { margin-top: 30px; padding-top: 16px; border-top: 2px solid #059669; display: flex; justify-content: space-between; font-size: 11px; color: #059669; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+            </style></head><body>
+            <div class="watermark"><img src="${logoUrl}" alt="watermark" /></div>
+            <div class="content">
+            <div class="header">
+                <img src="${logoUrl}" alt="NECO Logo" />
+                <div class="header-text">
+                    <h1>National Examinations Council (NECO)</h1>
+                    <h2>${userStateName} State Office</h2>
+                    <p>${activeTab} Schools DUE FOR ACCREDITATION Report</p>
+                </div>
+            </div>
+            <div class="meta">
+                <span>Generated on: ${new Date().toLocaleString()}</span>
+                <span>Total Due: ${dueSchools.length} schools</span>
+            </div>
+            <table>
+                <thead><tr><th style="background-color:#059669;color:white;width:4%">S/N</th><th style="background-color:#059669;color:white;width:10%">Center Code</th><th style="background-color:#059669;color:white;width:30%">School Name</th><th style="background-color:#059669;color:white;width:12%">LGA</th><th style="background-color:#059669;color:white;width:16%">Custodian</th><th style="background-color:#059669;color:white;width:8%">Category</th><th style="background-color:#059669;color:white;width:10%">Status</th><th style="background-color:#059669;color:white;width:15%">Accrd. Date</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <div class="footer">
+                <div>Accreditation Management System — ${userStateName}</div>
+                <div>Page 1 of 1</div>
+            </div>
+            </div>
+            <script>window.onload = function() { window.print(); }<\/script>
+            </body></html>`;
+
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                printWindow.document.write(html);
+                printWindow.document.close();
+            }
+        }
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
             {/* Header Section */}
@@ -280,14 +398,42 @@ export default function StateSchoolsDue() {
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => fetchData()}
-                        disabled={loading}
-                        className="group/btn relative flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/50 transition-all shadow-lg hover:shadow-emerald-500/10 active:scale-95 disabled:opacity-50"
-                    >
-                        <RefreshCw className={cn("w-4 h-4 transition-transform duration-500 group-hover/btn:rotate-180", loading && "animate-spin")} />
-                        Refresh Data
-                    </button>
+                    <div className="flex flex-wrap items-center gap-4">
+                        <button
+                            onClick={() => fetchData()}
+                            disabled={loading}
+                            className="group/btn relative flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/50 transition-all shadow-lg hover:shadow-emerald-500/10 active:scale-95 disabled:opacity-50"
+                        >
+                            <RefreshCw className={cn("w-4 h-4 transition-transform duration-500 group-hover/btn:rotate-180", loading && "animate-spin")} />
+                            Refresh Data
+                        </button>
+
+                        {/* Export Dropdown */}
+                        <div className="relative group/export">
+                            <button className="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95">
+                                <Download className="w-4 h-4" />
+                                Exports
+                            </button>
+                            <div className="absolute right-0 top-full pt-3 w-48 opacity-0 translate-y-2 pointer-events-none group-hover/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:pointer-events-auto transition-all z-50">
+                                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
+                                    <button
+                                        onClick={() => handleExport('excel')}
+                                        className="w-full px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800"
+                                    >
+                                        <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                        CSV Spreadsheet
+                                    </button>
+                                    <button
+                                        onClick={() => handleExport('pdf')}
+                                        className="w-full px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200"
+                                    >
+                                        <FileText className="w-4 h-4 text-emerald-600" />
+                                        PDF Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

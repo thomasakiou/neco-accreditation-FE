@@ -30,6 +30,7 @@ export default function StateReports() {
     const [isPrintingSummary, setIsPrintingSummary] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [stateName, setStateName] = useState('State Office');
+    const [currentState, setCurrentState] = useState<any>(null);
 
     const fetchInitialData = async () => {
         try {
@@ -42,8 +43,9 @@ export default function StateReports() {
             }
 
             const statesData = await DataService.getStates();
-            const currentState = statesData.find(s => s.code === user.state_code);
-            setStateName(currentState?.name || user.state_name || user.state_code);
+            const state = statesData.find(s => s.code === user.state_code);
+            setCurrentState(state || null);
+            setStateName(state?.name || user.state_name || user.state_code);
 
             const ssceData = await DataService.getSchools({ state_code: user.state_code });
             const beceData = await DataService.getBeceSchools({ state_code: user.state_code });
@@ -81,15 +83,13 @@ export default function StateReports() {
     // Determine if a school is due for accreditation
     const isDueForAccreditation = (school: any): boolean => {
         if (school.accreditation_status === 'Failed') return true;
-        if (!school.accredited_date || !['Full', 'Partial', 'Passed', 'Accredited'].includes(school.accreditation_status || '')) {
-            return true;
+        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
+            return false;
         }
         const accreditedDate = new Date(school.accredited_date);
         let yearsToAdd = 5;
 
-        // Check if school is in a foreign zone
-        const stateZoneCode = zones.find(z => ssceSchools.some(s => s.state_code === school.state_code))?.code; // Simplified for state office
-        const zone = zones.find(z => z.code === stateZoneCode);
+        const zone = zones.find(z => z.code === currentState?.zone_code);
         const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
 
         if (isForeign) {
@@ -135,10 +135,10 @@ export default function StateReports() {
     } = React.useMemo(() => {
         const totalSsce = ssceSchools.length;
         const totalBece = beceSchools.length;
-        const activeSsce = ssceSchools.filter(s => s.accreditation_status === 'Accredited').length;
-        const activeBece = beceSchools.filter(s => s.accreditation_status === 'Accredited').length;
-        const pendingSsce = ssceSchools.filter(s => s.status === 'pending' || s.accreditation_status === 'Unaccredited').length;
-        const pendingBece = beceSchools.filter(s => s.status === 'pending' || s.accreditation_status === 'Unaccredited').length;
+        const activeSsce = ssceSchools.filter(s => ['Full', 'Partial', 'Accredited'].includes(s.accreditation_status || '') && !isDueForAccreditation(s)).length;
+        const activeBece = beceSchools.filter(s => ['Full', 'Partial', 'Accredited'].includes(s.accreditation_status || '') && !isDueForAccreditation(s)).length;
+        const pendingSsce = ssceSchools.filter(s => isDueForAccreditation(s)).length;
+        const pendingBece = beceSchools.filter(s => isDueForAccreditation(s)).length;
 
         // LGA Breakdown
         const lgaStats = lgas.map(lga => {
@@ -148,11 +148,11 @@ export default function StateReports() {
                 lgaCode: lga.code,
                 lgaName: lga.name,
                 totalSsce: lgaSsce.length,
-                accreditedSsce: lgaSsce.filter(s => s.accreditation_status === 'Accredited').length,
-                pendingSsce: lgaSsce.filter(s => s.status === 'pending' || s.accreditation_status === 'Unaccredited').length,
+                accreditedSsce: lgaSsce.filter(s => ['Full', 'Partial', 'Accredited'].includes(s.accreditation_status || '') && !isDueForAccreditation(s)).length,
+                pendingSsce: lgaSsce.filter(s => isDueForAccreditation(s)).length,
                 totalBece: lgaBece.length,
-                accreditedBece: lgaBece.filter(s => s.accreditation_status === 'Accredited').length,
-                pendingBece: lgaBece.filter(s => s.status === 'pending' || s.accreditation_status === 'Unaccredited').length,
+                accreditedBece: lgaBece.filter(s => ['Full', 'Partial', 'Accredited'].includes(s.accreditation_status || '') && !isDueForAccreditation(s)).length,
+                pendingBece: lgaBece.filter(s => isDueForAccreditation(s)).length,
             };
         }).sort((a, b) => b.totalSsce - a.totalSsce || b.totalBece - a.totalBece); // Sort by highest schools
 
@@ -165,7 +165,7 @@ export default function StateReports() {
             pendingBece,
             lgaStats
         };
-    }, [ssceSchools, beceSchools, lgas]);
+    }, [ssceSchools, beceSchools, lgas, zones, currentState]);
 
 
     if (isLoading) {

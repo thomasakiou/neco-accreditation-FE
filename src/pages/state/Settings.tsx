@@ -256,7 +256,7 @@ export default function StateSettings() {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Access Protocol</h2>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Credential Management & Shielding</p>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Password Management & Reset</p>
                             </div>
                         </div>
                     </div>
@@ -268,7 +268,7 @@ export default function StateSettings() {
                                     <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-700">
                                         <KeyRound className="w-5 h-5 text-slate-400" />
                                     </div>
-                                    <h3 className="font-black text-lg text-slate-900 dark:text-white uppercase tracking-tight">Credential Rotation</h3>
+                                    <h3 className="font-black text-lg text-slate-900 dark:text-white uppercase tracking-tight">Password Reset</h3>
                                 </div>
                                 <button
                                     onClick={() => setShowPasswords(!showPasswords)}
@@ -283,7 +283,7 @@ export default function StateSettings() {
                                 <input type="text" name="fake_username_remembered" style={{ display: 'none' }} autoComplete="username" tabIndex={-1} aria-hidden="true" />
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Current Secret</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Current Password</label>
                                     <input
                                         type={showPasswords ? "text" : "password"}
                                         value={oldPassword}
@@ -293,7 +293,7 @@ export default function StateSettings() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">New Identity Code</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">New Password</label>
                                     <input
                                         type={showPasswords ? "text" : "password"}
                                         value={newPassword}
@@ -303,7 +303,7 @@ export default function StateSettings() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Confirm Identity</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Confirm New Password</label>
                                     <input
                                         type={showPasswords ? "text" : "password"}
                                         value={confirmPassword}
