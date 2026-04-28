@@ -359,7 +359,7 @@ export default function StateDashboard() {
             </div>
 
             <div className="mt-10 flex-1 flex flex-col items-center justify-center border-t border-slate-100 dark:border-slate-800/50 pt-10">
-              <div className="w-full max-w-[160px] aspect-square rounded-full border-8 border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative group/chart">
+              <div className="w-full max-w-[160px] aspect-square rounded-full border-8 border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center relative group/chart">
                 <div 
                   className="absolute inset-[-8px] rounded-full transition-transform duration-1000"
                   style={{ 
@@ -409,7 +409,7 @@ export default function StateDashboard() {
             </div>
 
             <div className="mt-10 flex-1 flex flex-col items-center justify-center border-t border-slate-100 dark:border-slate-800/50 pt-10">
-              <div className="w-full max-w-[160px] aspect-square rounded-full border-8 border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative group/chart">
+              <div className="w-full max-w-[160px] aspect-square rounded-full border-8 border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center relative group/chart">
                 <div 
                   className="absolute inset-[-8px] rounded-full transition-transform duration-1000"
                   style={{ 
