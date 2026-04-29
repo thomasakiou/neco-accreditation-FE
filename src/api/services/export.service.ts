@@ -192,6 +192,7 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const columns = [
+    'S/N',
     'School Code',
     'School',
     'State',
@@ -200,7 +201,8 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
     'Payment',
   ];
 
-  const rows = enrichedSchools.map(school => [
+  const rows = enrichedSchools.map((school, index) => [
+    (index + 1).toString(),
     school['School Code'],
     school['School'],
     school['State'],
@@ -257,8 +259,9 @@ const exportToPDF = async (enrichedSchools: EnrichedSchool[]): Promise<void> => 
       fontStyle: 'bold',
     },
     columnStyles: {
-      0: { halign: 'center' }, // School Code
-      1: { halign: 'left' },   // School Name
+      0: { halign: 'center', cellWidth: 15 }, // S/N
+      1: { halign: 'center' }, // School Code
+      2: { halign: 'left' },   // School Name
     },
     margin: { top: 42, right: 10, bottom: 15, left: 10 },
     didDrawPage: (data) => {
