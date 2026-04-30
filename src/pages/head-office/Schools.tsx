@@ -23,7 +23,8 @@ import {
     ChevronDown,
     FileText,
     RefreshCw,
-    Mail
+    Mail,
+    AlertTriangle
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
@@ -82,6 +83,7 @@ export default function HeadOfficeSchools() {
     const [isSendingEmails, setIsSendingEmails] = useState(false);
     const [emailResults, setEmailResults] = useState<{ success: boolean; message: string; results?: any[] } | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [selectedDueOnly, setSelectedDueOnly] = useState(false);
 
     const [newSchool, setNewSchool] = useState({
         name: '',
@@ -551,6 +553,38 @@ export default function HeadOfficeSchools() {
         });
     };
 
+    const isDueForAccreditation = (school: School): boolean => {
+        if (school.accreditation_status === 'Failed') return true;
+        
+        // Unaccredited schools are technically due if they are trying to register
+        if (!school.accredited_date || !['Full', 'Partial', 'Passed'].includes(school.accreditation_status || '')) {
+            return false; // Only mark existing accredited schools as due
+        }
+
+        const accreditedDate = new Date(school.accredited_date);
+        let yearsToAdd = 5;
+
+        // Check if school is in a foreign zone
+        const schoolState = states.find(s => s.code === school.state_code);
+        const zone = zones.find(z => z.code === schoolState?.zone_code);
+        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
+
+        if (isForeign) {
+            yearsToAdd = 10;
+        } else if (school.accreditation_status === 'Partial') {
+            yearsToAdd = 1;
+        }
+
+        const expiryDate = new Date(accreditedDate);
+        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+
+        const today = new Date();
+        const sixMonthsFromNow = new Date();
+        sixMonthsFromNow.setMonth(today.getMonth() + 6);
+
+        return expiryDate <= sixMonthsFromNow;
+    };
+
     const handleBulkDelete = async () => {
         if (selectedSchools.size === 0) return;
 
@@ -634,7 +668,10 @@ export default function HeadOfficeSchools() {
             const schoolYear = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
             const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
 
-            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesAccreditationType && matchesYear;
+            const isDue = isDueForAccreditation(school);
+            const matchesDueFilter = !selectedDueOnly || isDue;
+
+            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesAccreditationType && matchesYear && matchesDueFilter;
         });
 
         const totalPages = Math.ceil(filtered.length / rowsPerPage);
@@ -647,7 +684,7 @@ export default function HeadOfficeSchools() {
             startIndex,
             paginatedSchools: paginated
         };
-    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedAccreditationType, states, currentPage, rowsPerPage, headerYearFilter]);
+    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedAccreditationType, states, currentPage, rowsPerPage, headerYearFilter, selectedDueOnly, zones]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -658,7 +695,7 @@ export default function HeadOfficeSchools() {
             <tr>
                 <td>${idx + 1}</td>
                 <td style="font-family:monospace;font-weight:bold">${school.code}</td>
-                <td style="font-weight:600">${school.name}</td>
+                <td style="font-weight:600">${school.name}${isDueForAccreditation(school) ? ' <b style="color:#dc2626;">(DUE)</b>' : ''}</td>
                 <td>${states.find(s => s.code === school.state_code)?.name || school.state_code}</td>
                 <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
                 <td>${custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</td>
@@ -1414,6 +1451,18 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
+                            <button
+                                onClick={() => { setSelectedDueOnly(!selectedDueOnly); setCurrentPage(1); }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 ${selectedDueOnly
+                                    ? 'bg-red-600 text-white border-red-500 hover:bg-red-700'
+                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 border'
+                                    }`}
+                                title="Filter by Due for Accreditation"
+                            >
+                                <AlertCircle className={`w-4 h-4 ${selectedDueOnly ? 'text-white' : 'text-red-500'}`} />
+                                {selectedDueOnly ? 'DUE ONLY ACTIVE' : 'DUE ONLY'}
+                            </button>
+
                             <div className="flex flex-wrap items-center gap-4 ml-auto">
                                 <button
                                     onClick={() => fetchInitialData()}
@@ -1578,6 +1627,12 @@ export default function HeadOfficeSchools() {
                                                             <span className="text-base font-bold text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors">
                                                                 {school.name}
                                                             </span>
+                                                            {isDueForAccreditation(school) && (
+                                                                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                                                                    <AlertTriangle className="w-3 h-3" />
+                                                                    Due for Accreditation
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
