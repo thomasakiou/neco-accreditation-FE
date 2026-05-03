@@ -87,7 +87,6 @@ const stateNavGroups: NavGroup[] = [
     items: [
       { icon: FileText, label: 'Schools Due', path: '/state/schools-due' },
       { icon: Upload, label: 'Proof of Payment', path: '/state/applications' },
-      { icon: CheckCircle, label: 'Approval/Accreditation', path: '/head-office/approvals', badge: 'dynamic_pending_approvals' },
     ]
   },
   {

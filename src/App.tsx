@@ -78,7 +78,7 @@ export default function App() {
 
             {/* Head Office Routes */}
             <Route path="/head-office/*" element={
-              <ProtectedRoute allowedRoles={['hq', 'admin', 'state']}>
+              <ProtectedRoute allowedRoles={['hq', 'admin']}>
                 <DashboardLayout role="head-office">
                   <Routes>
                     <Route path="dashboard" element={<HeadOfficeDashboard />} />

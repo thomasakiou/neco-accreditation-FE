@@ -70,6 +70,10 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
     const [showHQVerifyConfirm, setShowHQVerifyConfirm] = useState(false);
     const [verifyingSchool, setVerifyingSchool] = useState<School | null>(null);
 
+    // Bulk selection state
+    const [selectedSchoolCodes, setSelectedSchoolCodes] = useState<Set<string>>(new Set());
+    const [showBulkReviewModal, setShowBulkReviewModal] = useState(false);
+
     // Track if we've initialized the default year
     const hasInitializedYear = useRef(false);
 
@@ -299,6 +303,70 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
         setShowReviewModal(true);
     };
 
+    const toggleSchoolSelection = (code: string) => {
+        setSelectedSchoolCodes(prev => {
+            const next = new Set(prev);
+            if (next.has(code)) {
+                next.delete(code);
+            } else {
+                next.add(code);
+            }
+            return next;
+        });
+    };
+
+    const toggleStateSelection = (stateSchools: School[]) => {
+        const approvableInState = stateSchools.filter(s => s.approval_status === 'Approved');
+        const approvableCodes = approvableInState.map(s => s.code);
+        
+        setSelectedSchoolCodes(prev => {
+            const next = new Set(prev);
+            const allSelected = approvableCodes.every(code => next.has(code));
+            
+            if (allSelected) {
+                approvableCodes.forEach(code => next.delete(code));
+            } else {
+                approvableCodes.forEach(code => next.add(code));
+            }
+            return next;
+        });
+    };
+
+    const handleBulkApprove = async () => {
+        if (selectedSchoolCodes.size === 0) return;
+        try {
+            setIsSubmitting(true);
+            const selectedSchoolsList = filteredSchools.filter(s => selectedSchoolCodes.has(s.code));
+            
+            const promises = selectedSchoolsList.map(school => {
+                if (school.school_type === 'BECE') {
+                    return DataService.updateBeceSchool(school.code, {
+                        accreditation_status: accrType,
+                        accredited_date: accrDate
+                    }, school.accrd_year);
+                } else {
+                    return DataService.updateSchool(school.code, {
+                        accreditation_status: accrType,
+                        accredited_date: accrDate
+                    }, school.accrd_year);
+                }
+            });
+
+            await Promise.all(promises);
+            
+            clearStaticCache();
+            await fetchData();
+            setShowBulkReviewModal(false);
+            setSelectedSchoolCodes(new Set());
+            alert(`Successfully updated ${selectedSchoolCodes.size} schools.`);
+        } catch (err) {
+            console.error('Failed to update bulk accreditation:', err);
+            alert('Bulk update failed. Some schools may not have been updated.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     // Stats - Scoped to selected school type AND year filter
     const stats = useMemo(() => {
         const yearFilteredSchools = schools.filter(s => {
@@ -395,7 +463,10 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
             <div className="flex justify-center">
                 <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-inner backdrop-blur-sm">
                     <button
-                        onClick={() => setSelectedSchoolType('SSCE')}
+                        onClick={() => {
+                            setSelectedSchoolType('SSCE');
+                            setSelectedSchoolCodes(new Set());
+                        }}
                         className={`relative flex items-center gap-2 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${selectedSchoolType === 'SSCE'
                             ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-md transform scale-100'
                             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 scale-95 hover:scale-100'
@@ -405,7 +476,10 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
                         SSCE Schools
                     </button>
                     <button
-                        onClick={() => setSelectedSchoolType('BECE')}
+                        onClick={() => {
+                            setSelectedSchoolType('BECE');
+                            setSelectedSchoolCodes(new Set());
+                        }}
                         className={`relative flex items-center gap-2 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${selectedSchoolType === 'BECE'
                             ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-md transform scale-100'
                             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 scale-95 hover:scale-100'
@@ -613,8 +687,25 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
                                 className="w-full flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 bg-transparent transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 gap-4"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`p-2 rounded-xl transition-all ${expandedStates[stateCode] ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover/accordion:text-emerald-500'}`}>
-                                        {expandedStates[stateCode] ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={stateSchools.filter(s => s.approval_status === 'Approved').length > 0 && stateSchools.filter(s => s.approval_status === 'Approved').every(s => selectedSchoolCodes.has(s.code))}
+                                            onChange={(e) => {
+                                                e.stopPropagation();
+                                                toggleStateSelection(stateSchools);
+                                            }}
+                                            className="w-5 h-5 rounded-lg border-2 border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500/20 transition-all cursor-pointer"
+                                        />
+                                        <div 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleState(stateCode);
+                                            }}
+                                            className={`p-2 rounded-xl transition-all ${expandedStates[stateCode] ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover/accordion:text-emerald-500'}`}
+                                        >
+                                            {expandedStates[stateCode] ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                                        </div>
                                     </div>
                                     <div>
                                         <h2 className="text-base font-black text-slate-900 dark:text-white tracking-tight text-left">
@@ -677,8 +768,19 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                                                 {stateSchools.map((school, idx) => (
-                                                    <tr key={school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code} className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all duration-200">
-                                                        <td className="px-5 py-4 pl-6 text-[11px] font-black text-slate-400 w-12">{idx + 1}</td>
+                                                    <tr key={school.accrd_year ? `${school.code}-${school.accrd_year}` : school.code} className={cn("group hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all duration-200", selectedSchoolCodes.has(school.code) && "bg-emerald-50/30 dark:bg-emerald-900/10")}>
+                                                        <td className="px-5 py-4 pl-6 w-12">
+                                                            <div className="flex items-center gap-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedSchoolCodes.has(school.code)}
+                                                                    disabled={school.approval_status !== 'Approved'}
+                                                                    onChange={() => toggleSchoolSelection(school.code)}
+                                                                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500/20 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                />
+                                                                <span className="text-[11px] font-black text-slate-400">{idx + 1}</span>
+                                                            </div>
+                                                        </td>
                                                         <td className="px-5 py-4 w-32">
                                                             <span className="inline-block px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-mono font-bold rounded-lg border border-slate-200 dark:border-slate-700">
                                                                 {school.code}
@@ -738,6 +840,15 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
                                                                         Verify
                                                                     </button>
                                                                 )}
+                                                                {school.approval_status === 'Approved' && (
+                                                                    <button
+                                                                        disabled
+                                                                        className="px-3 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 opacity-100 cursor-default"
+                                                                    >
+                                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                        Approved
+                                                                    </button>
+                                                                )}
                                                                 {!isAccountant && (
                                                                 <button
                                                                     onClick={() => openReviewModal(school)}
@@ -764,6 +875,45 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
                     ))
                 )}
             </div>
+
+            {/* Bulk Actions Bar */}
+            {selectedSchoolCodes.size > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[40] animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700/50 rounded-2xl shadow-2xl p-4 flex items-center gap-6 backdrop-blur-xl">
+                        <div className="flex items-center gap-3 pl-2">
+                            <div className="p-2 bg-emerald-500/20 rounded-lg">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-white text-sm font-black tracking-tight">{selectedSchoolCodes.size} Schools Selected</span>
+                                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Ready for bulk approval</span>
+                            </div>
+                        </div>
+                        <div className="h-10 w-[1px] bg-slate-700 mx-2"></div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setSelectedSchoolCodes(new Set())}
+                                className="px-4 py-2 text-slate-400 hover:text-white text-xs font-black uppercase tracking-widest transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            {!isAccountant && (
+                                <button
+                                    onClick={() => {
+                                        setAccrType('Full');
+                                        setAccrDate(new Date().toISOString().split('T')[0]);
+                                        setShowBulkReviewModal(true);
+                                    }}
+                                    className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2"
+                                >
+                                    <ShieldCheck className="w-4 h-4" />
+                                    Approve Selected
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
             {/* Review / Accreditation Modal */}
@@ -934,6 +1084,124 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
                                                 Confirm Decision
                                             </>
                                         )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Accreditation Modal */}
+            {showBulkReviewModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl w-full max-w-2xl rounded-[2rem] shadow-2xl shadow-slate-900/20 border border-white/50 dark:border-slate-700/50 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col">
+                        {/* Header */}
+                        <div className="flex flex-shrink-0 items-center justify-between p-6 sm:px-8 sm:py-6 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Bulk Accreditation</h2>
+                                <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                    Updating <span className="text-emerald-600 dark:text-emerald-400">{selectedSchoolCodes.size}</span> schools at once
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowBulkReviewModal(false)}
+                                className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                            >
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 sm:p-8 space-y-8">
+                            {/* Accreditation Type */}
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <ShieldCheck className="w-3.5 h-3.5" />
+                                    Accreditation Status
+                                </label>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {[
+                                        { id: 'Full', label: 'Full Accreditation', desc: 'Valid for 5 years (Standard)', icon: ShieldCheck, color: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500/50', colorText: 'text-emerald-700 dark:text-emerald-400', colorCheck: 'text-emerald-500' },
+                                        { id: 'Partial', label: 'Partial Accreditation', desc: 'Valid for 1 year only', icon: ShieldAlert, color: 'bg-amber-50 dark:bg-amber-900/20 border-amber-500/50', colorText: 'text-amber-700 dark:text-amber-400', colorCheck: 'text-amber-500' },
+                                        { id: 'Failed', label: 'Accreditation Failed', desc: 'School did not meet requirements', icon: ShieldX, color: 'bg-red-50 dark:bg-red-900/20 border-red-500/50', colorText: 'text-red-700 dark:text-red-400', colorCheck: 'text-red-500' }
+                                    ].map((type) => {
+                                        const Icon = type.icon;
+                                        return (
+                                            <button
+                                                key={type.id}
+                                                onClick={() => setAccrType(type.id as any)}
+                                                className={cn(
+                                                    "relative p-4 rounded-2xl border-2 text-left transition-all duration-300 active:scale-[0.98]",
+                                                    accrType === type.id
+                                                        ? `${type.color} shadow-lg shadow-emerald-500/5`
+                                                        : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                                                )}
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex gap-3">
+                                                        <div className={`mt-0.5 ${accrType === type.id ? type.colorCheck : 'text-slate-400'}`}>
+                                                            <Icon className="w-5 h-5" />
+                                                        </div>
+                                                        <div>
+                                                            <span className={`block text-sm font-black uppercase tracking-tight ${accrType === type.id ? type.colorText : 'text-slate-700 dark:text-slate-300'}`}>
+                                                                {type.label}
+                                                            </span>
+                                                            <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                                                                {type.desc}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${accrType === type.id ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 dark:border-slate-600'}`}>
+                                                        {accrType === type.id && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Accreditation Date */}
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    Accreditation Date
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                        <Calendar className="w-4 h-4 text-emerald-600" />
+                                    </div>
+                                    <input
+                                        type="date"
+                                        value={accrDate}
+                                        onChange={(e) => setAccrDate(e.target.value)}
+                                        className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-6 border-t border-slate-200/50 dark:border-slate-800/50 space-y-4">
+                                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-700/50">
+                                    <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 leading-relaxed flex items-start gap-2">
+                                        <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                        <span>Warning: This will update all {selectedSchoolCodes.size} selected schools with the chosen status and date. This action cannot be easily undone.</span>
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowBulkReviewModal(false)}
+                                        className="flex-1 py-4 text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleBulkApprove}
+                                        disabled={isSubmitting}
+                                        className="flex-[2] py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                    >
+                                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                                        {isSubmitting ? 'Processing...' : 'Confirm Bulk Approval'}
                                     </button>
                                 </div>
                             </div>

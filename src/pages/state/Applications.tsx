@@ -148,7 +148,7 @@ export default function StateApplications() {
                 DataService.getStates(),
                 DataService.getZones()
             ]);
-            
+
             const current = statesData.find(s => s.code === stateCode);
             setCurrentState(current || null);
             setZones(zonesData);
@@ -550,8 +550,8 @@ export default function StateApplications() {
                             onClick={() => setIsDueOnly(!isDueOnly)}
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300",
-                                isDueOnly 
-                                    ? "bg-amber-500/10 border-amber-500/50 text-amber-600 shadow-lg shadow-amber-500/5" 
+                                isDueOnly
+                                    ? "bg-amber-500/10 border-amber-500/50 text-amber-600 shadow-lg shadow-amber-500/5"
                                     : "bg-slate-100/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-amber-500/30"
                             )}
                         >
@@ -689,7 +689,7 @@ export default function StateApplications() {
                                                                     : "bg-amber-500/10 text-amber-600 border-amber-500/20"
                                                             )}>
                                                                 <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", school.approval_status === 'Approved' ? "bg-emerald-500" : "bg-amber-500")}></div>
-                                                                {school.approval_status === 'Approved' ? 'Verified Paid' : 'Pending Verification'}
+                                                                {school.approval_status === 'Approved' ? 'Payment Verified' : 'Pending Verification'}
                                                             </div>
                                                         ) : (
                                                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] font-black uppercase tracking-widest">
@@ -717,7 +717,13 @@ export default function StateApplications() {
                                                                 setSelectedSchool(school);
                                                                 setIsUploadModalOpen(true);
                                                             }}
-                                                            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                                                            disabled={school.approval_status === 'Approved'}
+                                                            className={cn(
+                                                                "flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed",
+                                                                school.approval_status === 'Approved' 
+                                                                    ? "bg-slate-400 dark:bg-slate-700" 
+                                                                    : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20"
+                                                            )}
                                                         >
                                                             <Upload className="w-3.5 h-3.5" />
                                                             {school.payment_url ? 'Update' : 'Submit'}
