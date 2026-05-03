@@ -126,12 +126,16 @@ export default function StateDashboard() {
     // Filter schools by year first
     const filteredSsce = ssceSchools.filter(s => {
       const year = s.accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
-      return !headerYearFilter || year === headerYearFilter;
+      const isYearMatch = !headerYearFilter || year === headerYearFilter;
+      const isInactive = (s.status || '').toLowerCase() === 'inactive';
+      return isYearMatch && !isInactive;
     });
 
     const filteredBece = beceSchools.filter(s => {
       const year = s.accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : '');
-      return !headerYearFilter || year === headerYearFilter;
+      const isYearMatch = !headerYearFilter || year === headerYearFilter;
+      const isInactive = (s.status || '').toLowerCase() === 'inactive';
+      return isYearMatch && !isInactive;
     });
 
     const totalSsce = filteredSsce.length;

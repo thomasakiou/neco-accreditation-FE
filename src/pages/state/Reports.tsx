@@ -88,8 +88,8 @@ export default function StateReports() {
     // Summary Report Stats (matching report.png)
     const summaryReportStats = useMemo(() => {
         return lgas.map(lga => {
-            const lgaSsceDue = ssceSchools.filter(s => s.lga_code === lga.code && isDueForAccreditation(s));
-            const lgaBeceDue = beceSchools.filter(s => s.lga_code === lga.code && isDueForAccreditation(s));
+            const lgaSsceDue = ssceSchools.filter(s => s.lga_code === lga.code && isDueForAccreditation(s) && (s.status || '').toLowerCase() !== 'inactive');
+            const lgaBeceDue = beceSchools.filter(s => s.lga_code === lga.code && isDueForAccreditation(s) && (s.status || '').toLowerCase() !== 'inactive');
 
             return {
                 lgaCode: lga.code,
@@ -112,17 +112,20 @@ export default function StateReports() {
         pendingBece,
         lgaStats
     } = React.useMemo(() => {
-        const totalSsce = ssceSchools.length;
-        const totalBece = beceSchools.length;
-        const activeSsce = ssceSchools.filter(s => ['Full', 'Partial', 'Accredited'].includes(s.accreditation_status || '') && !isDueForAccreditation(s)).length;
-        const activeBece = beceSchools.filter(s => ['Full', 'Partial', 'Accredited'].includes(s.accreditation_status || '') && !isDueForAccreditation(s)).length;
-        const pendingSsce = ssceSchools.filter(s => isDueForAccreditation(s)).length;
-        const pendingBece = beceSchools.filter(s => isDueForAccreditation(s)).length;
+        const filteredSsce = ssceSchools.filter(s => (s.status || '').toLowerCase() !== 'inactive');
+        const filteredBece = beceSchools.filter(s => (s.status || '').toLowerCase() !== 'inactive');
+
+        const totalSsce = filteredSsce.length;
+        const totalBece = filteredBece.length;
+        const activeSsce = filteredSsce.filter(s => ['Full', 'Partial', 'Accredited'].includes(s.accreditation_status || '') && !isDueForAccreditation(s)).length;
+        const activeBece = filteredBece.filter(s => ['Full', 'Partial', 'Accredited'].includes(s.accreditation_status || '') && !isDueForAccreditation(s)).length;
+        const pendingSsce = filteredSsce.filter(s => isDueForAccreditation(s)).length;
+        const pendingBece = filteredBece.filter(s => isDueForAccreditation(s)).length;
 
         // LGA Breakdown
         const lgaStats = lgas.map(lga => {
-            const lgaSsce = ssceSchools.filter(s => s.lga_code === lga.code);
-            const lgaBece = beceSchools.filter(s => s.lga_code === lga.code);
+            const lgaSsce = filteredSsce.filter(s => s.lga_code === lga.code);
+            const lgaBece = filteredBece.filter(s => s.lga_code === lga.code);
             return {
                 lgaCode: lga.code,
                 lgaName: lga.name,

@@ -404,8 +404,11 @@ export default function StateSchools() {
 
             const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
             const matchesDueStatus = !isDueOnly || isDueForAccreditation(school);
+            
+            // Filter out inactive schools in state portal
+            const isInactive = (school.status || '').toLowerCase() === 'inactive';
 
-            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesGender && matchesAccreditationType && matchesYear && matchesDueStatus;
+            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesGender && matchesAccreditationType && matchesYear && matchesDueStatus && !isInactive;
         });
 
 

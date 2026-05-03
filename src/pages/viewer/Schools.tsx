@@ -70,8 +70,11 @@ export default function ViewerSchools() {
 
     const matchesGender = selectedGender === '' || school.gender?.toUpperCase() === selectedGender.toUpperCase();
     const matchesDueStatus = !isDueOnly || isSchoolDueForAccreditation(school, states, zones);
+    
+    // Filter out inactive schools
+    const isInactive = ((school as any).status || '').toLowerCase() === 'inactive';
 
-    return matchesSearch && matchesZone && matchesGender && matchesDueStatus;
+    return matchesSearch && matchesZone && matchesGender && matchesDueStatus && !isInactive;
   });
 
   const getStatusBadgeColor = (status: string) => {

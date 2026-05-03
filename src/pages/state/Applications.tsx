@@ -313,7 +313,10 @@ export default function StateApplications() {
 
             const matchesDue = !isDueOnly || isDueForAccreditation(s);
 
-            return matchesSearch && matchesAccreditation && matchesProof && matchesCategory && matchesYear && matchesDue;
+            // Filter out inactive schools in state portal
+            const isInactive = (s.status || '').toLowerCase() === 'inactive';
+
+            return matchesSearch && matchesAccreditation && matchesProof && matchesCategory && matchesYear && matchesDue && !isInactive;
         });
 
 

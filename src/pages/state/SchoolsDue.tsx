@@ -129,8 +129,11 @@ export default function StateSchoolsDue() {
                 (selectedPaymentFilter === 'Pending' && !!school.payment_url && school.approval_status !== 'Approved') ||
                 (selectedPaymentFilter === 'Unpaid' && !school.payment_url);
             const matchesAccr = !selectedAccrFilter || school.accreditation_status === selectedAccrFilter;
+            
+            // Filter out inactive schools in state portal
+            const isInactive = (school.status || '').toLowerCase() === 'inactive';
 
-            return isDue && matchesSearch && matchesPayment && matchesAccr;
+            return isDue && matchesSearch && matchesPayment && matchesAccr && !isInactive;
         });
     }, [schools, searchQuery, selectedPaymentFilter, selectedAccrFilter, activeTab, zones, userState]);
 

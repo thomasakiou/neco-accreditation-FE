@@ -24,7 +24,9 @@ import {
     FileText,
     RefreshCw,
     Mail,
-    AlertTriangle
+    AlertTriangle,
+    Power,
+    CheckCircle
 } from 'lucide-react';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
@@ -58,6 +60,7 @@ export default function HeadOfficeSchools() {
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [selectedGender, setSelectedGender] = useState<string>('');
     const [selectedAccreditationType, setSelectedAccreditationType] = useState<string>('');
+    const [selectedStatus, setSelectedStatus] = useState<string>('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingSchool, setEditingSchool] = useState<School | null>(null);
@@ -134,6 +137,48 @@ export default function HeadOfficeSchools() {
             newSelected.add(rowId);
         }
         setSelectedSchools(newSelected);
+    };
+    
+    const handleToggleStatus = async (school: School) => {
+        const isBece = activeTab === 'BECE';
+        const currentStatus = school.status?.toLowerCase() || 'active';
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        const actionLabel = newStatus === 'active' ? 'Activate' : 'Deactivate';
+
+        setConfirmDialog({
+            isOpen: true,
+            title: `${actionLabel} School`,
+            message: `Are you sure you want to ${actionLabel.toLowerCase()} ${school.name}? ${newStatus === 'inactive' ? 'This school will no longer be visible in the State portal.' : 'This school will become visible in the State portal again.'}`,
+            confirmLabel: actionLabel,
+            variant: newStatus === 'active' ? 'warning' : 'danger',
+            onConfirm: async () => {
+                try {
+                    setIsLoading(true);
+                    if (isBece) {
+                        await DataService.updateBeceSchool(school.code, { status: newStatus }, school.accrd_year);
+                    } else {
+                        await DataService.updateSchool(school.code, { status: newStatus }, school.accrd_year);
+                    }
+                    
+                    // Update local state
+                    if (isBece) {
+                        setBeceSchools(prev => prev.map(s => 
+                            (s.code === school.code && s.accrd_year === school.accrd_year) ? { ...s, status: newStatus } : s
+                        ));
+                    } else {
+                        setSsceSchools(prev => prev.map(s => 
+                            (s.code === school.code && s.accrd_year === school.accrd_year) ? { ...s, status: newStatus } : s
+                        ));
+                    }
+                    
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                } catch (err: any) {
+                    setError(err.response?.data?.detail || `Failed to ${actionLabel.toLowerCase()} school`);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        });
     };
 
     const toggleSelectAll = (filteredSchools: School[]) => {
@@ -328,6 +373,7 @@ export default function HeadOfficeSchools() {
         setSelectedCategory('');
         setSelectedGender('');
         setSelectedAccreditationType('');
+        setSelectedStatus('');
         setSearchTerm('');
         setCurrentPage(1);
         // No fetch needed — data already loaded on mount
@@ -648,13 +694,15 @@ export default function HeadOfficeSchools() {
 
             const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
 
+            const matchesStatus = selectedStatus === '' || (school.status || 'active').toLowerCase() === selectedStatus.toLowerCase();
+
             const schoolYear = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
             const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
 
             const isDue = isDueForAccreditation(school);
             const matchesDueFilter = !selectedDueOnly || isDue;
 
-            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesGender && matchesAccreditationType && matchesYear && matchesDueFilter;
+            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesGender && matchesAccreditationType && matchesStatus && matchesYear && matchesDueFilter;
         });
 
         const totalPages = Math.ceil(filtered.length / rowsPerPage);
@@ -667,11 +715,11 @@ export default function HeadOfficeSchools() {
             startIndex,
             paginatedSchools: paginated
         };
-    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedGender, selectedAccreditationType, states, currentPage, rowsPerPage, headerYearFilter, selectedDueOnly, zones]);
+    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedGender, selectedAccreditationType, selectedStatus, states, currentPage, rowsPerPage, headerYearFilter, selectedDueOnly, zones]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedGender, selectedAccreditationType]);
+    }, [searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedGender, selectedAccreditationType, selectedStatus]);
 
     const handleExportReport = () => {
         const rows = filteredSchools.map((school, idx) => `
@@ -1432,6 +1480,21 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[140px] xl:flex-none">
+                                <Power className="w-4 h-4 text-slate-600" />
+                                <select
+                                    value={selectedStatus}
+                                    onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
+                                    className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
+                                >
+                                    <option value="" className="dark:bg-slate-800">
+                                        All Status
+                                    </option>
+                                    <option value="active" className="dark:bg-slate-800">Active</option>
+                                    <option value="inactive" className="dark:bg-slate-800">Inactive</option>
+                                </select>
+                            </div>
+
                             <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[150px] xl:flex-none">
                                 <GraduationCap className="w-4 h-4 text-slate-600" />
                                 <select
@@ -1705,6 +1768,15 @@ export default function HeadOfficeSchools() {
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                onClick={() => handleToggleStatus(school)}
+                                                                className={`p-1.5 rounded-lg transition-all ${school.status === 'active' 
+                                                                    ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10' 
+                                                                    : 'text-amber-600 bg-amber-50 dark:bg-amber-900/10 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10'}`}
+                                                                title={school.status === 'active' ? 'Deactivate School' : 'Activate School'}
+                                                            >
+                                                                <Power className="w-4 h-4" />
+                                                            </button>
                                                             <button
                                                                 onClick={() => handleEditClick(school)}
                                                                 className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-all"
