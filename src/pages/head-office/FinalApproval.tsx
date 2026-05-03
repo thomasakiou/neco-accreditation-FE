@@ -32,13 +32,18 @@ import { clearStaticCache } from '../../api/services/data.service';
 import { baseURL } from '../../api/client';
 import { components } from '../../api/types';
 import SearchableSelect from '../../components/common/SearchableSelect';
+import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import { useFilterContext } from '../../context/FilterContext';
 import { cn } from '../../lib/utils';
 
 type School = components['schemas']['School'] & { school_type?: 'SSCE' | 'BECE' };
 type State = components['schemas']['State'];
 
-export default function HeadOfficeFinalApproval() {
+interface FinalApprovalProps {
+    isAccountant?: boolean;
+}
+
+export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalApprovalProps) {
     const [schools, setSchools] = useState<School[]>([]);
     const [states, setStates] = useState<State[]>([]);
     const [zones, setZones] = useState<components['schemas']['Zone'][]>([]);
@@ -62,6 +67,7 @@ export default function HeadOfficeFinalApproval() {
     const [accrDate, setAccrDate] = useState(new Date().toISOString().split('T')[0]);
 
     const [showVerifyModal, setShowVerifyModal] = useState(false);
+    const [showHQVerifyConfirm, setShowHQVerifyConfirm] = useState(false);
     const [verifyingSchool, setVerifyingSchool] = useState<School | null>(null);
 
     // Track if we've initialized the default year
@@ -149,7 +155,9 @@ export default function HeadOfficeFinalApproval() {
             const matchesSearch = !searchTerm ||
                 school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 school.code.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesState = !selectedStateFilter || school.state_code === selectedStateFilter;
+            const matchesState = (currentUser?.role === 'state' && currentUser?.state_code) 
+                ? school.state_code === currentUser.state_code 
+                : (!selectedStateFilter || school.state_code === selectedStateFilter);
             const matchesAccr = !selectedAccrFilter ||
                 (selectedAccrFilter === 'Accredited' && (school.accreditation_status === 'Full' || school.accreditation_status === 'Partial')) ||
                 (selectedAccrFilter === 'Unaccredited' && (!school.accreditation_status || school.accreditation_status === 'Pending' || school.accreditation_status === 'Failed')) ||
@@ -512,13 +520,16 @@ export default function HeadOfficeFinalApproval() {
                             </div>
                             <select
                                 value={selectedStateFilter}
+                                disabled={currentUser?.role === 'state'}
                                 onChange={(e) => setSelectedStateFilter(e.target.value)}
                                 className="w-full h-full pl-10 pr-8 py-3 bg-slate-100/50 dark:bg-slate-800/50 border-0 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500/50 appearance-none cursor-pointer [&>option]:dark:bg-slate-800 [&>option]:dark:text-slate-200"
                             >
                                 <option value="">All States</option>
-                                {states.map(state => (
-                                    <option key={state.code} value={state.code}>{state.name}</option>
-                                ))}
+                                {states
+                                    .filter(state => !(currentUser?.role === 'state' && currentUser?.state_code) || state.code === currentUser.state_code)
+                                    .map(state => (
+                                        <option key={state.code} value={state.code}>{state.name}</option>
+                                    ))}
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         </div>
@@ -713,8 +724,13 @@ export default function HeadOfficeFinalApproval() {
                                                                 {school.approval_status !== 'Approved' && school.payment_url && (
                                                                     <button
                                                                         onClick={() => {
-                                                                            setVerifyingSchool(school);
-                                                                            setShowVerifyModal(true);
+                                                                            if (currentUser?.email === 'accreditation@neco.gov.ng') {
+                                                                                setVerifyingSchool(school);
+                                                                                setShowHQVerifyConfirm(true);
+                                                                            } else {
+                                                                                setVerifyingSchool(school);
+                                                                                setShowVerifyModal(true);
+                                                                            }
                                                                         }}
                                                                         className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-blue-500/20 flex items-center gap-1.5"
                                                                     >
@@ -722,14 +738,19 @@ export default function HeadOfficeFinalApproval() {
                                                                         Verify
                                                                     </button>
                                                                 )}
+                                                                {!isAccountant && (
                                                                 <button
                                                                     onClick={() => openReviewModal(school)}
-                                                                    disabled={school.approval_status !== 'Approved'}
+                                                                    disabled={
+                                                                        school.approval_status !== 'Approved' || 
+                                                                        currentUser?.role === 'state'
+                                                                    }
                                                                     className="px-3 py-2 bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-slate-900/10 flex items-center gap-1.5 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
                                                                 >
                                                                     <CheckCircle2 className="w-3.5 h-3.5" />
                                                                     Accredit
                                                                 </button>
+                                                                )}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -1035,6 +1056,23 @@ export default function HeadOfficeFinalApproval() {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={showHQVerifyConfirm}
+                title="Verify Payment?"
+                message="Payments are to be verified by the Accountant. Do you want to do it yourself?"
+                confirmLabel="Yes, Proceed"
+                cancelLabel="No, Cancel"
+                variant="info"
+                onConfirm={() => {
+                    setShowHQVerifyConfirm(false);
+                    setShowVerifyModal(true);
+                }}
+                onCancel={() => {
+                    setShowHQVerifyConfirm(false);
+                    setVerifyingSchool(null);
+                }}
+            />
         </div >
     );
 }

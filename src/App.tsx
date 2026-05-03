@@ -78,7 +78,7 @@ export default function App() {
 
             {/* Head Office Routes */}
             <Route path="/head-office/*" element={
-              <ProtectedRoute allowedRoles={['hq', 'admin']}>
+              <ProtectedRoute allowedRoles={['hq', 'admin', 'state']}>
                 <DashboardLayout role="head-office">
                   <Routes>
                     <Route path="dashboard" element={<HeadOfficeDashboard />} />
@@ -99,6 +99,18 @@ export default function App() {
               </ProtectedRoute>
             } />
 
+            {/* Accountant Routes */}
+            <Route path="/accountant/*" element={
+              <ProtectedRoute allowedRoles={['accountant']}>
+                <DashboardLayout role="accountant">
+                  <Routes>
+                    <Route path="approvals" element={<HeadOfficeFinalApproval isAccountant={true} />} />
+                    <Route path="*" element={<Navigate to="approvals" replace />} />
+                  </Routes>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+
             {/* Viewer Routes */}
             <Route path="/viewer/*" element={
               <ProtectedRoute allowedRoles={['viewer']}>
@@ -108,6 +120,22 @@ export default function App() {
                     <Route path="zones" element={<ViewerZones />} />
                     <Route path="states" element={<ViewerStates />} />
                     <Route path="lgas" element={<ViewerLGAs />} />
+                    <Route path="schools" element={<ViewerSchools />} />
+                    <Route path="custodians" element={<ViewerCustodians />} />
+                    <Route path="reports" element={<ViewerReports />} />
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Zone Routes */}
+            <Route path="/zone/*" element={
+              <ProtectedRoute allowedRoles={['zone']}>
+                <DashboardLayout role="zone">
+                  <Routes>
+                    <Route path="dashboard" element={<ViewerDashboard />} />
+                    <Route path="states" element={<ViewerStates />} />
                     <Route path="schools" element={<ViewerSchools />} />
                     <Route path="custodians" element={<ViewerCustodians />} />
                     <Route path="reports" element={<ViewerReports />} />

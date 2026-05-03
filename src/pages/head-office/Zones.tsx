@@ -38,6 +38,7 @@ export default function Zones() {
         name: '',
         code: '',
         description: '',
+        zone_email: '',
         status: 'active'
     });
 
@@ -67,7 +68,7 @@ export default function Zones() {
             setIsSubmitting(true);
             await DataService.createZone(newZone);
             setShowAddModal(false);
-            setNewZone({ name: '', code: '', description: '', status: 'active' });
+            setNewZone({ name: '', code: '', description: '', zone_email: '', status: 'active' });
             fetchZones();
         } catch (err: any) {
             setError(err.response?.data?.detail?.[0]?.msg || 'Failed to create zone.');
@@ -196,6 +197,18 @@ export default function Zones() {
                                 </div>
 
                                 <div className="space-y-1.5">
+                                    <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Zone Email</label>
+                                    <input
+                                        type="email"
+                                        placeholder="e.g. nc_zone@neco.gov.ng"
+                                        value={newZone.zone_email}
+                                        onChange={e => setNewZone({ ...newZone, zone_email: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    />
+                                    <p className="text-[10px] text-slate-500 font-medium italic">Credentials will be sent to this email upon creation.</p>
+                                </div>
+
+                                <div className="space-y-1.5">
                                     <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Description</label>
                                     <textarea
                                         placeholder="Optional description..."
@@ -259,6 +272,17 @@ export default function Zones() {
                                         disabled
                                         value={editingZone.code}
                                         className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 outline-none cursor-not-allowed uppercase"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Zone Email</label>
+                                    <input
+                                        type="email"
+                                        placeholder="e.g. nc_zone@neco.gov.ng"
+                                        value={editingZone.zone_email || ''}
+                                        onChange={e => setEditingZone({ ...editingZone, zone_email: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                     />
                                 </div>
 
@@ -341,6 +365,7 @@ export default function Zones() {
                             <tr>
                                 <th className="px-6 py-4">Zone Code</th>
                                 <th className="px-6 py-4">Zone Name</th>
+                                <th className="px-6 py-4">Zone Email</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -373,6 +398,11 @@ export default function Zones() {
                                         <td className="px-6 py-4">
                                             <span className="text-base font-bold text-slate-950 dark:text-white group-hover:text-emerald-600 transition-colors">
                                                 {zone.name}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                                                {zone.zone_email || '—'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">

@@ -49,7 +49,7 @@ interface NavGroup {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  role: 'school' | 'state' | 'head-office' | 'viewer';
+  role: 'school' | 'state' | 'head-office' | 'viewer' | 'accountant' | 'zone';
 }
 
 const schoolNavGroups: NavGroup[] = [
@@ -87,6 +87,7 @@ const stateNavGroups: NavGroup[] = [
     items: [
       { icon: FileText, label: 'Schools Due', path: '/state/schools-due' },
       { icon: Upload, label: 'Proof of Payment', path: '/state/applications' },
+      { icon: CheckCircle, label: 'Approval/Accreditation', path: '/head-office/approvals', badge: 'dynamic_pending_approvals' },
     ]
   },
   {
@@ -130,6 +131,29 @@ const headOfficeNavGroups: NavGroup[] = [
   }
 ];
 
+const zoneNavGroups: NavGroup[] = [
+  {
+    label: 'Operations',
+    items: [
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/zone/dashboard' },
+      { icon: School, label: 'Schools', path: '/zone/schools' },
+    ]
+  },
+  {
+    label: 'Directory',
+    items: [
+      { icon: Map, label: 'States', path: '/zone/states' },
+      { icon: ShieldCheck, label: 'Custodians', path: '/zone/custodians' },
+    ]
+  },
+  {
+    label: 'Analysis',
+    items: [
+      { icon: BarChart3, label: 'Reports', path: '/zone/reports' },
+    ]
+  }
+];
+
 const viewerNavGroups: NavGroup[] = [
   {
     label: 'Monitoring',
@@ -155,6 +179,15 @@ const viewerNavGroups: NavGroup[] = [
   }
 ];
 
+const accountantNavGroups: NavGroup[] = [
+  {
+    label: 'Accreditation',
+    items: [
+      { icon: CheckCircle, label: 'Approval/Accreditation', path: '/accountant/approvals', badge: 'dynamic_pending_approvals' },
+    ]
+  }
+];
+
 export default function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isDesktopCollapsed, setIsDesktopCollapsed] = React.useState(false);
@@ -163,15 +196,15 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   const [pendingApprovalsCount, setPendingApprovalsCount] = React.useState<number>(0);
   const location = useLocation();
   const navigate = useNavigate();
-    const { isDark, toggleTheme } = useTheme();
-    const { headerYearFilter, setHeaderYearFilter, headerAvailableYears } = useFilterContext();
-    
-    // Alert modal state
-    const [alertConfig, setAlertConfig] = React.useState<{
-        isOpen: boolean;
-        title: string;
-        message: string;
-    }>({ isOpen: false, title: '', message: '' });
+  const { isDark, toggleTheme } = useTheme();
+  const { headerYearFilter, setHeaderYearFilter, headerAvailableYears } = useFilterContext();
+
+  // Alert modal state
+  const [alertConfig, setAlertConfig] = React.useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  }>({ isOpen: false, title: '', message: '' });
 
   const showYearFilter = [
     '/head-office/dashboard',
@@ -181,7 +214,8 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     '/state/dashboard',
     '/state/schools',
     '/state/schools-due',
-    '/state/applications'
+    '/state/applications',
+    '/accountant/approvals'
   ].includes(location.pathname);
 
   React.useEffect(() => {
@@ -200,6 +234,21 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           setEntityName(currentState?.name ? `${currentState.name} State Office` : `State Office: ${user.state_code}`);
         } else if (role === 'viewer') {
           setEntityName('Accreditation Viewer');
+        } else if (role === 'zone') {
+          setEntityName(`Zonal Office: ${user.zone_code || 'Coordinator'}`);
+        } else if (role === 'accountant') {
+          setEntityName('Payment Verification');
+
+          // Fetch pending approvals count for Accountant
+          const schools = await DataService.getSchools();
+          const pendingCount = schools.filter((school: any) => {
+            return school.payment_url && (
+              !school.accreditation_status ||
+              school.accreditation_status === 'Pending' ||
+              school.accreditation_status === 'Unaccredited'
+            );
+          }).length;
+          setPendingApprovalsCount(pendingCount);
         } else {
           setEntityName('Head Office Portal');
 
@@ -225,7 +274,13 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
 
   const isSuperAdmin = currentUser?.email === 'admin@neco.gov.ng';
 
-  const navGroupsRaw = role === 'school' ? schoolNavGroups : role === 'state' ? stateNavGroups : role === 'viewer' ? viewerNavGroups : headOfficeNavGroups;
+  const navGroupsRaw =
+    role === 'school' ? schoolNavGroups :
+      role === 'state' ? stateNavGroups :
+        role === 'viewer' ? viewerNavGroups :
+          role === 'accountant' ? accountantNavGroups :
+            role === 'zone' ? zoneNavGroups :
+              headOfficeNavGroups;
   const navGroups = navGroupsRaw.map(group => ({
     ...group,
     items: group.items
@@ -244,19 +299,19 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       })
   })).filter(group => group.items.length > 0);
 
-    const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : role === 'viewer' ? 'Viewer' : 'National Admin');
-    const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : role === 'viewer' ? 'Accreditation Viewer' : 'Head Office Portal');
+  const roleLabel = currentUser?.full_name || currentUser?.name || (role === 'school' ? 'School Admin' : role === 'state' ? 'State Coordinator' : role === 'viewer' ? 'Viewer' : role === 'accountant' ? 'Accountant' : role === 'zone' ? 'Zonal Director' : 'National Admin');
+  const roleSubLabel = entityName || (role === 'school' ? 'Greenwood Academy' : role === 'state' ? 'Lagos State Office' : role === 'viewer' ? 'Accreditation Viewer' : role === 'accountant' ? 'Payment Verification' : role === 'zone' ? 'Zonal Office' : 'Head Office Portal');
 
-    const handleRestrictedClick = (e: React.MouseEvent, label: string) => {
-        if (role === 'head-office' && !isSuperAdmin) {
-            e.preventDefault();
-            setAlertConfig({
-                isOpen: true,
-                title: 'Access Restricted',
-                message: `You do not have permission to access ${label}. Only the system administrator can perform this action.`
-            });
-        }
-    };
+  const handleRestrictedClick = (e: React.MouseEvent, label: string) => {
+    if (role === 'head-office' && !isSuperAdmin) {
+      e.preventDefault();
+      setAlertConfig({
+        isOpen: true,
+        title: 'Access Restricted',
+        message: `You do not have permission to access ${label}. Only the system administrator can perform this action.`
+      });
+    }
+  };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -513,12 +568,12 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           </div>
         </main>
       </div>
-            <AlertModal 
-                isOpen={alertConfig.isOpen}
-                title={alertConfig.title}
-                message={alertConfig.message}
-                onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
-            />
-        </div>
-    );
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+      />
+    </div>
+  );
 }

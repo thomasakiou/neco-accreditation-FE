@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart3, Users, Building2, CheckCircle, AlertCircle } from 'lucide-react';
 import DataService from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 
 interface DashboardStats {
   totalStates: number;
@@ -29,15 +30,34 @@ export default function ViewerDashboard() {
   });
   const [stateOverviews, setStateOverviews] = React.useState<StateOverview[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const [states, schools, beceSchools] = await Promise.all([
+        const [statesRaw, schoolsRaw, beceSchoolsRaw, userData] = await Promise.all([
           DataService.getStates(),
           DataService.getSchools(),
           DataService.getBeceSchools(),
+          AuthService.getCurrentUser()
         ]);
+
+        setCurrentUser(userData);
+
+        // Filter by zone if user is a zone user
+        const states = userData?.role === 'zone'
+          ? statesRaw.filter((s: any) => s.zone_code === userData.zone_code)
+          : statesRaw;
+
+        const stateCodes = new Set(states.map((s: any) => s.code));
+
+        const schools = userData?.role === 'zone'
+          ? schoolsRaw.filter((s: any) => stateCodes.has(s.state_code))
+          : schoolsRaw;
+
+        const beceSchools = userData?.role === 'zone'
+          ? beceSchoolsRaw.filter((s: any) => stateCodes.has(s.state_code))
+          : beceSchoolsRaw;
 
         // Calculate overall stats
         const accreditedSCE = schools.filter(
@@ -123,20 +143,7 @@ export default function ViewerDashboard() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-slate-950 dark:text-white">Dashboard</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-2">View-only access to accreditation data</p>
-      </div>
-
-      {/* Info Box */}
-      <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex gap-3">
-        <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
-            Read-Only Access
-          </p>
-          <p className="text-sm text-blue-800 dark:text-blue-300 mt-1">
-            You have view-only access to the accreditation system. You can browse statistics and school data but cannot make any modifications.
-          </p>
-        </div>
+        <p className="text-slate-600 dark:text-slate-400 mt-2">View-only access to accreditation datain your Zone</p>
       </div>
 
       {/* Stat Cards */}

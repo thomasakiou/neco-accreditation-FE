@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle, BarChart3, Download } from 'lucide-react';
 import DataService from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 
 export default function ViewerReports() {
   const [stats, setStats] = React.useState({
@@ -11,15 +12,34 @@ export default function ViewerReports() {
     accreditedBECESchools: 0,
   });
   const [isLoading, setIsLoading] = React.useState(true);
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
 
   React.useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [states, schools, beceSchools] = await Promise.all([
+        const [statesRaw, schoolsRaw, beceSchoolsRaw, userData] = await Promise.all([
           DataService.getStates(),
           DataService.getSchools(),
           DataService.getBeceSchools(),
+          AuthService.getCurrentUser()
         ]);
+
+        setCurrentUser(userData);
+
+        // Filter by zone if user is a zone user
+        const states = userData?.role === 'zone' 
+          ? statesRaw.filter((s: any) => s.zone_code === userData.zone_code)
+          : statesRaw;
+        
+        const stateCodes = new Set(states.map((s: any) => s.code));
+        
+        const schools = userData?.role === 'zone'
+          ? schoolsRaw.filter((s: any) => stateCodes.has(s.state_code))
+          : schoolsRaw;
+          
+        const beceSchools = userData?.role === 'zone'
+          ? beceSchoolsRaw.filter((s: any) => stateCodes.has(s.state_code))
+          : beceSchoolsRaw;
 
         const accreditedSCE = schools.filter((s: any) => s.accreditation_status === 'Full').length;
         const accreditedBECE = beceSchools.filter((s: any) => s.accreditation_status === 'Full').length;
@@ -62,12 +82,6 @@ export default function ViewerReports() {
         <p className="text-slate-600 dark:text-slate-400 mt-2">System-wide accreditation reports and statistics</p>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex gap-3">
-        <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-blue-800 dark:text-blue-300">
-          This is a read-only view. Data cannot be modified.
-        </p>
-      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

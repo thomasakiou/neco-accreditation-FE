@@ -33,8 +33,12 @@ export default function Login() {
         navigate('/state/dashboard', { replace: true });
       } else if (response.role === 'hq' || response.role === 'head' || response.role === 'admin') {
         navigate('/head-office/dashboard', { replace: true });
+      } else if (response.role === 'accountant') {
+        navigate('/accountant/approvals', { replace: true });
       } else if (response.role === 'viewer') {
         navigate('/viewer/dashboard', { replace: true });
+      } else if (response.role === 'zone') {
+        navigate('/zone/dashboard', { replace: true });
       } else {
         setError('Unauthorized: Your account does not have a valid role for this system.');
       }

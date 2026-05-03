@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import DataService from '../../api/services/data.service';
+import AuthService from '../../api/services/auth.service';
 
 interface State {
   code: string;
@@ -13,26 +14,37 @@ export default function ViewerStates() {
   const [states, setStates] = React.useState<State[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
 
   React.useEffect(() => {
-    const fetchStates = async () => {
+    const fetchStatesAndUser = async () => {
       try {
-        const data = await DataService.getStates();
-        setStates(data);
+        const [statesData, userData] = await Promise.all([
+          DataService.getStates(),
+          AuthService.getCurrentUser()
+        ]);
+        setStates(statesData);
+        setCurrentUser(userData);
       } catch (err) {
-        console.error('Failed to fetch states:', err);
+        console.error('Failed to fetch data:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchStates();
+    fetchStatesAndUser();
   }, []);
 
-  const filteredStates = states.filter(state =>
-    state.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    state.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStates = states.filter(state => {
+    const matchesSearch = state.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      state.code.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesZone = currentUser?.role === 'zone'
+      ? state.zone_code === currentUser.zone_code
+      : true;
+
+    return matchesSearch && matchesZone;
+  });
 
   if (isLoading) {
     return <div className="flex items-center justify-center p-8"><div className="text-slate-600 dark:text-slate-400">Loading states...</div></div>;
@@ -41,16 +53,10 @@ export default function ViewerStates() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-950 dark:text-white">States</h1>
+        <h1 className="text-3xl font-bold text-slate-950 dark:text-white">States in your Zone</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-2">View all states in the system</p>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex gap-3">
-        <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-blue-800 dark:text-blue-300">
-          This is a read-only view. Data cannot be modified.
-        </p>
-      </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-6">
         <div className="mb-6">

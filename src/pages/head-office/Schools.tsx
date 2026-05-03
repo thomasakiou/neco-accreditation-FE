@@ -106,7 +106,10 @@ export default function HeadOfficeSchools() {
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
 
     const isSuperAdmin = userEmail === 'admin@neco.gov.ng';
-    const canSendEmails = isSuperAdmin || userRole === 'HQ' || userRole === 'Admin';
+    const canSendEmails = isSuperAdmin || 
+        userRole?.toLowerCase() === 'hq' || 
+        userRole?.toLowerCase() === 'admin' || 
+        userEmail === 'accreditation@neco.gov.ng';
 
     const toggleRow = (schoolCode: string, accrdYear?: string | number) => {
         const rowId = accrdYear ? `${schoolCode}-${accrdYear}` : schoolCode;
