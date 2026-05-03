@@ -16,7 +16,7 @@ import {
 import DataService, { LGA } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
-import { cn } from '../../lib/utils';
+import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 
 type SchoolType = components['schemas']['School'];
 type BECESchoolType = components['schemas']['BECESchool'];
@@ -82,29 +82,8 @@ export default function StateReports() {
 
     // Determine if a school is due for accreditation
     const isDueForAccreditation = (school: any): boolean => {
-        if (school.accreditation_status === 'Failed') return true;
-        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
-            return false;
-        }
-        const accreditedDate = new Date(school.accredited_date);
-        let yearsToAdd = 5;
-
-        const zone = zones.find(z => z.code === currentState?.zone_code);
-        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-        if (isForeign) {
-            yearsToAdd = 10;
-        } else if (school.accreditation_status === 'Partial') {
-            yearsToAdd = 1;
-        }
-
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
-        return expiryDate <= sixMonthsFromNow;
-    };
+        return isSchoolDueForAccreditation(school, [], zones, currentState);
+    };;
 
     // Summary Report Stats (matching report.png)
     const summaryReportStats = useMemo(() => {
@@ -121,7 +100,7 @@ export default function StateReports() {
                 becePaid: lgaBeceDue.filter(s => s.approval_status === 'Approved').length,
             };
         }).sort((a, b) => a.lgaName.localeCompare(b.lgaName));
-    }, [ssceSchools, beceSchools, lgas, zones]);
+    }, [ssceSchools, beceSchools, lgas, zones, currentState]);
 
     // Derived Statistics (Existing UI)
     const {

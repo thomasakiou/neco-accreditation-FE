@@ -24,7 +24,7 @@ import {
     ShieldAlert
 } from 'lucide-react';
 
-import { cn } from '../../lib/utils';
+import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 import DataService, { School } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
@@ -280,27 +280,8 @@ export default function StateApplications() {
         }
     };
 
-    const isDueForAccreditation = (school: School) => {
-        if (school.accreditation_status === 'Failed') return true;
-        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) return false;
-
-        const accreditedDate = new Date(school.accredited_date);
-        let yearsToAdd = 5;
-
-        const zone = zones.find(z => z.code === currentState?.zone_code);
-        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-        if (isForeign) yearsToAdd = 10;
-        else if (school.accreditation_status === 'Partial') yearsToAdd = 1;
-
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
-
-        return expiryDate <= sixMonthsFromNow;
+    const isDueForAccreditation = (school: School): boolean => {
+        return isSchoolDueForAccreditation(school, [], zones, currentState);
     };
 
     const { filteredSchools, totalPages, startIndex, paginatedSchools, schools } = React.useMemo(() => {
@@ -347,7 +328,7 @@ export default function StateApplications() {
             paginatedSchools: paginated,
             schools: currentSchools
         };
-    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, selectedCategory, schoolType, headerYearFilter, isDueOnly]);
+    }, [allSchools, searchQuery, currentPage, rowsPerPage, selectedAccreditationStatus, selectedProofStatus, selectedCategory, schoolType, headerYearFilter, isDueOnly, zones, currentState]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {

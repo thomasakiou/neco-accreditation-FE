@@ -19,7 +19,7 @@ import {
 import AuthService from '../../api/services/auth.service';
 import DataService from '../../api/services/data.service';
 import { useFilterContext } from '../../context/FilterContext';
-import { cn } from '../../lib/utils';
+import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 import { components } from '../../api/types';
 
 type School = components['schemas']['School'];
@@ -140,32 +140,9 @@ export default function StateDashboard() {
     // Global Stats Calculation (Merged SSCE + BECE)
     const allSchools = [...filteredSsce, ...filteredBece];
 
-    const isDueForAccreditation = (school: School) => {
-      if (school.accreditation_status === 'Failed') return true;
-      if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) return false;
-
-      const accreditedDate = new Date(school.accredited_date);
-      let yearsToAdd = 5;
-
-      // Check if school is in a foreign zone
-      const zone = zones.find(z => z.code === currentState?.zone_code);
-      const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-      if (isForeign) {
-        yearsToAdd = 10;
-      } else if (school.accreditation_status === 'Partial') {
-        yearsToAdd = 1;
-      }
-
-      const expiryDate = new Date(accreditedDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-
-      const today = new Date();
-      const sixMonthsFromNow = new Date();
-      sixMonthsFromNow.setMonth(today.getMonth() + 6);
-
-      return expiryDate <= sixMonthsFromNow;
-    };
+    const isDueForAccreditation = (school: School): boolean => {
+        return isSchoolDueForAccreditation(school, [], zones, currentState);
+    };;
 
     // SSCE Specific Stats
     const ssceDue = filteredSsce.filter(isDueForAccreditation);
@@ -248,7 +225,7 @@ export default function StateDashboard() {
       totalSsce,
       totalBece
     };
-  }, [ssceSchools, beceSchools, lgas, headerYearFilter]);
+  }, [ssceSchools, beceSchools, lgas, headerYearFilter, zones, currentState]);
 
   if (isLoading) {
     return (

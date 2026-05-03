@@ -1,11 +1,8 @@
 import React, { useMemo } from 'react';
 import {
     Search,
-    ChevronDown,
-    ChevronRight,
     School as SchoolIcon,
     GraduationCap,
-    Loader2,
     AlertCircle,
     CheckCircle2,
     Clock,
@@ -14,7 +11,7 @@ import {
     FileSpreadsheet,
     FileText
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
@@ -35,32 +32,11 @@ export default function StateSchoolsDue() {
     const [selectedPaymentFilter, setSelectedPaymentFilter] = React.useState<string>('');
     const [selectedAccrFilter, setSelectedAccrFilter] = React.useState<string>('');
     const [activeTab, setActiveTab] = React.useState<'SSCE' | 'BECE'>('SSCE');
-    const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
+    const { setHeaderAvailableYears, setHeaderYearFilter } = useFilterContext();
     const [selectedSchools, setSelectedSchools] = React.useState<Set<string>>(new Set());
-    const [error, setError] = React.useState<string | null>(null);
     React.useEffect(() => {
         fetchData();
     }, []);
-
-    React.useEffect(() => {
-        if (schools.length > 0) {
-            const years = Array.from(new Set(schools
-                .filter(s => (s as any).school_type === activeTab)
-                .map(s => (s as any).accrd_year || (s.accredited_date ? new Date(s.accredited_date).getFullYear().toString() : ''))
-                .filter(Boolean)
-            )).sort((a, b) => (b as string).localeCompare(a as string));
-
-            setHeaderAvailableYears(years);
-
-            if (!headerYearFilter && years.length > 0) {
-                const currentYear = new Date().getFullYear().toString();
-                const prevYear = (new Date().getFullYear() - 1).toString();
-                if (years.includes(currentYear)) setHeaderYearFilter(currentYear);
-                else if (years.includes(prevYear)) setHeaderYearFilter(prevYear);
-                else setHeaderYearFilter(years[0]);
-            }
-        }
-    }, [schools, activeTab]);
 
     React.useEffect(() => {
         return () => {
@@ -138,41 +114,13 @@ export default function StateSchoolsDue() {
         }
     };
 
-    // Determine if a school is due for accreditation
-    const isDueForAccreditation = (school: School): boolean => {
-        if (school.accreditation_status === 'Failed') return true;
-        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
-            return false;
-        }
-        const accreditedDate = new Date(school.accredited_date);
-        let yearsToAdd = 5;
-
-        // Check if school is in a foreign zone
-        const schoolState = userState || { code: school.state_code, zone_code: '' };
-        const zone = zones.find(z => z.code === (schoolState as any).zone_code);
-        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-        if (isForeign) {
-            yearsToAdd = 10;
-        } else if (school.accreditation_status === 'Partial') {
-            yearsToAdd = 1;
-        }
-
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
-        return expiryDate <= sixMonthsFromNow;
-    };
-
     // Filter schools that are due for accreditation
     const dueSchools = useMemo(() => {
         return schools.filter(school => {
             const matchesType = school.school_type === activeTab;
             if (!matchesType) return false;
 
-            const isDue = isDueForAccreditation(school);
+            const isDue = isSchoolDueForAccreditation(school, [], zones, userState);
             const matchesSearch = !searchQuery ||
                 school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 school.code.toLowerCase().includes(searchQuery.toLowerCase());
@@ -182,12 +130,9 @@ export default function StateSchoolsDue() {
                 (selectedPaymentFilter === 'Unpaid' && !school.payment_url);
             const matchesAccr = !selectedAccrFilter || school.accreditation_status === selectedAccrFilter;
 
-            const schoolYear = (school as any).accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
-            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
-
-            return isDue && matchesSearch && matchesPayment && matchesAccr && matchesYear;
+            return isDue && matchesSearch && matchesPayment && matchesAccr;
         });
-    }, [schools, searchQuery, selectedPaymentFilter, selectedAccrFilter, activeTab, headerYearFilter]);
+    }, [schools, searchQuery, selectedPaymentFilter, selectedAccrFilter, activeTab, zones, userState]);
 
     // Get statistics
     const getStats = (schoolsList: School[]) => {
@@ -235,7 +180,7 @@ export default function StateSchoolsDue() {
             const csvRows = [headers.join(',')];
 
             dueSchools.forEach(school => {
-                const lgaName = allLgas.find(lga => lga.code === school.lga_code)?.name || school.lga_code || school.lga_name;
+                const lgaName = allLgas.find(lga => lga.code === school.lga_code)?.name || school.lga_code || '';
                 const custodianName = custodians.find(cust => cust.code === school.custodian_code)?.name || school.custodian_code;
 
                 const row = [
@@ -267,7 +212,7 @@ export default function StateSchoolsDue() {
                     <td>${idx + 1}</td>
                     <td style="font-family:monospace;font-weight:bold">${school.code}</td>
                     <td style="font-weight:600">${school.name}</td>
-                    <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code || school.lga_name}</td>
+                    <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code || ''}</td>
                     <td>${school.custodian_code} - ${custodians.find(c => c.code === school.custodian_code)?.name || 'Unknown'}</td>
                     <td>${school.category === 'PUB' ? 'Public' : (school.category === 'FED' ? 'Federal' : 'Private')}</td>
                     <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}</td>
@@ -576,7 +521,7 @@ export default function StateSchoolsDue() {
                                                             <p className="font-bold text-slate-900 dark:text-white text-lg leading-tight group-hover:text-emerald-600 transition-colors">{school.name}</p>
                                                             <div className="flex items-center gap-2 mt-1">
                                                                 <span className="text-[10px] font-mono font-black text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">{school.code}</span>
-                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{school.lga_name}</span>
+                                                                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code || ''}</span>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -1014,6 +1014,8 @@ export interface components {
              * @default active
              */
             status: string;
+            /** Gender */
+            gender?: string | null;
         };
         /** BECESchoolCreate */
         BECESchoolCreate: {
@@ -1054,6 +1056,8 @@ export interface components {
              * @default active
              */
             status: string;
+            /** Gender */
+            gender?: string | null;
         };
         /** BECESchoolUpdate */
         BECESchoolUpdate: {
@@ -1083,6 +1087,8 @@ export interface components {
             payment_url?: string | null;
             /** Status */
             status?: string | null;
+            /** Gender */
+            gender?: string | null;
         };
         /** Body_login_api_v1_auth_login_post */
         Body_login_api_v1_auth_login_post: {
@@ -1306,6 +1312,8 @@ export interface components {
              * @default active
              */
             status: string;
+            /** Gender */
+            gender?: string | null;
         };
         /** SchoolCreate */
         SchoolCreate: {
@@ -1346,6 +1354,8 @@ export interface components {
              * @default active
              */
             status: string;
+            /** Gender */
+            gender?: string | null;
         };
         /** SchoolUpdate */
         SchoolUpdate: {
@@ -1375,6 +1385,8 @@ export interface components {
             payment_url?: string | null;
             /** Status */
             status?: string | null;
+            /** Gender */
+            gender?: string | null;
         };
         /** State */
         State: {

@@ -25,7 +25,7 @@ import {
     FileText,
     ShieldAlert
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { useFilterContext } from '../../context/FilterContext';
@@ -50,6 +50,7 @@ export default function StateSchools() {
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = useState<string>('');
     const [selectedProofStatus, setSelectedProofStatus] = useState<string>('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [selectedGender, setSelectedGender] = useState<string>('');
     const [selectedAccreditationType, setSelectedAccreditationType] = useState<string>('');
     const [isDueOnly, setIsDueOnly] = useState(false);
     const { headerYearFilter, setHeaderYearFilter, setHeaderAvailableYears } = useFilterContext();
@@ -120,6 +121,7 @@ export default function StateSchools() {
         accreditation_type: 'Fresh Accreditation',
         accredited_date: '',
         category: 'PUB',
+        gender: '',
         accrd_year: '',
         status: 'active'
     });
@@ -133,7 +135,7 @@ export default function StateSchools() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, selectedAccreditationType, activeTab, headerYearFilter]);
+    }, [searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, selectedGender, selectedAccreditationType, activeTab, headerYearFilter]);
 
     useEffect(() => {
         if (allSchools.length > 0) {
@@ -312,6 +314,7 @@ export default function StateSchools() {
                 accreditation_type: 'Fresh Accreditation',
                 accredited_date: '',
                 category: 'PUB',
+                gender: '',
                 accrd_year: '',
                 status: 'active'
             });
@@ -345,6 +348,7 @@ export default function StateSchools() {
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
                 category: editingSchool.category || 'PUB',
+                gender: editingSchool.gender || null,
                 accreditation_type: editingSchool.accreditation_type || 'Fresh Accreditation',
                 accrd_year: editingSchool.accrd_year || null,
                 status: editingSchool.status
@@ -366,27 +370,7 @@ export default function StateSchools() {
     };
 
     const isDueForAccreditation = (school: School): boolean => {
-        if (school.accreditation_status === 'Failed') return true;
-        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
-            return false;
-        }
-        const accreditedDate = new Date(school.accredited_date);
-        let yearsToAdd = 5;
-
-        const zone = zones.find(z => z.code === currentState?.zone_code);
-        const isForeign = zone?.name?.toLowerCase().includes('foreign') || zone?.name?.toLowerCase().includes('foriegn');
-
-        if (isForeign) yearsToAdd = 10;
-        else if (school.accreditation_status === 'Partial') yearsToAdd = 1;
-
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
-
-        return expiryDate <= sixMonthsFromNow;
+        return isSchoolDueForAccreditation(school, [], zones, currentState);
     };
 
     const { filteredSchools, totalPages, startIndex, paginatedSchools, schools, custodians } = React.useMemo(() => {
@@ -413,13 +397,15 @@ export default function StateSchools() {
                     selectedCategory === 'Private' ? (school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private') :
                         selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
 
+            const matchesGender = selectedGender === '' || school.gender?.toUpperCase() === selectedGender.toUpperCase();
+
             const schoolYear = (school as any).accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
             const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
 
             const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
             const matchesDueStatus = !isDueOnly || isDueForAccreditation(school);
 
-            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesAccreditationType && matchesYear && matchesDueStatus;
+            return matchesSearch && matchesLga && matchesCustodian && matchesAccreditation && matchesProof && matchesCategory && matchesGender && matchesAccreditationType && matchesYear && matchesDueStatus;
         });
 
 
@@ -435,11 +421,11 @@ export default function StateSchools() {
             schools,
             custodians
         };
-    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, currentPage, rowsPerPage, activeTab, headerYearFilter, isDueOnly, zones, currentState]);
+    }, [allSchools, allCustodians, searchTerm, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedProofStatus, selectedCategory, selectedGender, selectedAccreditationType, currentPage, rowsPerPage, activeTab, headerYearFilter, isDueOnly, zones, currentState]);
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (format === 'excel') {
-            const headers = ['Code', 'School Name', 'LGA', 'Custodian', 'Category', 'Accreditation Status', 'Accreditation Date', 'Email'];
+            const headers = ['Code', 'School Name', 'LGA', 'Custodian', 'Category', 'Gender', 'Accreditation Status', 'Accreditation Date', 'Email'];
             const csvRows = [headers.join(',')];
 
             filteredSchools.forEach(school => {
@@ -452,6 +438,7 @@ export default function StateSchools() {
                     lgaName,
                     custodianName,
                     school.category === 'PUB' ? 'Public' : (school.category === 'FED' ? 'Federal' : 'Private'),
+                    school.gender || '-',
                     (school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status,
                     school.accredited_date || 'N/A',
                     school.email || 'N/A'
@@ -478,6 +465,7 @@ export default function StateSchools() {
                     <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
                     <td>${school.custodian_code} - ${custodians.find(c => c.code === school.custodian_code)?.name || 'Unknown'}</td>
                     <td>${school.category === 'PUB' ? 'Public' : (school.category === 'FED' ? 'Federal' : 'Private')}</td>
+                    <td>${school.gender || '-'}</td>
                     <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status}</td>
                     <td>${school.accredited_date || 'N/A'}</td>
                 </tr>
@@ -520,7 +508,7 @@ export default function StateSchools() {
                 <span>Total: ${filteredSchools.length} schools</span>
             </div>
             <table>
-                <thead><tr><th style="background-color:#059669;color:white;width:4%">S/N</th><th style="background-color:#059669;color:white;width:10%">Center Code</th><th style="background-color:#059669;color:white;width:30%">School Name</th><th style="background-color:#059669;color:white;width:10%">LGA</th><th style="background-color:#059669;color:white;width:20%">Custodian</th><th style="background-color:#059669;color:white;width:8%">Category</th><th style="background-color:#059669;color:white;width:10%">Status</th><th style="background-color:#059669;color:white;width:15%">Accrd. Date</th></tr></thead>
+                <thead><tr><th style="background-color:#059669;color:white;width:4%">S/N</th><th style="background-color:#059669;color:white;width:10%">Center Code</th><th style="background-color:#059669;color:white;width:30%">School Name</th><th style="background-color:#059669;color:white;width:10%">LGA</th><th style="background-color:#059669;color:white;width:15%">Custodian</th><th style="background-color:#059669;color:white;width:6%">Category</th><th style="background-color:#059669;color:white;width:6%">Gender</th><th style="background-color:#059669;color:white;width:10%">Status</th><th style="background-color:#059669;color:white;width:10%">Accrd. Date</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
             <div class="footer">
@@ -802,6 +790,20 @@ export default function StateSchools() {
                                     </div>
 
                                     <div className="space-y-1.5">
+                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Gender</label>
+                                        <select
+                                            value={newSchool.gender || ''}
+                                            onChange={e => setNewSchool({ ...newSchool, gender: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        >
+                                            <option value="">Select Gender</option>
+                                            <option value="MIXED">MIXED</option>
+                                            <option value="BOYS">BOYS</option>
+                                            <option value="GIRLS">GIRLS</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Year</label>
                                         <input
                                             type="text"
@@ -950,6 +952,20 @@ export default function StateSchools() {
                                     </div>
 
                                     <div className="space-y-1.5">
+                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Gender</label>
+                                        <select
+                                            value={editingSchool.gender || ''}
+                                            onChange={e => setEditingSchool({ ...editingSchool, gender: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        >
+                                            <option value="">Select Gender</option>
+                                            <option value="MIXED">MIXED</option>
+                                            <option value="BOYS">BOYS</option>
+                                            <option value="GIRLS">GIRLS</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1.5">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Year</label>
                                         <input
                                             type="text"
@@ -1084,6 +1100,20 @@ export default function StateSchools() {
                                     <option value="Public" className="dark:bg-slate-900">Public</option>
                                     <option value="Private" className="dark:bg-slate-900">Private</option>
                                     <option value="Federal" className="dark:bg-slate-900">Federal</option>
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Gender:</span>
+                                <select
+                                    value={selectedGender}
+                                    onChange={(e) => setSelectedGender(e.target.value)}
+                                    className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-900 dark:text-slate-200 cursor-pointer"
+                                >
+                                    <option value="" className="dark:bg-slate-900">All</option>
+                                    <option value="BOYS" className="dark:bg-slate-900">Boys</option>
+                                    <option value="GIRLS" className="dark:bg-slate-900">Girls</option>
+                                    <option value="MIXED" className="dark:bg-slate-900">Mixed</option>
                                 </select>
                             </div>
                         </div>
@@ -1224,6 +1254,15 @@ export default function StateSchools() {
                                                                                 "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400"
                                                                     )}>
                                                                         {school.category === 'PUB' ? 'Public' : school.category === 'FED' ? 'Federal' : 'Private'}
+                                                                    </span>
+                                                                    <span className={cn(
+                                                                        "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                                                                        school.gender === 'BOYS' ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400" :
+                                                                            school.gender === 'GIRLS' ? "bg-pink-50 text-pink-600 border-pink-200 dark:bg-pink-900/20 dark:text-pink-400" :
+                                                                                school.gender === 'MIXED' ? "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400" :
+                                                                                "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400"
+                                                                    )}>
+                                                                        {school.gender || '-'}
                                                                     </span>
                                                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
                                                                         Center {school.code}

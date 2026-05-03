@@ -441,8 +441,9 @@ const DataService = {
                 fileName = 'lgas_template';
                 break;
             case 'schools':
-                headers = 'name,code,state_code,lga_code,custodian_code,email,category,status';
-                fileName = 'schools_template';
+            case 'bece_schools':
+                headers = 'name,code,state_code,lga_code,custodian_code,email,category,gender,status';
+                fileName = tableName === 'schools' ? 'schools_template' : 'bece_schools_template';
                 break;
             case 'custodians':
                 headers = 'name,code,state_code,lga_code,town,status';

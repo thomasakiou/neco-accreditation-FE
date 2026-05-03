@@ -18,6 +18,7 @@ import {
 import DataService, { School, BECESchool, State } from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import { components } from '../../api/types';
+import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 import {
     BarChart,
     Bar,
@@ -135,39 +136,8 @@ export default function HeadOfficeReports() {
 
     // Determine if a school is due for accreditation
     const isDueForAccreditation = (school: any): boolean => {
-        // A school is DUE if:
-        // 1. Its status is explicitly 'Failed'
-        // 2. It has NO accreditation date record
-        // 3. Its status is 'Partial' (expires in 1 yr) or 'Full' (5/10 yrs) AND it's expired or expiring within 6 months
-
-        if (school.accreditation_status === 'Failed') return true;
-
-        if (!school.accredited_date || !['Full', 'Partial', 'Passed'].includes(school.accreditation_status || '')) {
-            return true; // If no record exists yet, it's due
-        }
-
-        const accreditedDate = new Date(school.accredited_date);
-        let yearsToAdd = 5;
-
-        // Check if school is in a foreign zone
-        const zone = zones.find(z => z.code === states.find(st => st.code === school.state_code)?.zone_code);
-        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-        if (isForeign) {
-            yearsToAdd = 10;
-        } else if (school.accreditation_status === 'Partial') {
-            yearsToAdd = 1;
-        }
-
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
-
-        return expiryDate <= sixMonthsFromNow;
-    };
+        return isSchoolDueForAccreditation(school, states, zones);
+    };;
 
     // Calculate Summary Report Stats (matching report.png)
     const summaryReportStats = useMemo(() => {

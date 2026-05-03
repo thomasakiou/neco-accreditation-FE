@@ -20,7 +20,7 @@ import DataService from '../../api/services/data.service';
 import AuthService from '../../api/services/auth.service';
 import TemplateDownloadModal from '../../components/modals/TemplateDownloadModal';
 import { useFilterContext } from '../../context/FilterContext';
-import { cn } from '../../lib/utils';
+import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 import { components } from '../../api/types';
 
 type School = components['schemas']['School'];
@@ -116,32 +116,8 @@ export default function HeadOfficeDashboard() {
   const totalSsceSchools = yearFilteredSsce.length;
   const totalBeceSchools = yearFilteredBece.length;
 
-  // Calculate schools due for accreditation
-  const isDueForAccreditation = (school: School): boolean => {
-    if (school.accreditation_status === 'Failed') return true;
-    if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
-      return false;
-    }
-    const accreditedDate = new Date(school.accredited_date);
-    let yearsToAdd = 5;
-
-    // Check if school is in a foreign zone
-    const schoolState = states.find(s => s.code === school.state_code);
-    const zone = zones.find(z => z.code === schoolState?.zone_code);
-    const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-    if (isForeign) {
-      yearsToAdd = 10;
-    } else if (school.accreditation_status === 'Partial') {
-      yearsToAdd = 1;
-    }
-
-    const expiryDate = new Date(accreditedDate);
-    expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-    const today = new Date();
-    const sixMonthsFromNow = new Date();
-    sixMonthsFromNow.setMonth(today.getMonth() + 6);
-    return expiryDate <= sixMonthsFromNow;
+    const isDueForAccreditation = (school: any): boolean => {
+    return isSchoolDueForAccreditation(school, states, zones);
   };
 
   // SSCE calculations

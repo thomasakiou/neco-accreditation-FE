@@ -20,7 +20,7 @@ import {
     Shield,
     Calendar
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 import DataService from '../../api/services/data.service';
 import ExportService from '../../api/services/export.service';
 import AuthService from '../../api/services/auth.service';
@@ -109,30 +109,7 @@ export default function ReviewApplications() {
 
     // Determine if a school is due for accreditation
     const isDueForAccreditation = (school: School): boolean => {
-        if (school.accreditation_status === 'Failed') return true;
-        if (!school.accredited_date || !['Full', 'Partial'].includes(school.accreditation_status || '')) {
-            return false;
-        }
-        const accreditedDate = new Date(school.accredited_date);
-        let yearsToAdd = 5;
-
-        // Check if school is in a foreign zone
-        const schoolState = states.find(s => s.code === school.state_code);
-        const zone = zones.find(z => z.code === schoolState?.zone_code);
-        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-        if (isForeign) {
-            yearsToAdd = 10;
-        } else if (school.accreditation_status === 'Partial') {
-            yearsToAdd = 1;
-        }
-
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
-        return expiryDate <= sixMonthsFromNow;
+        return isSchoolDueForAccreditation(school, states, zones);
     };
 
     // Filter schools that are due for accreditation
@@ -151,17 +128,36 @@ export default function ReviewApplications() {
                 (selectedPaymentFilter === 'Pending' && !!school.payment_url && school.approval_status !== 'Approved') ||
                 (selectedPaymentFilter === 'Unpaid' && !school.payment_url);
             const matchesAccr = !selectedAccrFilter || school.accreditation_status === selectedAccrFilter;
-            const schoolYear = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
-            const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
-
-            // Debug log to trace what year string is being checked
-            if (schoolYear && headerYearFilter) {
-                // console.log(`Comparing school year ${schoolYear} with header filter ${headerYearFilter}`);
+            
+            // Calculate the year the school is DUE
+            let dueYearStr = '';
+            if (school.accrd_year) {
+                dueYearStr = school.accrd_year;
+            } else if (school.accredited_date) {
+                const accDate = new Date(school.accredited_date);
+                const status = (school.accreditation_status || '').toUpperCase();
+                
+                let isForeign = false;
+                const schoolState = states.find(s => s.code === school.state_code);
+                const zone = zones.find(z => z.code === schoolState?.zone_code);
+                isForeign = !!(zone?.name?.toLowerCase().includes('foreign') || zone?.name?.toLowerCase().includes('foriegn'));
+                
+                if (isForeign) {
+                    dueYearStr = (accDate.getFullYear() + 10).toString();
+                } else if (status === 'PARTIAL') {
+                    dueYearStr = (accDate.getFullYear() + 1).toString();
+                } else if (status === 'FAILED') {
+                    dueYearStr = accDate.getFullYear().toString();
+                } else {
+                    dueYearStr = (accDate.getFullYear() + 5).toString();
+                }
             }
+            
+            const matchesYear = !headerYearFilter || dueYearStr === headerYearFilter || (school.accredited_date && new Date(school.accredited_date).getFullYear().toString() === headerYearFilter);
 
             return isDue && matchesSearch && matchesState && matchesPayment && matchesAccr && matchesYear;
         });
-    }, [schools, searchQuery, selectedStateFilter, selectedPaymentFilter, selectedAccrFilter, activeTab, headerYearFilter]);
+    }, [schools, searchQuery, selectedStateFilter, selectedPaymentFilter, selectedAccrFilter, activeTab, headerYearFilter, states, zones]);
 
     // Group due schools by state
     const schoolsByState = useMemo(() => {

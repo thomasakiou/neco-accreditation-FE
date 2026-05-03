@@ -35,6 +35,7 @@ import ConfirmDialog from '../../components/modals/ConfirmDialog';
 import ExportModal from '../../components/modals/ExportModal';
 import { useFilterContext } from '../../context/FilterContext';
 import { useRef } from 'react';
+import { isSchoolDueForAccreditation } from '../../lib/utils';
 
 type School = components['schemas']['School'];
 type State = components['schemas']['State'];
@@ -55,6 +56,7 @@ export default function HeadOfficeSchools() {
     const [selectedCustodian, setSelectedCustodian] = useState<string>('');
     const [selectedAccreditationStatus, setSelectedAccreditationStatus] = useState<string>('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [selectedGender, setSelectedGender] = useState<string>('');
     const [selectedAccreditationType, setSelectedAccreditationType] = useState<string>('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -96,6 +98,7 @@ export default function HeadOfficeSchools() {
         accreditation_type: 'Fresh Accreditation',
         accredited_date: '',
         category: 'PUB',
+        gender: '',
         accrd_year: '',
         status: 'active'
     });
@@ -323,6 +326,7 @@ export default function HeadOfficeSchools() {
         setSelectedCustodian('');
         setSelectedAccreditationStatus('');
         setSelectedCategory('');
+        setSelectedGender('');
         setSelectedAccreditationType('');
         setSearchTerm('');
         setCurrentPage(1);
@@ -472,6 +476,7 @@ export default function HeadOfficeSchools() {
                 accreditation_type: 'Fresh',
                 accredited_date: '',
                 category: 'PUB',
+                gender: '',
                 accrd_year: '',
                 status: 'active'
             });
@@ -505,6 +510,7 @@ export default function HeadOfficeSchools() {
                 accreditation_status: editingSchool.accreditation_status,
                 accredited_date: editingSchool.accredited_date || null,
                 category: editingSchool.category || 'PUB',
+                gender: editingSchool.gender || null,
                 accreditation_type: editingSchool.accreditation_type || 'Fresh',
                 accrd_year: editingSchool.accrd_year || null,
                 status: editingSchool.status
@@ -557,35 +563,7 @@ export default function HeadOfficeSchools() {
     };
 
     const isDueForAccreditation = (school: School): boolean => {
-        if (school.accreditation_status === 'Failed') return true;
-        
-        // Unaccredited schools are technically due if they are trying to register
-        if (!school.accredited_date || !['Full', 'Partial', 'Passed'].includes(school.accreditation_status || '')) {
-            return false; // Only mark existing accredited schools as due
-        }
-
-        const accreditedDate = new Date(school.accredited_date);
-        let yearsToAdd = 5;
-
-        // Check if school is in a foreign zone
-        const schoolState = states.find(s => s.code === school.state_code);
-        const zone = zones.find(z => z.code === schoolState?.zone_code);
-        const isForeign = zone?.name.toLowerCase().includes('foreign') || zone?.name.toLowerCase().includes('foriegn');
-
-        if (isForeign) {
-            yearsToAdd = 10;
-        } else if (school.accreditation_status === 'Partial') {
-            yearsToAdd = 1;
-        }
-
-        const expiryDate = new Date(accreditedDate);
-        expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
-
-        const today = new Date();
-        const sixMonthsFromNow = new Date();
-        sixMonthsFromNow.setMonth(today.getMonth() + 6);
-
-        return expiryDate <= sixMonthsFromNow;
+        return isSchoolDueForAccreditation(school, states, zones);
     };
 
     const handleBulkDelete = async () => {
@@ -666,6 +644,8 @@ export default function HeadOfficeSchools() {
                     selectedCategory === 'Private' ? (school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private') :
                         selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
 
+            const matchesGender = selectedGender === '' || school.gender?.toUpperCase() === selectedGender.toUpperCase();
+
             const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
 
             const schoolYear = school.accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
@@ -674,7 +654,7 @@ export default function HeadOfficeSchools() {
             const isDue = isDueForAccreditation(school);
             const matchesDueFilter = !selectedDueOnly || isDue;
 
-            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesAccreditationType && matchesYear && matchesDueFilter;
+            return matchesSearch && matchesZone && matchesState && matchesLga && matchesCustodian && matchesAccreditation && matchesCategory && matchesGender && matchesAccreditationType && matchesYear && matchesDueFilter;
         });
 
         const totalPages = Math.ceil(filtered.length / rowsPerPage);
@@ -687,11 +667,11 @@ export default function HeadOfficeSchools() {
             startIndex,
             paginatedSchools: paginated
         };
-    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedAccreditationType, states, currentPage, rowsPerPage, headerYearFilter, selectedDueOnly, zones]);
+    }, [schools, searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedGender, selectedAccreditationType, states, currentPage, rowsPerPage, headerYearFilter, selectedDueOnly, zones]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedAccreditationType]);
+    }, [searchTerm, selectedZone, selectedState, selectedLga, selectedCustodian, selectedAccreditationStatus, selectedCategory, selectedGender, selectedAccreditationType]);
 
     const handleExportReport = () => {
         const rows = filteredSchools.map((school, idx) => `
@@ -703,6 +683,7 @@ export default function HeadOfficeSchools() {
                 <td>${allLgas.find(l => l.code === school.lga_code)?.name || school.lga_code}</td>
                 <td>${custodians.find(c => c.code === school.custodian_code)?.name || school.custodian_code}</td>
                 <td>${school.category === 'PUB' || school.category === 'Public' ? 'Public' : (school.category === 'FED' || school.category === 'Federal' ? 'Federal' : 'Private')}</td>
+                <td>${school.gender || '-'}</td>
                 <td>${(school.accreditation_status === 'Full' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Partial') ? `Accredited (${school.accreditation_status === 'Partial' ? 'Partial' : 'Full'})` : school.accreditation_status === 'Failed' ? 'Unaccredited (Failed)' : school.accreditation_status || 'Unaccredited'}</td>
                 <td>${school.accredited_date || 'N/A'}</td>
             </tr>
@@ -745,7 +726,7 @@ export default function HeadOfficeSchools() {
             <span>Total: ${filteredSchools.length} schools</span>
         </div>
         <table>
-            <thead><tr><th style="background-color:#059669;color:white">S/N</th><th style="background-color:#059669;color:white">Center Code</th><th style="background-color:#059669;color:white">School Name</th><th style="background-color:#059669;color:white">State</th><th style="background-color:#059669;color:white">LGA</th><th style="background-color:#059669;color:white">Custodian</th><th style="background-color:#059669;color:white">Category</th><th style="background-color:#059669;color:white">Status</th><th style="background-color:#059669;color:white">Accrd. Date</th></tr></thead>
+            <thead><tr><th style="background-color:#059669;color:white">S/N</th><th style="background-color:#059669;color:white">Center Code</th><th style="background-color:#059669;color:white">School Name</th><th style="background-color:#059669;color:white">State</th><th style="background-color:#059669;color:white">LGA</th><th style="background-color:#059669;color:white">Custodian</th><th style="background-color:#059669;color:white">Category</th><th style="background-color:#059669;color:white">Gender</th><th style="background-color:#059669;color:white">Status</th><th style="background-color:#059669;color:white">Accrd. Date</th></tr></thead>
             <tbody>${rows}</tbody>
         </table>
         <div class="footer">
@@ -1025,6 +1006,20 @@ export default function HeadOfficeSchools() {
                                     </div>
 
                                     <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Gender</label>
+                                        <select
+                                            value={newSchool.gender || ''}
+                                            onChange={e => setNewSchool({ ...newSchool, gender: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        >
+                                            <option value="">Select Gender</option>
+                                            <option value="MIXED">MIXED</option>
+                                            <option value="BOYS">BOYS</option>
+                                            <option value="GIRLS">GIRLS</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1.5 col-span-2 sm:col-span-1">
                                         <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Accre. Year</label>
                                         <input
                                             type="text"
@@ -1217,6 +1212,20 @@ export default function HeadOfficeSchools() {
                                             <option value="PUB">Public</option>
                                             <option value="PRV">Private</option>
                                             <option value="FED">Federal</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                        <label className="text-sm font-black uppercase text-slate-400 tracking-widest">Gender</label>
+                                        <select
+                                            value={editingSchool.gender || ''}
+                                            onChange={e => setEditingSchool({ ...editingSchool, gender: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        >
+                                            <option value="">Select Gender</option>
+                                            <option value="MIXED">MIXED</option>
+                                            <option value="BOYS">BOYS</option>
+                                            <option value="GIRLS">GIRLS</option>
                                         </select>
                                     </div>
 
@@ -1439,6 +1448,20 @@ export default function HeadOfficeSchools() {
                                 </select>
                             </div>
 
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[140px] xl:flex-none">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">GENDER:</span>
+                                <select
+                                    value={selectedGender}
+                                    onChange={(e) => { setSelectedGender(e.target.value); setCurrentPage(1); }}
+                                    className="bg-white dark:bg-slate-800 border-none text-sm text-slate-950 dark:text-slate-200 focus:ring-0 outline-none w-full cursor-pointer font-bold"
+                                >
+                                    <option value="" className="dark:bg-slate-800">All</option>
+                                    <option value="MIXED" className="dark:bg-slate-800">Mixed</option>
+                                    <option value="BOYS" className="dark:bg-slate-800">Boys</option>
+                                    <option value="GIRLS" className="dark:bg-slate-800">Girls</option>
+                                </select>
+                            </div>
+
                             <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl flex-1 min-w-[150px] xl:flex-none">
                                 <CheckCircle2 className="w-4 h-4 text-slate-600" />
                                 <select
@@ -1568,6 +1591,7 @@ export default function HeadOfficeSchools() {
                                     <th className="px-6 py-4">State</th>
                                     <th className="px-6 py-4">Custodian</th>
                                     <th className="px-6 py-4">Category</th>
+                                    <th className="px-6 py-4">Gender</th>
                                     <th className="px-6 py-4">Accreditation</th>
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
@@ -1654,6 +1678,11 @@ export default function HeadOfficeSchools() {
                                                                 school.category === 'PRI' || school.category === 'PRV' ? 'Private' :
                                                                     school.category === 'FED' ? 'Federal' :
                                                                         school.category || 'Public'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-sm font-bold text-slate-900 dark:text-slate-300">
+                                                            {school.gender || '-'}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4">
