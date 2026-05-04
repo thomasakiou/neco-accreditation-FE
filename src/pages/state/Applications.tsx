@@ -262,9 +262,9 @@ export default function StateApplications() {
             const file = uploadFiles[0];
 
             if (schoolType === 'SSCE') {
-                await DataService.uploadSchoolPaymentProof(selectedSchool.code, file);
+                await DataService.uploadSchoolPaymentProof(selectedSchool.code, file, (selectedSchool as any).accrd_year);
             } else {
-                await DataService.uploadBeceSchoolPaymentProof(selectedSchool.code, file);
+                await DataService.uploadBeceSchoolPaymentProof(selectedSchool.code, file, (selectedSchool as any).accrd_year);
             }
 
             // Reset and refresh
@@ -717,10 +717,10 @@ export default function StateApplications() {
                                                                 setSelectedSchool(school);
                                                                 setIsUploadModalOpen(true);
                                                             }}
-                                                            disabled={school.approval_status === 'Approved'}
+                                                            disabled={school.approval_status === 'Approved' && !!school.payment_url}
                                                             className={cn(
                                                                 "flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed",
-                                                                school.approval_status === 'Approved' 
+                                                                (school.approval_status === 'Approved' && !!school.payment_url)
                                                                     ? "bg-slate-400 dark:bg-slate-700" 
                                                                     : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20"
                                                             )}
