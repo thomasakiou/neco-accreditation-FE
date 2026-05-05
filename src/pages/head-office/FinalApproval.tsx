@@ -65,6 +65,7 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [accrType, setAccrType] = useState<'Full' | 'Partial' | 'Failed'>('Full');
     const [accrDate, setAccrDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isSendingCert, setIsSendingCert] = useState<Record<string, boolean>>({});
 
     const [showVerifyModal, setShowVerifyModal] = useState(false);
     const [showHQVerifyConfirm, setShowHQVerifyConfirm] = useState(false);
@@ -362,6 +363,64 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
         } catch (err) {
             console.error('Failed to update bulk accreditation:', err);
             alert('Bulk update failed. Some schools may not have been updated.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleSendCertificate = async (school: School) => {
+        try {
+            setIsSendingCert(prev => ({ ...prev, [school.code]: true }));
+            if (school.school_type === 'BECE') {
+                await DataService.sendBeceCertificate(school.code);
+            } else {
+                await DataService.sendCertificate(school.code);
+            }
+            alert(`Certificate sent successfully to ${school.name}`);
+        } catch (err) {
+            console.error('Failed to send certificate:', err);
+            alert('Failed to send certificate. Please check the school email and try again.');
+        } finally {
+            setIsSendingCert(prev => ({ ...prev, [school.code]: false }));
+        }
+    };
+
+    const handleBulkSendCertificates = async () => {
+        const selectedSchoolsList = filteredSchools.filter(s => 
+            selectedSchoolCodes.has(s.code) && 
+            ['Full', 'Partial'].includes(s.accreditation_status || '')
+        );
+
+        if (selectedSchoolsList.length === 0) {
+            alert('No accredited schools selected for certificate delivery.');
+            return;
+        }
+
+        if (!confirm(`Send certificates to ${selectedSchoolsList.length} schools?`)) return;
+
+        try {
+            setIsSubmitting(true);
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const school of selectedSchoolsList) {
+                try {
+                    if (school.school_type === 'BECE') {
+                        await DataService.sendBeceCertificate(school.code);
+                    } else {
+                        await DataService.sendCertificate(school.code);
+                    }
+                    successCount++;
+                } catch (err) {
+                    console.error(`Failed to send cert for ${school.code}:`, err);
+                    failCount++;
+                }
+            }
+
+            alert(`Batch complete. Sent: ${successCount}, Failed: ${failCount}`);
+            setSelectedSchoolCodes(new Set());
+        } catch (err) {
+            console.error('Bulk send error:', err);
         } finally {
             setIsSubmitting(false);
         }
@@ -862,6 +921,20 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
                                                                     Accredit
                                                                 </button>
                                                                 )}
+                                                                {['Full', 'Partial'].includes(school.accreditation_status || '') && (
+                                                                    <button
+                                                                        onClick={() => handleSendCertificate(school)}
+                                                                        disabled={isSendingCert[school.code]}
+                                                                        className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                                                                    >
+                                                                        {isSendingCert[school.code] ? (
+                                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                        ) : (
+                                                                            <Printer className="w-3.5 h-3.5" />
+                                                                        )}
+                                                                        Send Cert
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -910,6 +983,14 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
                                     Approve Selected
                                 </button>
                             )}
+                            <button
+                                onClick={handleBulkSendCertificates}
+                                disabled={isSubmitting}
+                                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-500/20 active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                            >
+                                <Printer className="w-4 h-4" />
+                                Send Certificates
+                            </button>
                         </div>
                     </div>
                 </div>

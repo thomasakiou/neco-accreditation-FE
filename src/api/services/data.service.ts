@@ -507,6 +507,16 @@ const DataService = {
         const response = await client.post('/api/v1/data/schools/send-manual-emails', data);
         return response.data;
     },
+
+    sendCertificate: async (code: string): Promise<any> => {
+        const response = await client.post(`/api/v1/data/schools/${code}/send-certificate`);
+        return response.data;
+    },
+
+    sendBeceCertificate: async (code: string): Promise<any> => {
+        const response = await client.post(`/api/v1/data/bece-schools/${code}/send-certificate`);
+        return response.data;
+    },
 };
 
 export default DataService;
