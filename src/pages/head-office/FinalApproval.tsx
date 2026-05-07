@@ -369,6 +369,11 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
     };
 
     const handleSendCertificate = async (school: School) => {
+        if (!school.email) {
+            alert(`Cannot send certificate: ${school.name} (${school.code}) does not have an institutional email address set.`);
+            return;
+        }
+
         try {
             setIsSendingCert(prev => ({ ...prev, [school.code]: true }));
             if (school.school_type === 'BECE') {
@@ -391,19 +396,27 @@ export default function HeadOfficeFinalApproval({ isAccountant = false }: FinalA
             ['Full', 'Partial'].includes(s.accreditation_status || '')
         );
 
-        if (selectedSchoolsList.length === 0) {
-            alert('No accredited schools selected for certificate delivery.');
+        const schoolsWithEmail = selectedSchoolsList.filter(s => !!s.email);
+        const schoolsWithoutEmail = selectedSchoolsList.filter(s => !s.email);
+
+        if (schoolsWithEmail.length === 0) {
+            alert('None of the selected schools have an institutional email address set.');
             return;
         }
 
-        if (!confirm(`Send certificates to ${selectedSchoolsList.length} schools?`)) return;
+        let confirmMessage = `Send certificates to ${schoolsWithEmail.length} schools?`;
+        if (schoolsWithoutEmail.length > 0) {
+            confirmMessage = `${schoolsWithoutEmail.length} selected schools do not have emails set and will be skipped. Send certificates to the remaining ${schoolsWithEmail.length} schools?`;
+        }
+
+        if (!confirm(confirmMessage)) return;
 
         try {
             setIsSubmitting(true);
             let successCount = 0;
             let failCount = 0;
 
-            for (const school of selectedSchoolsList) {
+            for (const school of schoolsWithEmail) {
                 try {
                     if (school.school_type === 'BECE') {
                         await DataService.sendBeceCertificate(school.code);
