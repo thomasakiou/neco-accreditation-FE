@@ -10,6 +10,7 @@ import {
     X,
     Edit2,
     Download,
+    Upload,
     Trash2,
     Filter,
     RefreshCw
@@ -33,6 +34,8 @@ export default function Custodians() {
     const [modalLgas, setModalLgas] = useState<LGA[]>([]);
     const [isLoadingLgas, setIsLoadingLgas] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [newCustodian, setNewCustodian] = useState({
         name: '',
         code: '',
@@ -212,6 +215,28 @@ export default function Custodians() {
         DataService.downloadTemplate('custodians');
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsUploading(true);
+            setError(null);
+            if (activeTab === 'SSCE') {
+                await DataService.uploadCustodians(file);
+            } else {
+                await DataService.uploadBeceCustodians(file);
+            }
+            fetchInitialData();
+            // Clear the input
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        } catch (err: any) {
+            setError(err.response?.data?.detail?.[0]?.msg || `Failed to upload ${activeTab} Custodians. Please ensure the CSV format is correct.`);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     const filteredCustodians = custodians.filter(c => {
         const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.code.toLowerCase().includes(searchTerm.toLowerCase());
@@ -250,6 +275,13 @@ export default function Custodians() {
 
                         {isSuperAdmin && (
                             <div className="flex items-center gap-3">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileUpload}
+                                    accept=".csv"
+                                    className="hidden"
+                                />
                                 <button
                                     onClick={handleDownloadTemplate}
                                     className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-emerald-900/20 border border-slate-700 dark:border-emerald-500/30 text-white dark:text-emerald-400 rounded-lg hover:bg-slate-800 dark:hover:bg-emerald-900/40 transition-all text-sm font-bold shadow-sm"
@@ -257,6 +289,15 @@ export default function Custodians() {
                                 >
                                     <Download className="w-4 h-4" />
                                     <span>Template</span>
+                                </button>
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploading}
+                                    className="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm font-bold shadow-sm disabled:opacity-50"
+                                    title="Upload CSV File"
+                                >
+                                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                    <span>{isUploading ? 'Uploading...' : 'Upload CSV'}</span>
                                 </button>
                                 <button
                                     onClick={() => setShowAddModal(true)}

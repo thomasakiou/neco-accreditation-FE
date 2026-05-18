@@ -355,6 +355,18 @@ const DataService = {
         await client.delete(`/api/v1/data/custodians/${code}`);
     },
 
+    uploadCustodians: async (file: File): Promise<any> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await client.post('/api/v1/data/upload/custodians', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        custodiansCache = null;
+        return response.data;
+    },
+
     // BECE Custodians
     getBeceCustodians: async (params?: { state_code?: string; lga_code?: string }): Promise<BECECustodian[]> => {
         const hasParams = params && Object.values(params).some(v => v !== undefined);
@@ -437,7 +449,7 @@ const DataService = {
 
         switch (tableName.toLowerCase()) {
             case 'lgas':
-                headers = 'name,code,state_code';
+                headers = 'StateCode,LgaCode,LGA';
                 fileName = 'lgas_template';
                 break;
             case 'schools':

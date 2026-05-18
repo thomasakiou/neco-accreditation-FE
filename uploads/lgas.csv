@@ -1,0 +1,775 @@
+name,code,state_code
+Aba North,1001,001
+Aba South,1002,001
+Arochukwu,1003,001
+Bende,1004,001
+Ikwuano,1005,001
+Isiala Ngwa North,1006,001
+Isiala Ngwa South,1007,001
+Isuikwuato,1008,001
+Obi Ngwa,1009,001
+Ohafia,1010,001
+Osisioma,1011,001
+Ugwunagbo,1012,001
+Ukwa East,1013,001
+Ukwa West,1014,001
+Umu Nneochi,1015,001
+Umuahia North,1016,001
+Umuahia South,1017,001
+Demsa,2001,002
+Fufure,2002,002
+Ganye,2003,002
+Gayuk,2004,002
+Gombi,2005,002
+Grie,2006,002
+Hong,2007,002
+Jada,2008,002
+Lamurde,2009,002
+Madagali,2010,002
+Maiha,2011,002
+Mayo Belwa,2012,002
+Michika,2013,002
+Mubi North,2014,002
+Mubi South,2015,002
+Numan,2016,002
+Shelleng,2017,002
+Song,2018,002
+Toungo,2019,002
+Yola North,2020,002
+Yola South,2021,002
+Abak,3001,003
+Eastern Obolo,3002,003
+Eket,3003,003
+Esit Eket,3004,003
+Essien Udim,3005,003
+Etim Ekpo,3006,003
+Etinan,3007,003
+Ibeno,3008,003
+Ibesikpo Asutan,3009,003
+Ibiono-Ibom,3010,003
+Ika,3011,003
+Ikono,3012,003
+Ikot Abasi,3013,003
+Ikot Ekpene,3014,003
+Ini,3015,003
+Itu,3016,003
+Mbo,3017,003
+Mkpat-Enin,3018,003
+Nsit-Atai,3019,003
+Nsit-Ibom,3020,003
+Nsit-Ubium,3021,003
+Obot Akara,3022,003
+Okobo,3023,003
+Onna,3024,003
+Oron,3025,003
+Oruk Anam,3026,003
+Udung-Uko,3027,003
+Ukanafun,3028,003
+Uruan,3029,003
+Urue-Offong/Oruko,3030,003
+Uyo,3031,003
+Aguata,4001,004
+Anambra East,4002,004
+Anambra West,4003,004
+Anaocha,4004,004
+Awka North,4005,004
+Awka South,4006,004
+Ayamelum,4007,004
+Dunukofia,4008,004
+Ekwusigo,4009,004
+Idemili North,4010,004
+Idemili South,4011,004
+Ihiala,4012,004
+Njikoka,4013,004
+Nnewi North,4014,004
+Nnewi South,4015,004
+Ogbaru,4016,004
+Onitsha North,4017,004
+Onitsha South,4018,004
+Orumba North,4019,004
+Orumba South,4020,004
+Oyi,4021,004
+Alkaleri,5001,005
+Bauchi,5002,005
+Bogoro,5003,005
+Damban,5004,005
+Darazo,5005,005
+Dass,5006,005
+Gamawa,5007,005
+Ganjuwa,5008,005
+Giade,5009,005
+Itas/Gadau,5010,005
+Jama'are,5011,005
+Katagum,5012,005
+Kirfi,5013,005
+Misau,5014,005
+Ningi,5015,005
+Shira,5016,005
+Tafawa Balewa,5017,005
+Toro,5018,005
+Warji,5019,005
+Zaki,5020,005
+Ado,6001,006
+Agatu,6002,006
+Apa,6003,006
+Buruku,6004,006
+Gboko,6005,006
+Guma,6006,006
+Gwer East,6007,006
+Gwer West,6008,006
+Katsina-Ala,6009,006
+Konshisha,6010,006
+Kwande,6011,006
+Logo,6012,006
+Makurdi,6013,006
+Obi,6014,006
+Ogbadibo,6015,006
+Ohimini,6016,006
+Oju,6017,006
+Okpokwu,6018,006
+Oturkpo,6019,006
+Tarka,6020,006
+Ukum,6021,006
+Ushongo,6022,006
+Vandeikya,6023,006
+Abadam,7001,007
+Askira/Uba,7002,007
+Bama,7003,007
+Bayo,7004,007
+Biu,7005,007
+Chibok,7006,007
+Damboa,7007,007
+Dikwa,7008,007
+Gubio,7009,007
+Guzamala,7010,007
+Gwoza,7011,007
+Hawul,7012,007
+Jere,7013,007
+Kaga,7014,007
+Kala/Balge,7015,007
+Konduga,7016,007
+Kukawa,7017,007
+Kwaya Kusar,7018,007
+Mafa,7019,007
+Magumeri,7020,007
+Maiduguri,7021,007
+Marte,7022,007
+Mobbar,7023,007
+Monguno,7024,007
+Ngala,7025,007
+Nganzai,7026,007
+Shani,7027,007
+Abi,8001,008
+Akamkpa,8002,008
+Akpabuyo,8003,008
+Bakassi,8004,008
+Bekwarra,8005,008
+Biase,8006,008
+Boki,8007,008
+Calabar Municipal,8008,008
+Calabar South,8009,008
+Etung,8010,008
+Ikom,8011,008
+Obanliku,8012,008
+Obubra,8013,008
+Obudu,8014,008
+Odukpani,8015,008
+Ogoja,8016,008
+Yakuur,8017,008
+Yala,8018,008
+Aniocha North,9001,009
+Aniocha South,9002,009
+Bomadi,9003,009
+Burutu,9004,009
+Ethiope East,9005,009
+Ethiope West,9006,009
+Ika North East,9007,009
+Ika South,9008,009
+Isoko North,9009,009
+Isoko South,9010,009
+Ndokwa East,9011,009
+Ndokwa West,9012,009
+Okpe,9013,009
+Oshimili North,9014,009
+Oshimili South,9015,009
+Patani,9016,009
+Sapele,9017,009
+Udu,9018,009
+Ughelli North,9019,009
+Ughelli South,9020,009
+Ukwuani,9021,009
+Uvwie,9022,009
+Warri North,9023,009
+Warri South,9024,009
+Warri South West,9025,009
+Akoko-Edo,10001,010
+Egor,10002,010
+Esan Central,10003,010
+Esan North-East,10004,010
+Esan South-East,10005,010
+Esan West,10006,010
+Etsako Central,10007,010
+Etsako East,10008,010
+Etsako West,10009,010
+Igueben,10010,010
+Ikpoba Okha,10011,010
+Oredo,10012,010
+Orhionmwon,10013,010
+Ovia North-East,10014,010
+Ovia South-West,10015,010
+Owan East,10016,010
+Owan West,10017,010
+Uhunmwonde,10018,010
+Aninri,11001,011
+Awgu,11002,011
+Enugu East,11003,011
+Enugu North,11004,011
+Enugu South,11005,011
+Ezeagu,11006,011
+Igbo Etiti,11007,011
+Igbo Eze North,11008,011
+Igbo Eze South,11009,011
+Isi Uzo,11010,011
+Nkanu East,11011,011
+Nkanu West,11012,011
+Nsukka,11013,011
+Oji River,11014,011
+Udenu,11015,011
+Udi,11016,011
+Uzo-Uwani,11017,011
+Aboh Mbaise,12001,012
+Ahiazu Mbaise,12002,012
+Ehime Mbano,12003,012
+Ezinihitte,12004,012
+Ideato North,12005,012
+Ideato South,12006,012
+Ihitte/Uboma,12007,012
+Ikeduru,12008,012
+Isiala Mbano,12009,012
+Isu,12010,012
+Mbaitoli,12011,012
+Ngor Okpala,12012,012
+Njaba,12013,012
+Nkwerre,12014,012
+Nwangele,12015,012
+Obowo,12016,012
+Oguta,12017,012
+Ohaji/Egbema,12018,012
+Okigwe,12019,012
+Orlu,12020,012
+Orsu,12021,012
+Oru East,12022,012
+Oru West,12023,012
+Owerri Municipal,12024,012
+Owerri North,12025,012
+Owerri West,12026,012
+Unuimo,12027,012
+Auyo,13001,013
+Babura,13002,013
+Biriniwa,13003,013
+Birnin Kudu,13004,013
+Buji,13005,013
+Dutse,13006,013
+Gagarawa,13007,013
+Garki,13008,013
+Gumel,13009,013
+Guri,13010,013
+Gwaram,13011,013
+Gwiwa,13012,013
+Hadejia,13013,013
+Jahun,13014,013
+Kafin Hausa,13015,013
+Kaugama,13016,013
+Kazaure,13017,013
+Kiri Kasama,13018,013
+Kiyawa,13019,013
+Maigatari,13020,013
+Malam Madori,13021,013
+Miga,13022,013
+Ringim,13023,013
+Roni,13024,013
+Sule Tankarkar,13025,013
+Taura,13026,013
+Yankwashi,13027,013
+Birnin Gwari,14001,014
+Chikun,14002,014
+Giwa,14003,014
+Igabi,14004,014
+Ikara,14005,014
+Jaba,14006,014
+Jema'a,14007,014
+Kachia,14008,014
+Kaduna North,14009,014
+Kaduna South,14010,014
+Kagarko,14011,014
+Kajuru,14012,014
+Kaura,14013,014
+Kauru,14014,014
+Kubau,14015,014
+Kudan,14016,014
+Lere,14017,014
+Makarfi,14018,014
+Sabon Gari,14019,014
+Sanga,14020,014
+Soba,14021,014
+Zangon Kataf,14022,014
+Zaria,14023,014
+Ajingi,15001,015
+Albasu,15002,015
+Bagwai,15003,015
+Bebeji,15004,015
+Bichi,15005,015
+Bunkure,15006,015
+Dala,15007,015
+Dambatta,15008,015
+Dawakin Kudu,15009,015
+Dawakin Tofa,15010,015
+Doguwa,15011,015
+Fagge,15012,015
+Gabasawa,15013,015
+Garko,15014,015
+Garun Mallam,15015,015
+Gaya,15016,015
+Gezawa,15017,015
+Gwale,15018,015
+Gwarzo,15019,015
+Kabo,15020,015
+Kano Municipal,15021,015
+Karaye,15022,015
+Kibiya,15023,015
+Kiru,15024,015
+Kumbotso,15025,015
+Kunchi,15026,015
+Kura,15027,015
+Madobi,15028,015
+Makoda,15029,015
+Minjibir,15030,015
+Nasarawa,15031,015
+Rano,15032,015
+Rimin Gado,15033,015
+Rogo,15034,015
+Shanono,15035,015
+Sumaila,15036,015
+Takai,15037,015
+Tarauni,15038,015
+Tofa,15039,015
+Tsanyawa,15040,015
+Tudun Wada,15041,015
+Ungogo,15042,015
+Warawa,15043,015
+Wudil,15044,015
+Bakori,16001,016
+Batagarawa,16002,016
+Batsari,16003,016
+Baure,16004,016
+Bindawa,16005,016
+Charanchi,16006,016
+Dan Musa,16007,016
+Dandume,16008,016
+Danja,16009,016
+Daura,16010,016
+Dutsi,16011,016
+Dutsin Ma,16012,016
+Faskari,16013,016
+Funtua,16014,016
+Ingawa,16015,016
+Jibia,16016,016
+Kafur,16017,016
+Kaita,16018,016
+Kankara,16019,016
+Kankia,16020,016
+Katsina,16021,016
+Kurfi,16022,016
+Kusada,16023,016
+Mai'Adua,16024,016
+Malumfashi,16025,016
+Mani,16026,016
+Mashi,16027,016
+Matazu,16028,016
+Musawa,16029,016
+Rimi,16030,016
+Sabuwa,16031,016
+Safana,16032,016
+Sandamu,16033,016
+Zango,16034,016
+Aleiro,17001,017
+Arewa Dandi,17002,017
+Argungu,17003,017
+Augie,17004,017
+Bagudo,17005,017
+Birnin Kebbi,17006,017
+Bunza,17007,017
+Dandi,17008,017
+Fakai,17009,017
+Gwandu,17010,017
+Jega,17011,017
+Kalgo,17012,017
+Koko/Besse,17013,017
+Maiyama,17014,017
+Ngaski,17015,017
+Sakaba,17016,017
+Shanga,17017,017
+Suru,17018,017
+Wasagu/Danko,17019,017
+Yauri,17020,017
+Zuru,17021,017
+Adavi,18001,018
+Ajaokuta,18002,018
+Ankpa,18003,018
+Bassa,18004,018
+Dekina,18005,018
+Ibaji,18006,018
+Idah,18007,018
+Igalamela Odolu,18008,018
+Ijumu,18009,018
+Kabba/Bunu,18010,018
+Kogi,18011,018
+Lokoja,18012,018
+Mopa Muro,18013,018
+Ofu,18014,018
+Ogori/Magongo,18015,018
+Okehi,18016,018
+Okene,18017,018
+Olamaboro,18018,018
+Omala,18019,018
+Yagba East,18020,018
+Yagba West,18021,018
+Asa,19001,019
+Baruten,19002,019
+Edu,19003,019
+Ekiti,19004,019
+Ifelodun,19005,019
+Ilorin East,19006,019
+Ilorin South,19007,019
+Ilorin West,19008,019
+Irepodun,19009,019
+Isin,19010,019
+Kaiama,19011,019
+Moro,19012,019
+Offa,19013,019
+Oke Ero,19014,019
+Oyun,19015,019
+Pategi,19016,019
+Agege,20001,020
+Ajeromi-Ifelodun,20002,020
+Alimosho,20003,020
+Amuwo-Odofin,20004,020
+Apapa,20005,020
+Badagry,20006,020
+Epe,20007,020
+Eti Osa,20008,020
+Ibeju-Lekki,20009,020
+Ifako-Ijaiye,20010,020
+Ikeja,20011,020
+Ikorodu,20012,020
+Kosofe,20013,020
+Lagos Island,20014,020
+Lagos Mainland,20015,020
+Mushin,20016,020
+Ojo,20017,020
+Oshodi-Isolo,20018,020
+Shomolu,20019,020
+Surulere,20020,020
+Agaie,21001,021
+Agwara,21002,021
+Bida,21003,021
+Borgu,21004,021
+Bosso,21005,021
+Chanchaga,21006,021
+Edati,21007,021
+Gbako,21008,021
+Gurara,21009,021
+Katcha,21010,021
+Kontagora,21011,021
+Lapai,21012,021
+Lavun,21013,021
+Magama,21014,021
+Mariga,21015,021
+Mashegu,21016,021
+Mokwa,21017,021
+Moya,21018,021
+Paikoro,21019,021
+Rafi,21020,021
+Rijau,21021,021
+Shiroro,21022,021
+Suleja,21023,021
+Tafa,21024,021
+Wushishi,21025,021
+Abeokuta North,22001,022
+Abeokuta South,22002,022
+Ado-Odo/Ota,22003,022
+Ewekoro,22004,022
+Ifo,22005,022
+Ijebu East,22006,022
+Ijebu North,22007,022
+Ijebu North East,22008,022
+Ijebu Ode,22009,022
+Ikenne,22010,022
+Imeko Afon,22011,022
+Ipokia,22012,022
+Obafemi Owode,22013,022
+Odeda,22014,022
+Odogbolu,22015,022
+Ogun Waterside,22016,022
+Remo North,22017,022
+Shagamu,22018,022
+Yewa North,22019,022
+Yewa South,22020,022
+Akoko North-East,23001,023
+Akoko North-West,23002,023
+Akoko South-East,23003,023
+Akoko South-West,23004,023
+Akure North,23005,023
+Akure South,23006,023
+Ese Odo,23007,023
+Idanre,23008,023
+Ifedore,23009,023
+Ilaje,23010,023
+Ile Oluji/Okeigbo,23011,023
+Irele,23012,023
+Odigbo,23013,023
+Okitipupa,23014,023
+Ondo East,23015,023
+Ondo West,23016,023
+Ose,23017,023
+Owo,23018,023
+Aiyedaade,24001,024
+Aiyedire,24002,024
+Atakunmosa East,24003,024
+Atakunmosa West,24004,024
+Boluwaduro,24005,024
+Boripe,24006,024
+Ede North,24007,024
+Ede South,24008,024
+Egbedore,24009,024
+Ejigbo,24010,024
+Ife Central,24011,024
+Ife East,24012,024
+Ife North,24013,024
+Ife South,24014,024
+Ifedayo,24015,024
+Ifelodun,24016,024
+Ila,24017,024
+Ilesa East,24018,024
+Ilesa West,24019,024
+Irepodun,24020,024
+Irewole,24021,024
+Isokan,24022,024
+Iwo,24023,024
+Obokun,24024,024
+Odo Otin,24025,024
+Ola Oluwa,24026,024
+Olorunda,24027,024
+Oriade,24028,024
+Orolu,24029,024
+Osogbo,24030,024
+Afijio,25001,025
+Akinyele,25002,025
+Atiba,25003,025
+Atisbo,25004,025
+Egbeda,25005,025
+Ibadan North,25006,025
+Ibadan North-East,25007,025
+Ibadan North-West,25008,025
+Ibadan South-East,25009,025
+Ibadan South-West,25010,025
+Ibarapa Central,25011,025
+Ibarapa East,25012,025
+Ibarapa North,25013,025
+Ido,25014,025
+Irepo,25015,025
+Iseyin,25016,025
+Itesiwaju,25017,025
+Iwajowa,25018,025
+Kajola,25019,025
+Lagelu,25020,025
+Ogbomosho North,25021,025
+Ogbomosho South,25022,025
+Ogo Oluwa,25023,025
+Olorunsogo,25024,025
+Oluyole,25025,025
+Ona Ara,25026,025
+Orelope,25027,025
+Ori Ire,25028,025
+Oyo East,25029,025
+Oyo West,25030,025
+Saki East,25031,025
+Saki West,25032,025
+Surulere,25033,025
+Barkin Ladi,26001,026
+Bassa,26002,026
+Bokkos,26003,026
+Jos East,26004,026
+Jos North,26005,026
+Jos South,26006,026
+Kanam,26007,026
+Kanke,26008,026
+Langtang North,26009,026
+Langtang South,26010,026
+Mangu,26011,026
+Mikang,26012,026
+Pankshin,26013,026
+Qua'an Pan,26014,026
+Riyom,26015,026
+Shendam,26016,026
+Wase,26017,026
+Abua/Odual,27001,027
+Ahoada East,27002,027
+Ahoada West,27003,027
+Akuku-Toru,27004,027
+Andoni,27005,027
+Asari-Toru,27006,027
+Bonny,27007,027
+Degema,27008,027
+Eleme,27009,027
+Emuoha,27010,027
+Etche,27011,027
+Gokana,27012,027
+Ikwerre,27013,027
+Khana,27014,027
+Obio/Akpor,27015,027
+Ogba/Egbema/Ndoni,27016,027
+Ogu/Bolo,27017,027
+Okrika,27018,027
+Omuma,27019,027
+Opobo/Nkoro,27020,027
+Oyigbo,27021,027
+Port Harcourt,27022,027
+Tai,27023,027
+Binji,28001,028
+Bodinga,28002,028
+Dange Shuni,28003,028
+Gada,28004,028
+Goronyo,28005,028
+Gudu,28006,028
+Gwadabawa,28007,028
+Illela,28008,028
+Isa,28009,028
+Kebbe,28010,028
+Kware,28011,028
+Rabah,28012,028
+Sabon Birni,28013,028
+Shagari,28014,028
+Silame,28015,028
+Sokoto North,28016,028
+Sokoto South,28017,028
+Tambuwal,28018,028
+Tangaza,28019,028
+Tureta,28020,028
+Wamako,28021,028
+Wurno,28022,028
+Yabo,28023,028
+Ardo Kola,29001,029
+Bali,29002,029
+Donga,29003,029
+Gashaka,29004,029
+Gassol,29005,029
+Ibi,29006,029
+Jalingo,29007,029
+Karim Lamido,29008,029
+Kumi,29009,029
+Lau,29010,029
+Sardauna,29011,029
+Takum,29012,029
+Ussa,29013,029
+Wukari,29014,029
+Yorro,29015,029
+Zing,29016,029
+Bade,30001,030
+Bursari,30002,030
+Damaturu,30003,030
+Fika,30004,030
+Fune,30005,030
+Geidam,30006,030
+Gujba,30007,030
+Gulani,30008,030
+Jakusko,30009,030
+Karasuwa,30010,030
+Machina,30011,030
+Nangere,30012,030
+Nguru,30013,030
+Potiskum,30014,030
+Tarmuwa,30015,030
+Yunusari,30016,030
+Yusufari,30017,030
+Abaji,31001,031
+Abuja,31002,031
+Bwari,31003,031
+Gwagwalada,31004,031
+Kuje,31005,031
+Kwali,31006,031
+Brass,32001,032
+Ekeremor,32002,032
+Kolokuma/Opokuma,32003,032
+Nembe,32004,032
+Ogbia,32005,032
+Sagbama,32006,032
+Southern Ijaw,32007,032
+Yenagoa,32008,032
+Abakaliki,33001,033
+Afikpo North,33002,033
+Afikpo South (Edda),33003,033
+Ebonyi,33004,033
+Ezza North,33005,033
+Ezza South,33006,033
+Ikwo,33007,033
+Ishielu,33008,033
+Ivo,33009,033
+Izzi,33010,033
+Ohaozara,33011,033
+Ohaukwu,33012,033
+Onicha,33013,033
+Ado Ekiti,34001,034
+Efon,34002,034
+Ekiti East,34003,034
+Ekiti South-West,34004,034
+Ekiti West,34005,034
+Emure,34006,034
+Gbonyin,34007,034
+Ido Osi,34008,034
+Ijero,34009,034
+Ikere,34010,034
+Ikole,34011,034
+Ilejemeje,34012,034
+Irepodun/Ifelodun,34013,034
+Ise/Orun,34014,034
+Moba,34015,034
+Oye,34016,034
+Akko,35001,035
+Balanga,35002,035
+Billiri,35003,035
+Dukku,35004,035
+Funakaye,35005,035
+Gombe,35006,035
+Kaltungo,35007,035
+Kwami,35008,035
+Nafada,35009,035
+Shongom,35010,035
+Yamaltu/Deba,35011,035
+Akwanga,36001,036
+Awe,36002,036
+Doma,36003,036
+Karu,36004,036
+Keana,36005,036
+Keffi,36006,036
+Kokona,36007,036
+Lafia,36008,036
+Nasarawa,36009,036
+Nasarawa Egon,36010,036
+Obi,36011,036
+Toto,36012,036
+Wamba,36013,036
+Anka,37001,037
+Bakura,37002,037
+Birnin Magaji/Kiyaw,37003,037
+Bukkuyum,37004,037
+Bungudu,37005,037
+Chafe,37006,037
+Gummi,37007,037
+Gusau,37008,037
+Kaura Namoda,37009,037
+Maradun,37010,037
+Maru,37011,037
+Shinkafi,37012,037
+Talata Mafara,37013,037
+Zurmi,37014,037
