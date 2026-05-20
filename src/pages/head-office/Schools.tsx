@@ -83,6 +83,9 @@ export default function HeadOfficeSchools() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isExporting, setIsExporting] = useState<string | null>(null);
     const [showExportModal, setShowExportModal] = useState(false);
+    const [skippedSchools, setSkippedSchools] = useState<any[]>([]);
+    const [showSkippedModal, setShowSkippedModal] = useState(false);
+    const [uploadMessage, setUploadMessage] = useState<string>('');
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [emailInterval, setEmailInterval] = useState('12 Months');
     const [isSendingEmails, setIsSendingEmails] = useState(false);
@@ -448,14 +451,22 @@ export default function HeadOfficeSchools() {
         try {
             setUploadProgress('uploading');
             setError(null);
+            let response;
             if (activeTab === 'SSCE') {
-                await DataService.uploadSchools(file);
+                response = await DataService.uploadSchools(file);
             } else {
-                await DataService.uploadBeceSchools(file);
+                response = await DataService.uploadBeceSchools(file);
             }
             setUploadProgress('success');
+            setUploadMessage(response?.message || 'Schools database updated successfully!');
+            
+            if (response?.skipped_schools && response.skipped_schools.length > 0) {
+                setSkippedSchools(response.skipped_schools);
+                setShowSkippedModal(true);
+            }
+            
             fetchSchools();
-            setTimeout(() => setUploadProgress('idle'), 3000);
+            setTimeout(() => setUploadProgress('idle'), 5000);
         } catch (err: any) {
             setUploadProgress('error');
             setError(`Failed to upload ${activeTab} schools. Please ensure the file format is correct.`);
@@ -925,7 +936,7 @@ export default function HeadOfficeSchools() {
                 {uploadProgress === 'success' && (
                     <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3 text-emerald-700 dark:text-emerald-400 animate-in fade-in slide-in-from-top-2">
                         <CheckCircle2 className="w-5 h-5" />
-                        <p className="text-sm font-medium">Schools database updated successfully!</p>
+                        <p className="text-sm font-medium">{uploadMessage || 'Schools database updated successfully!'}</p>
                     </div>
                 )}
 
@@ -1379,6 +1390,59 @@ export default function HeadOfficeSchools() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Skipped Schools Modal */}
+                {showSkippedModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-300 dark:border-slate-800 w-full max-w-3xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[85vh]">
+                            <div className="p-6 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-3 text-amber-600 dark:text-amber-500">
+                                    <AlertTriangle className="w-6 h-6" />
+                                    <h2 className="text-xl font-bold text-slate-950 dark:text-white">Skipped Schools</h2>
+                                </div>
+                                <button onClick={() => setShowSkippedModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+                            
+                            <div className="p-6 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 flex-1">
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 font-medium">
+                                    The following {skippedSchools.length} schools were skipped during the upload due to invalid data or missing references:
+                                </p>
+                                
+                                <div className="border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-100 dark:bg-slate-900/50 border-b border-slate-300 dark:border-slate-700">
+                                            <tr>
+                                                <th className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-200">Code</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-200">Name</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-200">Reason</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700/50">
+                                            {skippedSchools.map((school, i) => (
+                                                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                                    <td className="px-4 py-3 font-mono text-xs text-slate-700 dark:text-slate-300">{school.code || '-'}</td>
+                                                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{school.name || '-'}</td>
+                                                    <td className="px-4 py-3 text-red-600 dark:text-red-400 text-xs">{school.reason || 'Unknown error'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div className="p-4 border-t border-slate-300 dark:border-slate-800 flex justify-end bg-white dark:bg-slate-900 shrink-0">
+                                <button 
+                                    onClick={() => setShowSkippedModal(false)}
+                                    className="px-6 py-2 bg-slate-900 dark:bg-emerald-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
+                                >
+                                    Understood
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

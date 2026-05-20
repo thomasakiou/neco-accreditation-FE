@@ -23,7 +23,8 @@ import {
     Check,
     FileSpreadsheet,
     FileText,
-    ShieldAlert
+    ShieldAlert,
+    AlertTriangle
 } from 'lucide-react';
 import { cn, isSchoolDueForAccreditation } from '../../lib/utils';
 import DataService, { LGA, Custodian } from '../../api/services/data.service';
@@ -83,6 +84,9 @@ export default function StateSchools() {
     const [isLoadingCustodians, setIsLoadingCustodians] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+    const [skippedSchools, setSkippedSchools] = useState<any[]>([]);
+    const [showSkippedModal, setShowSkippedModal] = useState(false);
+    const [uploadMessage, setUploadMessage] = useState<string>('');
 
     const toggleSelectSchool = (schoolCode: string, accrdYear?: string | number) => {
         const rowId = accrdYear ? `${schoolCode}-${accrdYear}` : String(schoolCode);
@@ -266,17 +270,25 @@ export default function StateSchools() {
         try {
             setUploadProgress('uploading');
             setError(null);
+            let response;
             if (activeTab === 'SSCE') {
-                await DataService.uploadSchools(file);
+                response = await DataService.uploadSchools(file);
             } else {
-                await DataService.uploadBeceSchools(file);
+                response = await DataService.uploadBeceSchools(file);
             }
             setUploadProgress('success');
+            setUploadMessage(response?.message || 'Data Synchronization Successful!');
+
+            if (response?.skipped_schools && response.skipped_schools.length > 0) {
+                setSkippedSchools(response.skipped_schools);
+                setShowSkippedModal(true);
+            }
+
             fetchSchools();
-            setTimeout(() => setUploadProgress('idle'), 3000);
+            setTimeout(() => setUploadProgress('idle'), 5000);
         } catch (err: any) {
             setUploadProgress('error');
-            setError(`Failed to upload ${activeTab} schools. Please ensure the file format is correct.`);
+            setError(err.response?.data?.detail || err.message || `Failed to upload ${activeTab} schools. Please ensure the file format is correct.`);
         }
     };
 
@@ -404,7 +416,7 @@ export default function StateSchools() {
 
             const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
             const matchesDueStatus = !isDueOnly || isDueForAccreditation(school);
-            
+
             // Filter out inactive schools in state portal
             const isInactive = (school.status || '').toLowerCase() === 'inactive';
 
@@ -681,7 +693,7 @@ export default function StateSchools() {
                     {uploadProgress === 'success' && (
                         <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
                             <CheckCircle2 className="w-5 h-5" />
-                            <p className="text-[10px] font-black uppercase tracking-widest">Data Synchronization Successful!</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest">{uploadMessage || 'Data Synchronization Successful!'}</p>
                         </div>
                     )}
                     {error && (
@@ -801,8 +813,8 @@ export default function StateSchools() {
                                         >
                                             <option value="">Select Gender</option>
                                             <option value="MIXED">MIXED</option>
-                                            <option value="BOYS">BOYS</option>
-                                            <option value="GIRLS">GIRLS</option>
+                                            <option value="BOY">BOY</option>
+                                            <option value="GIRL">GIRL</option>
                                         </select>
                                     </div>
 
@@ -963,8 +975,8 @@ export default function StateSchools() {
                                         >
                                             <option value="">Select Gender</option>
                                             <option value="MIXED">MIXED</option>
-                                            <option value="BOYS">BOYS</option>
-                                            <option value="GIRLS">GIRLS</option>
+                                            <option value="BOY">BOY</option>
+                                            <option value="GIRL">GIRL</option>
                                         </select>
                                     </div>
 
@@ -1048,6 +1060,59 @@ export default function StateSchools() {
                     </div>
                 )}
 
+                {/* Skipped Schools Modal */}
+                {showSkippedModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[85vh]">
+                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-3 text-amber-600 dark:text-amber-500">
+                                    <AlertTriangle className="w-6 h-6" />
+                                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Skipped Schools</h2>
+                                </div>
+                                <button onClick={() => setShowSkippedModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 overflow-y-auto bg-slate-50/50 dark:bg-slate-900/50 flex-1">
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 font-medium">
+                                    The following {skippedSchools.length} schools were skipped during the upload due to invalid data or missing references:
+                                </p>
+
+                                <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                                            <tr>
+                                                <th className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-200">Code</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-200">Name</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-200">Reason</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                            {skippedSchools.map((school, i) => (
+                                                <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                                                    <td className="px-4 py-3 font-mono text-xs">{school.code || '-'}</td>
+                                                    <td className="px-4 py-3 font-medium">{school.name || '-'}</td>
+                                                    <td className="px-4 py-3 text-red-600 dark:text-red-400 text-xs">{school.reason || 'Unknown error'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end bg-white dark:bg-slate-900 shrink-0">
+                                <button
+                                    onClick={() => setShowSkippedModal(false)}
+                                    className="px-6 py-2 bg-slate-900 dark:bg-emerald-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
+                                >
+                                    Understood
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Filters Bar */}
                 <div className="bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-3xl border border-slate-300 dark:border-slate-800/50 shadow-xl space-y-4">
                     <div className="flex flex-wrap items-center gap-4">
@@ -1114,8 +1179,8 @@ export default function StateSchools() {
                                     className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest outline-none text-slate-900 dark:text-slate-200 cursor-pointer"
                                 >
                                     <option value="" className="dark:bg-slate-900">All</option>
-                                    <option value="BOYS" className="dark:bg-slate-900">Boys</option>
-                                    <option value="GIRLS" className="dark:bg-slate-900">Girls</option>
+                                    <option value="BOY" className="dark:bg-slate-900">Boy</option>
+                                    <option value="GIRL" className="dark:bg-slate-900">Girl</option>
                                     <option value="MIXED" className="dark:bg-slate-900">Mixed</option>
                                 </select>
                             </div>
@@ -1127,7 +1192,7 @@ export default function StateSchools() {
                             <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
                                 Filtered: <span className="text-slate-900 dark:text-emerald-400">{filteredSchools.length}</span> Results
                             </div>
-                            </div>
+                        </div>
 
                         <div className="flex items-center gap-2 px-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700">
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Rows Per View:</span>
@@ -1260,10 +1325,10 @@ export default function StateSchools() {
                                                                     </span>
                                                                     <span className={cn(
                                                                         "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
-                                                                        school.gender === 'BOYS' ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400" :
-                                                                            school.gender === 'GIRLS' ? "bg-pink-50 text-pink-600 border-pink-200 dark:bg-pink-900/20 dark:text-pink-400" :
+                                                                        school.gender === 'BOY' ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400" :
+                                                                            school.gender === 'GIRL' ? "bg-pink-50 text-pink-600 border-pink-200 dark:bg-pink-900/20 dark:text-pink-400" :
                                                                                 school.gender === 'MIXED' ? "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400" :
-                                                                                "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400"
+                                                                                    "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400"
                                                                     )}>
                                                                         {school.gender || '-'}
                                                                     </span>

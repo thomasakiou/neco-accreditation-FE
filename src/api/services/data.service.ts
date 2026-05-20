@@ -454,7 +454,7 @@ const DataService = {
                 break;
             case 'schools':
             case 'bece_schools':
-                headers = 'name,code,state_code,lga_code,custodian_code,email,category,gender,status';
+                headers = 'code,name,state_code,lga_code,custodian_code,category,accrd_year,email,approval_status,accreditation_type,accredited_date,gender,locality,status';
                 fileName = tableName === 'schools' ? 'schools_template' : 'bece_schools_template';
                 break;
             case 'custodians':
