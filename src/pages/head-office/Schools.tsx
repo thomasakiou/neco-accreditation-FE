@@ -115,9 +115,9 @@ export default function HeadOfficeSchools() {
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
 
     const isSuperAdmin = userEmail === 'admin@neco.gov.ng';
-    const canSendEmails = isSuperAdmin || 
-        userRole?.toLowerCase() === 'hq' || 
-        userRole?.toLowerCase() === 'admin' || 
+    const canSendEmails = isSuperAdmin ||
+        userRole?.toLowerCase() === 'hq' ||
+        userRole?.toLowerCase() === 'admin' ||
         userEmail === 'accreditation@neco.gov.ng';
 
     const toggleRow = (schoolCode: string, accrdYear?: string | number) => {
@@ -141,7 +141,7 @@ export default function HeadOfficeSchools() {
         }
         setSelectedSchools(newSelected);
     };
-    
+
     const handleToggleStatus = async (school: School) => {
         const isBece = activeTab === 'BECE';
         const currentStatus = school.status?.toLowerCase() || 'active';
@@ -162,18 +162,18 @@ export default function HeadOfficeSchools() {
                     } else {
                         await DataService.updateSchool(school.code, { status: newStatus }, school.accrd_year);
                     }
-                    
+
                     // Update local state
                     if (isBece) {
-                        setBeceSchools(prev => prev.map(s => 
+                        setBeceSchools(prev => prev.map(s =>
                             (s.code === school.code && s.accrd_year === school.accrd_year) ? { ...s, status: newStatus } : s
                         ));
                     } else {
-                        setSsceSchools(prev => prev.map(s => 
+                        setSsceSchools(prev => prev.map(s =>
                             (s.code === school.code && s.accrd_year === school.accrd_year) ? { ...s, status: newStatus } : s
                         ));
                     }
-                    
+
                     setConfirmDialog(prev => ({ ...prev, isOpen: false }));
                 } catch (err: any) {
                     setError(err.response?.data?.detail || `Failed to ${actionLabel.toLowerCase()} school`);
@@ -459,12 +459,12 @@ export default function HeadOfficeSchools() {
             }
             setUploadProgress('success');
             setUploadMessage(response?.message || 'Schools database updated successfully!');
-            
+
             if (response?.skipped_schools && response.skipped_schools.length > 0) {
                 setSkippedSchools(response.skipped_schools);
                 setShowSkippedModal(true);
             }
-            
+
             fetchSchools();
             setTimeout(() => setUploadProgress('idle'), 5000);
         } catch (err: any) {
@@ -701,7 +701,7 @@ export default function HeadOfficeSchools() {
                     selectedCategory === 'Private' ? (school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private') :
                         selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
 
-            const matchesGender = selectedGender === '' || school.gender?.toUpperCase() === selectedGender.toUpperCase();
+            const matchesGender = selectedGender === '' || school.gender?.toUpperCase().replace(/S$/, '') === selectedGender.toUpperCase().replace(/S$/, '');
 
             const matchesAccreditationType = selectedAccreditationType === '' || school.accreditation_type === selectedAccreditationType;
 
@@ -1407,12 +1407,12 @@ export default function HeadOfficeSchools() {
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
-                            
+
                             <div className="p-6 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 flex-1">
                                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 font-medium">
                                     The following {skippedSchools.length} schools were skipped during the upload due to invalid data or missing references:
                                 </p>
-                                
+
                                 <div className="border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-slate-100 dark:bg-slate-900/50 border-b border-slate-300 dark:border-slate-700">
@@ -1434,9 +1434,9 @@ export default function HeadOfficeSchools() {
                                     </table>
                                 </div>
                             </div>
-                            
+
                             <div className="p-4 border-t border-slate-300 dark:border-slate-800 flex justify-end bg-white dark:bg-slate-900 shrink-0">
-                                <button 
+                                <button
                                     onClick={() => setShowSkippedModal(false)}
                                     className="px-6 py-2 bg-slate-900 dark:bg-emerald-600 text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
                                 >
@@ -1834,8 +1834,8 @@ export default function HeadOfficeSchools() {
                                                         <div className="flex items-center justify-end gap-2">
                                                             <button
                                                                 onClick={() => handleToggleStatus(school)}
-                                                                className={`p-1.5 rounded-lg transition-all ${school.status === 'active' 
-                                                                    ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10' 
+                                                                className={`p-1.5 rounded-lg transition-all ${school.status === 'active'
+                                                                    ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10'
                                                                     : 'text-amber-600 bg-amber-50 dark:bg-amber-900/10 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10'}`}
                                                                 title={school.status === 'active' ? 'Deactivate School' : 'Activate School'}
                                                             >
@@ -2136,8 +2136,8 @@ export default function HeadOfficeSchools() {
             {emailResults && (
                 <div className="fixed bottom-6 right-6 z-[70] animate-in slide-in-from-right-10 duration-300">
                     <div className={`p-4 rounded-2xl shadow-2xl border-2 flex items-center gap-4 max-w-md ${emailResults.success
-                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
-                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
                         }`}>
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${emailResults.success ? 'bg-purple-600 text-white' : 'bg-red-600 text-white'
                             }`}>

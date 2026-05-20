@@ -409,7 +409,7 @@ export default function StateSchools() {
                     selectedCategory === 'Private' ? (school.category === 'PRI' || school.category === 'PRV' || school.category === 'Private') :
                         selectedCategory === 'Federal' ? school.category === 'FED' || school.category === 'Federal' : false);
 
-            const matchesGender = selectedGender === '' || school.gender?.toUpperCase() === selectedGender.toUpperCase();
+            const matchesGender = selectedGender === '' || school.gender?.toUpperCase().replace(/S$/, '') === selectedGender.toUpperCase().replace(/S$/, '');
 
             const schoolYear = (school as any).accrd_year || (school.accredited_date ? new Date(school.accredited_date).getFullYear().toString() : '');
             const matchesYear = !headerYearFilter || schoolYear === headerYearFilter;
@@ -1325,8 +1325,8 @@ export default function StateSchools() {
                                                                     </span>
                                                                     <span className={cn(
                                                                         "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
-                                                                        school.gender === 'BOY' ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400" :
-                                                                            school.gender === 'GIRL' ? "bg-pink-50 text-pink-600 border-pink-200 dark:bg-pink-900/20 dark:text-pink-400" :
+                                                                        (school.gender === 'BOY' || school.gender === 'BOYS') ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400" :
+                                                                            (school.gender === 'GIRL' || school.gender === 'GIRLS') ? "bg-pink-50 text-pink-600 border-pink-200 dark:bg-pink-900/20 dark:text-pink-400" :
                                                                                 school.gender === 'MIXED' ? "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400" :
                                                                                     "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400"
                                                                     )}>

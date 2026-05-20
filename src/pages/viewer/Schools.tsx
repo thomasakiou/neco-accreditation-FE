@@ -68,9 +68,9 @@ export default function ViewerSchools() {
       matchesZone = state?.zone_code === currentUser.zone_code;
     }
 
-    const matchesGender = selectedGender === '' || school.gender?.toUpperCase() === selectedGender.toUpperCase();
+    const matchesGender = selectedGender === '' || school.gender?.toUpperCase().replace(/S$/, '') === selectedGender.toUpperCase().replace(/S$/, '');
     const matchesDueStatus = !isDueOnly || isSchoolDueForAccreditation(school, states, zones);
-    
+
     // Filter out inactive schools
     const isInactive = ((school as any).status || '').toLowerCase() === 'inactive';
 
