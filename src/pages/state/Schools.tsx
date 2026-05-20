@@ -396,8 +396,13 @@ export default function StateSchools() {
 
             const matchesLga = selectedLga === '' || school.lga_code === selectedLga;
             const matchesCustodian = selectedCustodian === '' || school.custodian_code === selectedCustodian;
+            const matchStatus = selectedAccreditationStatus.toLowerCase().trim();
+            const schoolStatus = (school.accreditation_status || '').toLowerCase().trim();
             const matchesAccreditation = selectedAccreditationStatus === '' ||
-                (selectedAccreditationStatus === 'Accredited' ? (school.accreditation_status === 'Accredited' || school.accreditation_status === 'Passed' || school.accreditation_status === 'Full' || school.accreditation_status === 'Partial') : selectedAccreditationStatus === 'Unaccredited' ? (school.accreditation_status === 'Unaccredited' || school.accreditation_status === 'Failed' || !school.accreditation_status || school.accreditation_status === 'Pending') : school.accreditation_status === selectedAccreditationStatus);
+                (matchStatus === 'full' ? (schoolStatus === 'full' || schoolStatus === 'passed' || schoolStatus === 'accredited') :
+                    matchStatus === 'partial' ? (schoolStatus === 'partial') : // Not appending accredited here so we don't duplicate Full into Partial if not needed, or maybe partial was not overridden
+                        matchStatus === 'failed' ? (schoolStatus === 'failed' || schoolStatus === 'unaccredited' || schoolStatus === 'pending' || schoolStatus === '') :
+                            schoolStatus === matchStatus);
 
             const matchesProof = selectedProofStatus === '' ||
                 (selectedProofStatus === 'Paid' ? school.approval_status === 'Approved' :
